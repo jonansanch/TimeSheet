@@ -1,0 +1,442 @@
+@inject IRegistroHorasRepository RegistroHorasRepository
+
+<MudPaper Elevation="1" Class="pa-6">
+    <MudStack Spacing="4">
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+        }
+
+        <KpgSaveConfirmationBanner IsVisible="_bannerVisible"
+                                   OnDismiss="@(() => { _bannerVisible = false; })"
+                                   Turno="@_bannerTurno"
+                                   Fecha="@_bannerFecha"
+                                   HoraEntrada="@_bannerHoraEntrada"
+                                   HoraSalida="@_bannerHoraSalida"
+                                   Cliente="@_bannerCliente"
+                                   Proyecto="@_bannerProyecto" />
+
+        <MudDatePicker Label="Fecha"
+                       Variant="Variant.Outlined"
+                       Date="@_fecha"
+                       DateChanged="HandleDateChanged"
+                       DateFormat="dd/MM/yyyy"
+                       Required="true"
+                       RequiredError="La fecha es requerida." />
+
+        <KpgRecentSuggestions OnSuggestionSelected="HandleSuggestionSelected" />
+
+        @if (_amGuardado && _pmGuardado)
+        {
+            <MudAlert Severity="Severity.Success"
+                      role="status"
+                      Icon="@Icons.Material.Filled.EventAvailable">
+                <MudText Typo="Typo.body1"><b>Jornada completa</b></MudText>
+                <MudText Typo="Typo.body2">Total registrado: @TotalHorasFormateado horas</MudText>
+            </MudAlert>
+        }
+
+        <MudTabs @bind-ActivePanelIndex="_activeTurnoIndex" Elevation="0" Rounded="true" ApplyEffectsToContainer="true">
+            <MudTabPanel Text="AM">
+                <MudForm @ref="_amForm" @bind-IsValid="_amIsValid">
+                    @RenderTurnoFields(_amModel, "am")
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="@_isSaving"
+                               OnClick="@(() => SaveAsync(TurnoRegistro.AM))"
+                               Class="mt-4">
+                        @if (_isSaving && _activeTurnoIndex == 0)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <span>Guardar turno AM</span>
+                        }
+                    </MudButton>
+                </MudForm>
+            </MudTabPanel>
+            <MudTabPanel Text="PM">
+                @if (_amGuardado && !_pmGuardado)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.ContentCopy"
+                               OnClick="CopiarConfigAM"
+                               Class="mb-3 mt-2">
+                        Copiar configuración del AM
+                    </MudButton>
+                }
+                <MudForm @ref="_pmForm" @bind-IsValid="_pmIsValid">
+                    @RenderTurnoFields(_pmModel, "pm")
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="@_isSaving"
+                               OnClick="@(() => SaveAsync(TurnoRegistro.PM))"
+                               Class="mt-4">
+                        @if (_isSaving && _activeTurnoIndex == 1)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <span>Guardar turno PM</span>
+                        }
+                    </MudButton>
+                </MudForm>
+            </MudTabPanel>
+        </MudTabs>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private MudForm _amForm = default!;
+    private MudForm _pmForm = default!;
+
+    private DateTime? _fecha = DateTime.Today;
+    private int _activeTurnoIndex;
+    private bool _amIsValid;
+    private bool _pmIsValid;
+    private bool _isSaving;
+    private string? _errorMessage;
+
+    private bool _amGuardado;
+    private bool _pmGuardado;
+    private RegistroHorasResponse? _amResponse;
+    private RegistroHorasResponse? _pmResponse;
+    private readonly HashSet<string> _touchedModalidades = [];
+
+    private bool _bannerVisible;
+    private string _bannerTurno = string.Empty;
+    private DateOnly _bannerFecha;
+    private TimeOnly _bannerHoraEntrada;
+    private TimeOnly _bannerHoraSalida;
+    private string _bannerCliente = string.Empty;
+    private string _bannerProyecto = string.Empty;
+
+    private List<RegistroRecienteResponse> _sugerenciasRecientes = [];
+
+    private readonly ShiftFormModel _amModel = new()
+    {
+        HoraEntrada = new TimeSpan(8, 0, 0),
+        HoraSalida = new TimeSpan(13, 0, 0)
+    };
+
+    private readonly ShiftFormModel _pmModel = new()
+    {
+        HoraEntrada = new TimeSpan(14, 0, 0),
+        HoraSalida = new TimeSpan(18, 0, 0)
+    };
+
+    private static readonly string[] Clientes = ["KPG", "Cliente interno", "Cliente externo"];
+    private static readonly string[] Proyectos = ["Timesheet", "Soporte operativo", "Consultoria"];
+    private static readonly string[] Modalidades = ["Presencial", "Remoto", "Hibrido"];
+    private static readonly string[] Recursos = ["Consultor", "Analista", "Lider tecnico"];
+    private static readonly string[] Lugares = ["Presencial Oficina", "Presencial Viaje", "Presencial Cliente", "Remoto"];
+
+    private string TotalHorasFormateado
+    {
+        get
+        {
+            if (_amResponse is null || _pmResponse is null)
+                return string.Empty;
+            var durAM = _amResponse.HoraSalida.ToTimeSpan() - _amResponse.HoraEntrada.ToTimeSpan();
+            var durPM = _pmResponse.HoraSalida.ToTimeSpan() - _pmResponse.HoraEntrada.ToTimeSpan();
+            var total = durAM + durPM;
+            return $"{(int)total.TotalHours:D2}:{total.Minutes:D2}";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _sugerenciasRecientes = await RegistroHorasRepository.GetRecientesAsync(5);
+        }
+        catch
+        {
+            _sugerenciasRecientes = [];
+        }
+    }
+
+    private void HandleSuggestionSelected((string Cliente, string Proyecto) sugerencia)
+    {
+        var model = _activeTurnoIndex == 0 ? _amModel : _pmModel;
+        model.Cliente = sugerencia.Cliente;
+        model.Proyecto = sugerencia.Proyecto;
+        StateHasChanged();
+    }
+
+    private Task<IEnumerable<string>> SearchClientesAsync(string text, CancellationToken token)
+    {
+        var opciones = _sugerenciasRecientes
+            .Select(s => s.Cliente)
+            .Concat(Clientes)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(text))
+            return Task.FromResult(opciones);
+
+        return Task.FromResult(
+            opciones.Where(c => c.Contains(text, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private Task<IEnumerable<string>> SearchProyectosAsync(string text, ShiftFormModel model, CancellationToken token)
+    {
+        IEnumerable<string> opciones;
+
+        if (!string.IsNullOrWhiteSpace(model.Cliente))
+        {
+            var delCliente = _sugerenciasRecientes
+                .Where(s => s.Cliente.Equals(model.Cliente, StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.Proyecto)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            opciones = delCliente.Count > 0 ? delCliente : Proyectos;
+        }
+        else
+        {
+            opciones = Proyectos;
+        }
+
+        if (!string.IsNullOrWhiteSpace(text))
+            opciones = opciones.Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(opciones);
+    }
+
+    private void HandleClienteChanged(string? value, ShiftFormModel model)
+    {
+        model.Cliente = value;
+        model.Proyecto = null;
+        StateHasChanged();
+    }
+
+    private void CopiarConfigAM()
+    {
+        _pmModel.Cliente = _amModel.Cliente;
+        _pmModel.Proyecto = _amModel.Proyecto;
+        _pmModel.Modalidad = _amModel.Modalidad;
+        _pmModel.Recurso = _amModel.Recurso;
+        StateHasChanged();
+    }
+
+    private RenderFragment RenderTurnoFields(ShiftFormModel model, string turnoId) => @<MudGrid Class="mt-2">
+        <MudItem xs="12" md="6">
+            <MudTimePicker Label="Hora entrada"
+                           Variant="Variant.Outlined"
+                           @bind-Time="model.HoraEntrada"
+                           Required="true"
+                           RequiredError="La hora de entrada es requerida." />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTimePicker Label="Hora salida"
+                           Variant="Variant.Outlined"
+                           @bind-Time="model.HoraSalida"
+                           Required="true"
+                           RequiredError="La hora de salida es requerida."
+                           Error="@IsInvalidTimeRange(model)"
+                           ErrorText="La hora de salida debe ser mayor que la entrada." />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudAutocomplete T="string"
+                             Label="Cliente"
+                             Variant="Variant.Outlined"
+                             Value="@model.Cliente"
+                             ValueChanged="@(v => HandleClienteChanged(v, model))"
+                             SearchFunc="@((text, token) => SearchClientesAsync(text, token))"
+                             Required="true"
+                             RequiredError="El cliente es requerido."
+                             CoerceValue="true"
+                             Immediate="false" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudAutocomplete T="string"
+                             Label="Proyecto"
+                             Variant="Variant.Outlined"
+                             @bind-Value="model.Proyecto"
+                             SearchFunc="@((text, token) => SearchProyectosAsync(text, model, token))"
+                             Required="true"
+                             RequiredError="El proyecto es requerido."
+                             CoerceValue="true"
+                             Immediate="false" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudText id="@($"modalidad-label-{turnoId}")" Typo="Typo.body2" Class="mb-1">Modalidad *</MudText>
+            <div role="radiogroup"
+                 aria-labelledby="modalidad-label-@turnoId"
+                 aria-describedby="modalidad-error-@turnoId"
+                 style="display:flex;gap:6px;flex-wrap:wrap;">
+                @foreach (var m in Modalidades)
+                {
+                    var isSelected = model.Modalidad == m;
+                    var isFirst = m == Modalidades[0];
+                    var tabIdx = isSelected || (string.IsNullOrWhiteSpace(model.Modalidad) && isFirst) ? 0 : -1;
+                    <MudButton Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               role="radio"
+                               aria-checked="@(isSelected ? "true" : "false")"
+                               tabindex="@tabIdx"
+                               @onkeydown="@(e => HandleModalidadKey(e, model))"
+                               OnClick="@(() => { model.Modalidad = m; _touchedModalidades.Add(turnoId); StateHasChanged(); })">
+                        @m
+                    </MudButton>
+                }
+            </div>
+            <span id="modalidad-error-@turnoId" role="alert" aria-live="polite">
+                @if (string.IsNullOrWhiteSpace(model.Modalidad) && _touchedModalidades.Contains(turnoId))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">La modalidad es requerida.</MudText>
+                }
+            </span>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSelect T="string" Label="Recurso" Variant="Variant.Outlined" @bind-Value="model.Recurso" Required="true" RequiredError="El recurso es requerido.">
+                @foreach (var recurso in Recursos)
+                {
+                    <MudSelectItem Value="@recurso">@recurso</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect T="string" Label="Lugar" Variant="Variant.Outlined" @bind-Value="model.Lugar" Required="true" RequiredError="El lugar es requerido.">
+                @foreach (var lugar in Lugares)
+                {
+                    <MudSelectItem Value="@lugar">@lugar</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTextField T="string"
+                          Label="Descripcion"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          @bind-Value="model.Descripcion"
+                          Required="true"
+                          RequiredError="La descripcion es requerida." />
+        </MudItem>
+    </MudGrid>;
+
+    private void HandleModalidadKey(KeyboardEventArgs e, ShiftFormModel model)
+    {
+        if (e.Key is not ("ArrowLeft" or "ArrowRight" or "ArrowUp" or "ArrowDown"))
+            return;
+        var current = Array.IndexOf(Modalidades, model.Modalidad ?? Modalidades[0]);
+        if (current < 0) current = 0;
+        model.Modalidad = e.Key is "ArrowRight" or "ArrowDown"
+            ? Modalidades[(current + 1) % Modalidades.Length]
+            : Modalidades[(current - 1 + Modalidades.Length) % Modalidades.Length];
+        StateHasChanged();
+    }
+
+    private static bool IsInvalidTimeRange(ShiftFormModel model) =>
+        model.HoraEntrada.HasValue &&
+        model.HoraSalida.HasValue &&
+        model.HoraSalida.Value <= model.HoraEntrada.Value;
+
+    private bool CanSave(ShiftFormModel model, bool formIsValid) =>
+        formIsValid &&
+        _fecha.HasValue &&
+        model.HoraEntrada.HasValue &&
+        model.HoraSalida.HasValue &&
+        !IsInvalidTimeRange(model) &&
+        !string.IsNullOrWhiteSpace(model.Modalidad);
+
+    private void HandleDateChanged(DateTime? value)
+    {
+        _amGuardado = false;
+        _pmGuardado = false;
+        _amResponse = null;
+        _pmResponse = null;
+        _bannerVisible = false;
+        _activeTurnoIndex = 0;
+        _fecha = value;
+        _errorMessage = null;
+    }
+
+    private async Task SaveAsync(TurnoRegistro turno)
+    {
+        var form = turno == TurnoRegistro.AM ? _amForm : _pmForm;
+        var model = turno == TurnoRegistro.AM ? _amModel : _pmModel;
+        await form.Validate();
+        _touchedModalidades.Add(turno == TurnoRegistro.AM ? "am" : "pm");
+
+        if (!CanSave(model, turno == TurnoRegistro.AM ? _amIsValid : _pmIsValid))
+            return;
+
+        _isSaving = true;
+        _bannerVisible = false;
+        _errorMessage = null;
+
+        try
+        {
+            var request = new CreateRegistroHorasRequest(
+                DateOnly.FromDateTime(_fecha!.Value),
+                turno,
+                TimeOnly.FromTimeSpan(model.HoraEntrada!.Value),
+                TimeOnly.FromTimeSpan(model.HoraSalida!.Value),
+                model.Cliente!,
+                model.Proyecto!,
+                model.Modalidad!,
+                model.Recurso!,
+                model.Descripcion!,
+                model.Lugar!);
+
+            var response = await RegistroHorasRepository.CreateAsync(request);
+            if (response is null)
+            {
+                _errorMessage = "No fue posible guardar el turno. Revise los datos e intente nuevamente.";
+                return;
+            }
+
+            _bannerVisible = true;
+            _bannerTurno = turno == TurnoRegistro.AM ? "AM" : "PM";
+            _bannerFecha = response.FechaRegistro;
+            _bannerHoraEntrada = response.HoraEntrada;
+            _bannerHoraSalida = response.HoraSalida;
+            _bannerCliente = response.Cliente;
+            _bannerProyecto = response.Proyecto;
+
+            if (turno == TurnoRegistro.AM)
+            {
+                _amGuardado = true;
+                _amResponse = response;
+                _activeTurnoIndex = 1;
+            }
+            else
+            {
+                _pmGuardado = true;
+                _pmResponse = response;
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Su sesion expiro. Inicie sesion nuevamente.";
+        }
+        catch
+        {
+            _errorMessage = "Ocurrio un error guardando el registro.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private sealed class ShiftFormModel
+    {
+        public TimeSpan? HoraEntrada { get; set; }
+        public TimeSpan? HoraSalida { get; set; }
+        public string? Cliente { get; set; }
+        public string? Proyecto { get; set; }
+        public string? Modalidad { get; set; }
+        public string? Recurso { get; set; }
+        public string? Descripcion { get; set; }
+        public string? Lugar { get; set; }
+    }
+}

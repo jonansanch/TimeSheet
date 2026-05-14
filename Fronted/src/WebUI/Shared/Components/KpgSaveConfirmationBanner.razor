@@ -1,0 +1,65 @@
+@implements IDisposable
+
+@if (IsVisible)
+{
+    <MudPaper Elevation="2" Class="pa-3 mb-2" role="status" aria-live="polite">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                <div>
+                    <MudText Typo="Typo.body1">
+                        Turno @Turno guardado — @Fecha.ToString("dd/MM/yyyy")
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @HoraEntrada.ToString(@"HH\:mm") – @HoraSalida.ToString(@"HH\:mm")
+                        | @Cliente | @Proyecto
+                    </MudText>
+                </div>
+            </MudStack>
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           Size="Size.Small"
+                           aria-label="Cerrar confirmación"
+                           OnClick="Dismiss" />
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnDismiss { get; set; }
+    [Parameter] public string Turno { get; set; } = string.Empty;
+    [Parameter] public DateOnly Fecha { get; set; }
+    [Parameter] public TimeOnly HoraEntrada { get; set; }
+    [Parameter] public TimeOnly HoraSalida { get; set; }
+    [Parameter] public string Cliente { get; set; } = string.Empty;
+    [Parameter] public string Proyecto { get; set; } = string.Empty;
+
+    private CancellationTokenSource? _cts;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            _ = AutoDismissAsync(_cts.Token);
+        }
+    }
+
+    private async Task AutoDismissAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(8000, token);
+            await InvokeAsync(async () =>
+            {
+                await OnDismiss.InvokeAsync();
+            });
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private Task Dismiss() => OnDismiss.InvokeAsync();
+
+    public void Dispose() => _cts?.Cancel();
+}

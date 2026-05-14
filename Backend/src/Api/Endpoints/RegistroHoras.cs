@@ -1,0 +1,82 @@
+using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
+using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
+using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
+using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetRegistrosRecientes;
+using KPG.Timesheet.Domain.Constants;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace KPG.Timesheet.Api.Endpoints;
+
+public class RegistroHoras : IEndpointGroup
+{
+    public static string RoutePrefix => "/api/registros-horas";
+
+    public static void Map(RouteGroupBuilder groupBuilder)
+    {
+        var auth = new AuthorizeAttribute
+        {
+            Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}"
+        };
+
+        groupBuilder.MapPost(Create).RequireAuthorization(auth);
+        groupBuilder.MapGet("", GetMisRegistros).RequireAuthorization(auth);
+        groupBuilder.MapGet("recientes", GetRecientes).RequireAuthorization(auth);
+        groupBuilder.MapDelete("{id}", Delete).RequireAuthorization(auth);
+    }
+
+    [EndpointSummary("Obtener historial de registros del usuario autenticado")]
+    [EndpointDescription("Retorna todos los registros del usuario autenticado, ordenados por fecha descendente.")]
+    [ProducesResponseType<IEnumerable<MisRegistrosItemDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> GetMisRegistros(
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetMisRegistrosQuery(), cancellationToken);
+        return Results.Ok(result);
+    }
+
+    [EndpointSummary("Registrar turno AM/PM")]
+    [EndpointDescription("Crea un registro de horas para el usuario autenticado en la fecha y turno indicados.")]
+    [ProducesResponseType<RegistroHorasDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> Create(
+        [FromBody] CreateRegistroHorasCommand command,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(command, cancellationToken);
+        return Results.Created($"/api/registros-horas/{result.Id}", result);
+    }
+
+    [EndpointSummary("Eliminar registro de horas propio")]
+    [EndpointDescription("Elimina un registro del usuario autenticado. Retorna 403 si el registro pertenece a otro usuario.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> Delete(
+        int id,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new DeleteRegistroHorasCommand(id), cancellationToken);
+        return Results.NoContent();
+    }
+
+    [EndpointSummary("Obtener sugerencias recientes de cliente/proyecto")]
+    [EndpointDescription("Retorna las últimas combinaciones cliente/proyecto usadas por el usuario autenticado.")]
+    [ProducesResponseType<IEnumerable<RegistroRecienteDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> GetRecientes(
+        ISender sender,
+        CancellationToken cancellationToken,
+        [FromQuery] int top = 5)
+    {
+        var result = await sender.Send(new GetRegistrosRecientesQuery(top), cancellationToken);
+        return Results.Ok(result);
+    }
+}

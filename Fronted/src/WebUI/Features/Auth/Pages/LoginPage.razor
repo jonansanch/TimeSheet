@@ -1,0 +1,124 @@
+@page "/login"
+@layout LoginLayout
+@inject KpgAuthStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Iniciar sesión — KPG Timesheet</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 100vh;">
+    <MudPaper Class="pa-8" Elevation="4" Style="width: 100%; max-width: 420px;">
+
+        <div class="d-flex flex-column align-center mb-6">
+            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-family: Poppins, sans-serif; font-weight: 700;">
+                KPG Timesheet
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                Sistema de registro de horas
+            </MudText>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@_errorMessage</MudAlert>
+        }
+
+        <MudForm @ref="_form" @bind-IsValid="_formIsValid">
+            <MudTextField T="string"
+                          Label="Correo electrónico"
+                          @bind-Value="_email"
+                          InputType="InputType.Email"
+                          Required="true"
+                          RequiredError="El correo electrónico es requerido."
+                          Class="mb-3"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Email" />
+
+            <MudTextField T="string"
+                          Label="Contraseña"
+                          @bind-Value="_password"
+                          InputType="@_passwordInputType"
+                          Required="true"
+                          RequiredError="La contraseña es requerida."
+                          Class="mb-4"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@_passwordIcon"
+                          OnAdornmentClick="TogglePasswordVisibility" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       Disabled="@_isLoading"
+                       OnClick="HandleLogin"
+                       Class="mb-4">
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Iniciando sesión...</span>
+                }
+                else
+                {
+                    <span>Iniciar sesión</span>
+                }
+            </MudButton>
+        </MudForm>
+
+        <MudDivider Class="my-2" />
+
+        <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-3" Color="Color.Secondary">
+            ¿Problemas para acceder? Contacte al Administrador del sistema.
+        </MudText>
+
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private MudForm _form = default!;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string? _errorMessage;
+    private bool _isLoading;
+    private bool _formIsValid;
+    private bool _showPassword;
+
+    private InputType _passwordInputType => _showPassword ? InputType.Text : InputType.Password;
+    private string _passwordIcon => _showPassword
+        ? Icons.Material.Filled.Visibility
+        : Icons.Material.Filled.VisibilityOff;
+
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+
+    private async Task HandleLogin()
+    {
+        await _form.Validate();
+        if (!_formIsValid) return;
+
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            await AuthProvider.LoginAsync(_email, _password);
+
+            var destination = string.IsNullOrEmpty(ReturnUrl) ? "/" : ReturnUrl;
+            Navigation.NavigateTo(destination);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Usuario o contraseña incorrectos. Verifique sus credenciales.";
+        }
+        catch
+        {
+            _errorMessage = "No fue posible conectar con el servidor. Intente nuevamente.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

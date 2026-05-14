@@ -1,0 +1,57 @@
+@inject KpgAuthStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<MudNavMenu Class="kpg-nav" Style="padding:8px 0;">
+
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="/"
+                        Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.Home"
+                        IconColor="Color.Secondary">
+                Inicio
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="@($"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+        <Authorized>
+            <MudNavLink Href="/registro"
+                        Icon="@Icons.Material.Filled.EditCalendar"
+                        IconColor="Color.Secondary">
+                Registro
+            </MudNavLink>
+            <MudNavLink Href="/mis-registros"
+                        Icon="@Icons.Material.Filled.History"
+                        IconColor="Color.Secondary">
+                Mis Registros
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+        <Authorized>
+            <MudNavLink Href="/dashboard"
+                        Icon="@Icons.Material.Filled.Dashboard"
+                        IconColor="Color.Secondary">
+                Dashboard
+            </MudNavLink>
+            <MudNavLink Href="/reportes"
+                        Icon="@Icons.Material.Filled.BarChart"
+                        IconColor="Color.Secondary">
+                Reportes
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="@Roles.Admin">
+        <Authorized>
+            <MudNavLink Href="/admin"
+                        Icon="@Icons.Material.Filled.AdminPanelSettings"
+                        IconColor="Color.Secondary">
+                Administración
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+</MudNavMenu>

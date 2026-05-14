@@ -1,0 +1,48 @@
+@inject IRegistroHorasRepository RegistroHorasRepository
+
+@if (_isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Size="Size.Small" Class="mb-2" />
+}
+else if (_sugerencias.Count > 0)
+{
+    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="1" Class="mb-2">
+        <MudText Typo="Typo.caption" Color="Color.Secondary">Usados recientemente:</MudText>
+        @foreach (var s in _sugerencias)
+        {
+            <MudChip T="string"
+                     Value="@($"{s.Cliente} — {s.Proyecto}")"
+                     OnClick="@(() => OnSuggestionSelected.InvokeAsync((s.Cliente, s.Proyecto)))"
+                     aria-label="@($"Aplicar: {s.Cliente} - {s.Proyecto}")"
+                     Color="Color.Default"
+                     Variant="Variant.Outlined"
+                     Size="Size.Small">
+                @s.Cliente — @s.Proyecto
+            </MudChip>
+        }
+    </MudStack>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<(string Cliente, string Proyecto)> OnSuggestionSelected { get; set; }
+
+    private List<RegistroRecienteResponse> _sugerencias = [];
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _sugerencias = await RegistroHorasRepository.GetRecientesAsync(5);
+        }
+        catch
+        {
+            _sugerencias = [];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

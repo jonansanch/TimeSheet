@@ -1,0 +1,82 @@
+@page "/"
+@attribute [Authorize]
+@inject CurrentUserService CurrentUser
+
+<PageTitle>Inicio — KPG Timesheet</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-2" Style="font-family: 'Poppins', sans-serif; font-weight: 600;">
+    Bienvenido a KPG Timesheet
+</MudText>
+
+<AuthorizeView>
+    <Authorized>
+        <MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+            @(context.User.FindFirst("email")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? context.User.Identity?.Name)
+        </MudText>
+    </Authorized>
+</AuthorizeView>
+
+<MudGrid>
+    <AuthorizeView Roles="@($"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+        <Authorized>
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Registro</MudText>
+                        <MudText Typo="Typo.body2">Registra tus horas de trabajo.</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/registro">Ir a Registro</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+        <Authorized>
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Dashboard</MudText>
+                        <MudText Typo="Typo.body2">Visualiza el estado del equipo.</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/dashboard">Ir a Dashboard</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Reportes</MudText>
+                        <MudText Typo="Typo.body2">Genera reportes de horas trabajadas.</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/reportes">Ir a Reportes</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="@Roles.Admin">
+        <Authorized>
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Size="Size.Large" Class="mb-2" />
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Administración</MudText>
+                        <MudText Typo="Typo.body2">Gestiona usuarios y configuración del sistema.</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Warning" Href="/admin">Ir a Administración</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </Authorized>
+    </AuthorizeView>
+</MudGrid>

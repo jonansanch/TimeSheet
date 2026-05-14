@@ -1,0 +1,41 @@
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #ffffff;
+  text-align: center;
+  padding: 2rem;
+
+  h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(90deg, #e94560, #f5a623);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 400;
+    margin: 0 0 1rem;
+    color: #a0aec0;
+
+    .project-name {
+      color: #63b3ed;
+      font-weight: 600;
+    }
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: #718096;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}

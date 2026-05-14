@@ -1,0 +1,17 @@
+@page "/registro"
+@attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+
+<PageTitle>Registro de horas - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+            Registro de horas
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Registra tu turno AM o PM para la fecha seleccionada.
+        </MudText>
+    </div>
+
+    <KpgShiftForm />
+</MudStack>
