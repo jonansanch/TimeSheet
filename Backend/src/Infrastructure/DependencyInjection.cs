@@ -4,6 +4,7 @@ using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Infrastructure.Data;
 using KPG.Timesheet.Infrastructure.Data.Interceptors;
 using KPG.Timesheet.Infrastructure.Identity;
+using KPG.Timesheet.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         }
 
         builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+        builder.Services.AddScoped<ISaveChangesInterceptor, RegistroHorasImmutabilityInterceptor>();
         builder.Services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
 
         builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -73,6 +75,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
         builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<IClock, SystemClock>();
         builder.Services.AddTransient<IIdentityService, IdentityService>();
         builder.Services.AddTransient<IJwtTokenService, JwtTokenService>();
     }

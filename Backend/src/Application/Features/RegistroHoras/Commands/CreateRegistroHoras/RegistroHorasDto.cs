@@ -14,4 +14,5 @@ public record RegistroHorasDto(
     string Modalidad,
     string Recurso,
     string Descripcion,
-    string Lugar);
+    string Lugar,
+    bool EsRetroactivo);

@@ -46,10 +46,30 @@
 
     <AuthorizeView Roles="@Roles.Admin">
         <Authorized>
-            <MudNavLink Href="/admin"
+            <MudNavLink Href="/admin/usuarios"
                         Icon="@Icons.Material.Filled.AdminPanelSettings"
                         IconColor="Color.Secondary">
                 Administración
+            </MudNavLink>
+            <MudNavLink Href="/admin/empleados"
+                        Icon="@Icons.Material.Filled.People"
+                        IconColor="Color.Secondary">
+                Empleados
+            </MudNavLink>
+            <MudNavLink Href="/admin/clientes"
+                        Icon="@Icons.Material.Filled.Business"
+                        IconColor="Color.Secondary">
+                Clientes
+            </MudNavLink>
+            <MudNavLink Href="/solicitudes-excepcion"
+                        Icon="@Icons.Material.Filled.PendingActions"
+                        IconColor="Color.Secondary">
+                Solicitudes
+            </MudNavLink>
+            <MudNavLink Href="/admin/parametros"
+                        Icon="@Icons.Material.Filled.Settings"
+                        IconColor="Color.Secondary">
+                Parámetros
             </MudNavLink>
         </Authorized>
     </AuthorizeView>

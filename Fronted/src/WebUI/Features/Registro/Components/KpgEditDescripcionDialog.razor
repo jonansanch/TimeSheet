@@ -1,0 +1,56 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">Editar descripción</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @ref="_descripcionField"
+                      T="string"
+                      Label="Descripción"
+                      Variant="Variant.Outlined"
+                      Lines="4"
+                      @bind-Value="_descripcion"
+                      MaxLength="1000"
+                      Counter="1000"
+                      Required="true"
+                      RequiredError="La descripción es requerida."
+                      aria-label="Descripción del registro" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValida)"
+                   OnClick="Submit">
+            Confirmar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string DescripcionActual { get; set; } = string.Empty;
+
+    private MudTextField<string> _descripcionField = default!;
+    private string _descripcion = string.Empty;
+
+    private bool EsValida =>
+        !string.IsNullOrWhiteSpace(_descripcion) && _descripcion.Length <= 1000;
+
+    protected override void OnParametersSet()
+    {
+        _descripcion = DescripcionActual;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await _descripcionField.FocusAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(_descripcion));
+}

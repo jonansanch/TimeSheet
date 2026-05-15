@@ -2,6 +2,8 @@
 @attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @inject IRegistroHorasRepository RegistroHorasRepository
 @inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject CurrentUserService CurrentUserService
 
 <PageTitle>Mis Registros - KPG Timesheet</PageTitle>
 
@@ -74,6 +76,15 @@
                 <PropertyColumn Property="x => x.Descripcion" Title="Descripción" Sortable="false" />
                 <TemplateColumn Title="" Sortable="false">
                     <CellTemplate>
+                        @if (_puedeEditar)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           aria-label="Editar descripción"
+                                           Disabled="_isEditing"
+                                           OnClick="@(() => AbrirEditarDescripcionAsync(context.Item))" />
+                        }
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Color="Color.Error"
                                        Size="Size.Small"
@@ -107,6 +118,8 @@
     private string? _errorMessage;
     private string? _successMessage;
     private bool _isDeleting;
+    private bool _isEditing;
+    private bool _puedeEditar;
     private HistorialRegistroResponse? _pendiente;
     private MudMessageBox? _msgBox;
 
@@ -115,6 +128,8 @@
         try
         {
             _registros = await RegistroHorasRepository.GetHistorialAsync();
+            _puedeEditar = await CurrentUserService.IsInRoleAsync(Roles.Supervisor)
+                        || await CurrentUserService.IsInRoleAsync(Roles.Admin);
         }
         catch
         {
@@ -123,6 +138,55 @@
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task AbrirEditarDescripcionAsync(HistorialRegistroResponse item)
+    {
+        var parameters = new DialogParameters<KpgEditDescripcionDialog>
+        {
+            { x => x.DescripcionActual, item.Descripcion }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgEditDescripcionDialog>(
+            "Editar descripción", parameters, options);
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string nuevaDescripcion })
+            await GuardarDescripcionAsync(item, nuevaDescripcion);
+    }
+
+    private async Task GuardarDescripcionAsync(HistorialRegistroResponse item, string nuevaDescripcion)
+    {
+        _isEditing = true;
+        _successMessage = null;
+        _errorMessage = null;
+        try
+        {
+            var ok = await RegistroHorasRepository.UpdateDescripcionAsync(item.Id, nuevaDescripcion);
+            if (ok)
+            {
+                var idx = _registros.IndexOf(item);
+                if (idx >= 0)
+                    _registros[idx] = item with { Descripcion = nuevaDescripcion };
+                _successMessage = "Descripción actualizada correctamente.";
+            }
+            else
+            {
+                _errorMessage = "No fue posible actualizar la descripción. Intente nuevamente.";
+            }
+        }
+        catch
+        {
+            _errorMessage = "Ocurrió un error al actualizar la descripción.";
+        }
+        finally
+        {
+            _isEditing = false;
         }
     }
 

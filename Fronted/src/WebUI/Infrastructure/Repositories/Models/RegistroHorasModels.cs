@@ -34,6 +34,8 @@ public record RegistroHorasResponse(
 
 public record RegistroRecienteResponse(string Cliente, string Proyecto);
 
+public record UpdateDescripcionRegistroRequest(string Descripcion);
+
 public record HistorialRegistroResponse(
     int Id,
     DateOnly FechaRegistro,

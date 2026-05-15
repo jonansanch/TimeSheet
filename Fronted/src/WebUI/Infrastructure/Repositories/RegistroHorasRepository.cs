@@ -75,4 +75,17 @@ public class RegistroHorasRepository : IRegistroHorasRepository
         var response = await _http.SendAsync(httpRequest, cancellationToken);
         return response.StatusCode == System.Net.HttpStatusCode.NoContent;
     }
+
+    public async Task<bool> UpdateDescripcionAsync(int id, string descripcion, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return false;
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Patch, $"api/registros-horas/{id}/descripcion");
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+        httpRequest.Content = JsonContent.Create(new UpdateDescripcionRegistroRequest(descripcion));
+
+        var response = await _http.SendAsync(httpRequest, cancellationToken);
+        return response.StatusCode == System.Net.HttpStatusCode.NoContent;
+    }
 }

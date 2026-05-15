@@ -1,0 +1,64 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_empleado is null ? "Nuevo Empleado" : "Editar Empleado")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string"
+                          Label="Nombre"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_nombre"
+                          MaxLength="200"
+                          Required="true"
+                          RequiredError="El nombre es requerido."
+                          aria-label="Nombre del empleado" />
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public EmpleadoResponse? Empleado { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private EmpleadoResponse? _empleado;
+    private string _nombre = string.Empty;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        _empleado = Empleado;
+        _nombre = Empleado?.Nombre ?? string.Empty;
+        _errorMessage = ErrorMessage;
+    }
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_nombre)
+        && (_empleado is null || _nombre.Trim() != _empleado.Nombre);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (_empleado is null)
+            MudDialog.Close(DialogResult.Ok(new CreateEmpleadoRequest(_nombre.Trim())));
+        else
+            MudDialog.Close(DialogResult.Ok(new UpdateEmpleadoRequest(_nombre.Trim())));
+    }
+}

@@ -1,0 +1,58 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">Cambiar rol</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Email</MudText>
+            <MudText Typo="Typo.caption">Rol actual: @CurrentRole</MudText>
+
+            <MudSelect T="string"
+                       Label="Nuevo rol"
+                       Variant="Variant.Outlined"
+                       @bind-Value="_role"
+                       Required="true"
+                       RequiredError="El rol es requerido."
+                       aria-label="Nuevo rol">
+                @foreach (var role in RolesDisponibles)
+                {
+                    <MudSelectItem Value="@role">@role</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string Email { get; set; } = string.Empty;
+    [Parameter] public string CurrentRole { get; set; } = string.Empty;
+
+    private string _role = string.Empty;
+    private static readonly string[] RolesDisponibles = [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_role)
+        && _role != CurrentRole;
+
+    protected override void OnInitialized()
+    {
+        _role = CurrentRole;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(new ChangeUserRoleRequest(_role)));
+}

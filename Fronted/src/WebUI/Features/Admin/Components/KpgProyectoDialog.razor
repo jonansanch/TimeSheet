@@ -1,0 +1,64 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_proyecto is null ? "Nuevo Proyecto" : "Editar Proyecto")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string"
+                          Label="Nombre"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_nombre"
+                          MaxLength="200"
+                          Required="true"
+                          RequiredError="El nombre es requerido."
+                          aria-label="Nombre del proyecto" />
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ProyectoResponse? Proyecto { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private ProyectoResponse? _proyecto;
+    private string _nombre = string.Empty;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        _proyecto = Proyecto;
+        _nombre = Proyecto?.Nombre ?? string.Empty;
+        _errorMessage = ErrorMessage;
+    }
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_nombre)
+        && (_proyecto is null || _nombre.Trim() != _proyecto.Nombre);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (_proyecto is null)
+            MudDialog.Close(DialogResult.Ok(new CreateProyectoRequest(_nombre.Trim())));
+        else
+            MudDialog.Close(DialogResult.Ok(new UpdateProyectoRequest(_nombre.Trim())));
+    }
+}

@@ -1,5 +1,8 @@
 using FluentValidation.Results;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Domain.Common;
+using KPG.Timesheet.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 using ApplicationValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
 
@@ -9,11 +12,13 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
 {
     private readonly IApplicationDbContext _context;
     private readonly IUser _user;
+    private readonly IClock _clock;
 
-    public CreateRegistroHorasCommandHandler(IApplicationDbContext context, IUser user)
+    public CreateRegistroHorasCommandHandler(IApplicationDbContext context, IUser user, IClock clock)
     {
         _context = context;
         _user = user;
+        _clock = clock;
     }
 
     public async Task<RegistroHorasDto> Handle(CreateRegistroHorasCommand request, CancellationToken cancellationToken)
@@ -22,21 +27,33 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         if (string.IsNullOrWhiteSpace(userId))
             throw new UnauthorizedAccessException("No existe usuario autenticado para asociar el registro.");
 
-        var duplicateExists = await _context.RegistrosHoras
-            .AnyAsync(r =>
-                r.UserId == userId &&
-                r.FechaRegistro == request.FechaRegistro &&
-                r.Turno == request.Turno,
-                cancellationToken);
+        var ventanaParam = await _context.ParametrosSistema
+            .FirstOrDefaultAsync(p => p.Clave == Domain.Constants.ParametrosSistema.VentanaRetroactividad, cancellationToken);
+        var windowDays = ventanaParam != null && int.TryParse(ventanaParam.Valor, out var d) ? d : 3;
 
-        if (duplicateExists)
+        var today = _clock.Today;
+        var earliestAllowed = BusinessDayCalculator.GetEarliestAllowedDate(today, windowDays);
+
+        if (request.FechaRegistro < earliestAllowed)
         {
-            throw new ApplicationValidationException([
-                new ValidationFailure(
-                    nameof(request.Turno),
-                    "Ya existe un registro para este usuario, fecha y turno.")
-            ]);
+            var tieneExcepcionAprobada = await _context.SolicitudesExcepcion
+                .AnyAsync(s =>
+                    s.UserId == userId &&
+                    s.FechaRegistro == request.FechaRegistro &&
+                    s.Estado == EstadoSolicitud.Aprobada,
+                    cancellationToken);
+
+            if (!tieneExcepcionAprobada)
+            {
+                throw new ApplicationValidationException([
+                    new ValidationFailure(
+                        nameof(request.FechaRegistro),
+                        $"La fecha seleccionada está fuera de la ventana de registro permitida ({windowDays} días hábiles).")
+                ]);
+            }
         }
+
+        var esRetroactivo = request.FechaRegistro < today;
 
         var registro = new RegistroHorasEntity(
             userId,
@@ -49,7 +66,8 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
             request.Modalidad,
             request.Recurso,
             request.Descripcion,
-            request.Lugar);
+            request.Lugar,
+            esRetroactivo);
 
         _context.RegistrosHoras.Add(registro);
         await _context.SaveChangesAsync(cancellationToken);
@@ -66,6 +84,7 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
             registro.Modalidad,
             registro.Recurso,
             registro.Descripcion,
-            registro.Lugar);
+            registro.Lugar,
+            registro.EsRetroactivo);
     }
 }

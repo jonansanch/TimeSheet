@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPG Timesheet — Direcciones de Diseño UX</title>
+<style>
+  :root {
+    --kpg-navy: #0D3B5E;
+    --kpg-navy-dark: #082A45;
+    --kpg-navy-light: #1A5276;
+    --kpg-sky: #5BB8D4;
+    --kpg-amber: #FFD300;
+    --kpg-orange: #F57C20;
+    --kpg-success: #2E7D32;
+    --kpg-error: #C62828;
+    --kpg-warning-light: #FFF8E1;
+    --kpg-success-light: #E8F5E9;
+    --gray-50: #FAFAFA;
+    --gray-100: #F5F5F5;
+    --gray-200: #EEEEEE;
+    --gray-300: #E0E0E0;
+    --gray-400: #BDBDBD;
+    --gray-500: #9E9E9E;
+    --gray-600: #757575;
+    --gray-700: #616161;
+    --gray-800: #424242;
+    --gray-900: #212121;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: var(--gray-900); }
+
+  /* ====== META LAYOUT ====== */
+  .showcase-header {
+    background: linear-gradient(135deg, var(--kpg-navy) 0%, var(--kpg-navy-dark) 100%);
+    padding: 40px 60px;
+    color: white;
+  }
+  .showcase-header .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .showcase-header .logo-k {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--kpg-amber), var(--kpg-orange));
+    clip-path: polygon(0 0, 55% 0, 100% 50%, 55% 100%, 0 100%, 45% 50%);
+  }
+  .showcase-header .logo-text { font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .showcase-header h1 { font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 400; opacity: 0.9; }
+  .showcase-header p { opacity: 0.7; font-size: 14px; margin-top: 6px; }
+
+  .direction-tabs {
+    background: var(--kpg-navy-dark);
+    display: flex;
+    padding: 0 60px;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .direction-tab {
+    padding: 14px 24px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .direction-tab:hover { color: rgba(255,255,255,0.9); }
+  .direction-tab.active { color: var(--kpg-amber); border-bottom-color: var(--kpg-amber); }
+
+  .direction-panel { display: none; }
+  .direction-panel.active { display: block; }
+
+  .direction-intro {
+    background: #f8f9ff;
+    padding: 24px 60px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .direction-intro h2 { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: var(--kpg-navy); margin-bottom: 6px; }
+  .direction-intro p { font-size: 14px; color: var(--gray-600); max-width: 700px; line-height: 1.6; }
+  .direction-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .tag { background: var(--kpg-navy); color: white; font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 500; }
+  .tag.amber { background: var(--kpg-amber); color: var(--gray-900); }
+  .tag.sky { background: var(--kpg-sky); color: white; }
+
+  .screen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    padding: 32px 60px;
+    background: #1a1a2e;
+  }
+  .screen-label {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 4px 4px 0 0;
+    display: inline-block;
+  }
+  .screen-wrapper { }
+  .screen-wrapper.full-width { grid-column: 1 / -1; }
+
+  /* ====== APP SHELL ====== */
+  .app-shell {
+    display: flex;
+    height: 580px;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  /* ====== DIRECTION A: NAVY SIDEBAR ====== */
+  .dir-a .sidebar {
+    width: 240px;
+    background: var(--kpg-navy);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .dir-a .sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .dir-a .sidebar-logo { display: flex; align-items: center; gap: 10px; }
+  .dir-a .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--kpg-amber), var(--kpg-orange));
+    clip-path: polygon(0 0, 55% 0, 100% 50%, 55% 100%, 0 100%, 45% 50%);
+    flex-shrink: 0;
+  }
+  .dir-a .logo-name { color: white; font-weight: 700; font-size: 16px; font-family: 'Poppins', sans-serif; }
+  .dir-a .logo-sub { color: rgba(255,255,255,0.5); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .dir-a .user-info { padding: 12px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .dir-a .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--kpg-sky); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 13px; flex-shrink: 0; }
+  .dir-a .user-name { color: white; font-size: 13px; font-weight: 500; }
+  .dir-a .user-role { color: rgba(255,255,255,0.5); font-size: 11px; }
+  .dir-a .nav-section { padding: 8px 0; flex: 1; overflow-y: auto; }
+  .dir-a .nav-label { color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 20px 4px; }
+  .dir-a .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px;
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .dir-a .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+  .dir-a .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--kpg-amber); }
+  .dir-a .nav-icon { width: 18px; height: 18px; opacity: 0.7; flex-shrink: 0; }
+  .dir-a .nav-item.active .nav-icon { opacity: 1; }
+  .dir-a .sidebar-footer { padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .dir-a .sidebar-footer .nav-item { padding: 8px 0; }
+
+  .dir-a .main-content { flex: 1; background: var(--gray-100); display: flex; flex-direction: column; overflow: hidden; }
+  .dir-a .topbar {
+    background: white;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--gray-200);
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .dir-a .topbar-title { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: var(--kpg-navy); flex: 1; }
+  .dir-a .topbar-badge {
+    background: var(--kpg-success-light);
+    color: var(--kpg-success);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+  .dir-a .page-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  /* ====== DIRECTION B: WHITE SIDEBAR ====== */
+  .dir-b .sidebar {
+    width: 240px;
+    background: white;
+    border-right: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .dir-b .sidebar-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--gray-100); }
+  .dir-b .sidebar-logo { display: flex; align-items: center; gap: 10px; }
+  .dir-b .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--kpg-amber), var(--kpg-orange));
+    clip-path: polygon(0 0, 55% 0, 100% 50%, 55% 100%, 0 100%, 45% 50%);
+    flex-shrink: 0;
+  }
+  .dir-b .logo-name { color: var(--kpg-navy); font-weight: 700; font-size: 16px; font-family: 'Poppins', sans-serif; }
+  .dir-b .logo-sub { color: var(--gray-500); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .dir-b .user-info { padding: 12px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--gray-100); }
+  .dir-b .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--kpg-navy); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 13px; flex-shrink: 0; }
+  .dir-b .user-name { color: var(--gray-900); font-size: 13px; font-weight: 500; }
+  .dir-b .user-role { color: var(--gray-500); font-size: 11px; }
+  .dir-b .nav-section { padding: 8px 0; flex: 1; }
+  .dir-b .nav-label { color: var(--gray-400); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 20px 4px; }
+  .dir-b .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 20px;
+    color: var(--gray-600);
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 0;
+    border-left: 3px solid transparent;
+  }
+  .dir-b .nav-item:hover { background: var(--gray-50); color: var(--gray-900); }
+  .dir-b .nav-item.active { background: #EBF4FF; color: var(--kpg-navy); border-left-color: var(--kpg-navy); font-weight: 500; }
+  .dir-b .sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--gray-100); }
+  .dir-b .sidebar-footer .nav-item { padding: 8px 0; }
+
+  .dir-b .main-content { flex: 1; background: var(--gray-50); display: flex; flex-direction: column; overflow: hidden; }
+  .dir-b .topbar {
+    background: white;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--gray-200);
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .dir-b .topbar-title { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: var(--kpg-navy); flex: 1; }
+  .dir-b .page-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  /* ====== DIRECTION C: COMPACT DARK ====== */
+  .dir-c .sidebar {
+    width: 64px;
+    background: var(--kpg-navy-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    flex-shrink: 0;
+  }
+  .dir-c .sidebar-logo { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); width: 100%; display: flex; justify-content: center; }
+  .dir-c .logo-icon-sm {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--kpg-amber), var(--kpg-orange));
+    clip-path: polygon(0 0, 55% 0, 100% 50%, 55% 100%, 0 100%, 45% 50%);
+  }
+  .dir-c .nav-icon-btn {
+    width: 44px; height: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 2px 0;
+    color: rgba(255,255,255,0.4);
+    font-size: 8px;
+    transition: all 0.15s;
+  }
+  .dir-c .nav-icon-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+  .dir-c .nav-icon-btn.active { background: rgba(255,255,255,0.15); color: var(--kpg-amber); }
+  .dir-c .icon-dot { width: 18px; height: 18px; border-radius: 3px; background: currentColor; opacity: 0.6; }
+  .dir-c .nav-icon-btn.active .icon-dot { opacity: 1; }
+
+  .dir-c .main-content { flex: 1; background: var(--gray-100); display: flex; flex-direction: column; overflow: hidden; }
+  .dir-c .topbar {
+    background: white;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--gray-200);
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .dir-c .topbar-title { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: var(--kpg-navy); flex: 1; }
+  .dir-c .topbar-user { display: flex; align-items: center; gap: 8px; }
+  .dir-c .avatar-sm { width: 30px; height: 30px; border-radius: 50%; background: var(--kpg-sky); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 11px; }
+  .dir-c .page-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  /* ====== SHARED FORM COMPONENTS ====== */
+  .success-banner {
+    background: var(--kpg-success-light);
+    border: 1px solid #A5D6A7;
+    border-radius: 6px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--kpg-success);
+  }
+  .success-banner .check { font-size: 16px; }
+
+  .register-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .register-card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .register-card-header h3 { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: var(--gray-900); flex: 1; }
+  .date-nav { display: flex; align-items: center; gap: 6px; }
+  .date-chip {
+    background: var(--kpg-navy);
+    color: white;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .date-chip.retro { background: var(--kpg-warning-light); color: #E65100; border: 1px solid #FFD300; }
+  .date-arrow { background: none; border: 1px solid var(--gray-300); border-radius: 4px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--gray-500); font-size: 12px; }
+
+  .turno-tabs { display: flex; border-bottom: 1px solid var(--gray-200); }
+  .turno-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--gray-500);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .turno-tab:hover { color: var(--gray-700); }
+  .turno-tab.active { color: var(--kpg-navy); border-bottom-color: var(--kpg-navy); }
+  .turno-tab.done { color: var(--kpg-success); border-bottom-color: var(--kpg-success); }
+
+  .form-body { padding: 16px 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input {
+    height: 36px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: var(--gray-800);
+    background: white;
+    outline: none;
+    transition: border 0.15s;
+  }
+  .form-input:focus { border-color: var(--kpg-navy); box-shadow: 0 0 0 2px rgba(13,59,94,0.1); }
+  .form-input.filled { background: var(--gray-50); }
+  .form-select {
+    height: 36px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: var(--gray-800);
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23757575'/%3E%3C/svg%3E") no-repeat right 10px center;
+    appearance: none;
+    outline: none;
+  }
+  .form-textarea {
+    height: 56px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--gray-800);
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    width: 100%;
+  }
+
+  .recientes-label { font-size: 11px; color: var(--gray-400); margin-bottom: 4px; }
+  .recientes-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .reciente-chip {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 16px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--gray-700);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .reciente-chip:hover { border-color: var(--kpg-sky); color: var(--kpg-navy); }
+  .reciente-chip .star { color: var(--kpg-amber); font-size: 10px; }
+
+  .modalidad-chips { display: flex; gap: 6px; }
+  .mod-chip {
+    padding: 4px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 16px;
+    font-size: 12px;
+    color: var(--gray-600);
+    cursor: pointer;
+  }
+  .mod-chip.active { background: var(--kpg-navy); color: white; border-color: var(--kpg-navy); }
+
+  .form-actions { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--gray-100); margin-top: 4px; }
+  .copy-link { font-size: 12px; color: var(--kpg-sky); cursor: pointer; }
+  .btn-primary {
+    background: var(--kpg-navy);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--kpg-navy-light); }
+
+  /* Turno done state */
+  .turno-done-card {
+    background: var(--kpg-success-light);
+    border: 1px solid #A5D6A7;
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .turno-done-icon { font-size: 18px; }
+  .turno-done-info { flex: 1; }
+  .turno-done-title { font-weight: 600; color: var(--kpg-success); font-size: 13px; }
+  .turno-done-detail { color: var(--gray-600); font-size: 12px; margin-top: 1px; }
+
+  /* ====== DASHBOARD COMPONENTS ====== */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: white; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .stat-value { font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: var(--kpg-navy); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--gray-500); margin-top: 3px; }
+  .stat-sub { font-size: 12px; margin-top: 6px; }
+  .stat-sub.alert { color: var(--kpg-error); font-weight: 600; }
+  .stat-sub.ok { color: var(--kpg-success); font-weight: 600; }
+
+  .team-grid { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+  .team-grid-header { padding: 12px 16px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 12px; }
+  .team-grid-header h3 { font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: var(--gray-900); flex: 1; }
+  .team-member { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--gray-50); }
+  .team-member:last-child { border-bottom: none; }
+  .member-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--kpg-sky); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+  .member-avatar.pending { background: var(--gray-300); }
+  .member-name { flex: 1; font-size: 13px; color: var(--gray-800); }
+  .member-hours { font-size: 12px; color: var(--gray-500); }
+  .status-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .status-badge.done { background: var(--kpg-success-light); color: var(--kpg-success); }
+  .status-badge.pending { background: #FFF3E0; color: #E65100; }
+
+  /* ====== CALENDAR SEMAPHORE ====== */
+  .cal-mini { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .cal-mini-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-mini-title { font-size: 12px; font-weight: 600; color: var(--gray-700); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day-label { text-align: center; font-size: 9px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; padding: 2px 0; }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--gray-600);
+  }
+  .cal-day.today { background: var(--kpg-navy); color: white; font-weight: 700; }
+  .cal-day.retro { background: #FFF8E1; color: #F57F17; font-weight: 600; }
+  .cal-day.retro:hover { background: var(--kpg-amber); color: var(--gray-900); }
+  .cal-day.blocked { color: var(--gray-300); cursor: default; }
+  .cal-day.future { color: var(--gray-400); }
+  .cal-legend { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .cal-legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--gray-500); }
+  .cal-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ====== EXCEPTION FLOW ====== */
+  .exception-dialog {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    overflow: hidden;
+    max-width: 380px;
+  }
+  .exception-dialog-header {
+    background: var(--kpg-warning-light);
+    padding: 14px 20px;
+    border-bottom: 1px solid #FFD300;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .exception-dialog-header .icon { font-size: 20px; }
+  .exception-dialog-header h4 { font-size: 14px; font-weight: 600; color: #E65100; }
+  .exception-dialog-body { padding: 16px 20px; }
+  .exception-dialog-body p { font-size: 13px; color: var(--gray-600); line-height: 1.5; margin-bottom: 12px; }
+  .exception-textarea {
+    width: 100%;
+    height: 64px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+  }
+  .exception-dialog-footer { padding: 12px 20px; border-top: 1px solid var(--gray-100); display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-secondary { background: white; border: 1px solid var(--gray-300); border-radius: 4px; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--gray-700); }
+  .btn-warning { background: #F57C20; color: white; border: none; border-radius: 4px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  /* ====== LEGEND ====== */
+  .design-notes {
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 20px 60px;
+  }
+  .notes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .note-item h4 { color: var(--kpg-amber); font-size: 12px; font-weight: 600; margin-bottom: 6px; font-family: 'Poppins', sans-serif; }
+  .note-item p { color: rgba(255,255,255,0.5); font-size: 12px; line-height: 1.6; }
+
+  .color-swatch-row { display: flex; gap: 8px; padding: 20px 60px; background: rgba(0,0,0,0.2); }
+  .swatch { width: 32px; height: 32px; border-radius: 6px; position: relative; cursor: pointer; }
+  .swatch:hover::after { content: attr(data-color); position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; color: white; white-space: nowrap; }
+  .swatch-label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .swatch-label span { font-size: 10px; color: rgba(255,255,255,0.4); }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="showcase-header">
+  <div class="logo">
+    <div class="logo-k"></div>
+    <span class="logo-text">kpg</span>
+  </div>
+  <h1>KPG Timesheet Platform — Direcciones de Diseño UX</h1>
+  <p>Exploraciones visuales para la selección del look & feel final · Mayo 2026</p>
+</div>
+
+<!-- COLOR SWATCHES -->
+<div class="color-swatch-row">
+  <div class="swatch-label"><div class="swatch" style="background:#0D3B5E" data-color="#0D3B5E"></div><span>Navy</span></div>
+  <div class="swatch-label"><div class="swatch" style="background:#5BB8D4" data-color="#5BB8D4"></div><span>Sky</span></div>
+  <div class="swatch-label"><div class="swatch" style="background:#FFD300" data-color="#FFD300"></div><span>Amber</span></div>
+  <div class="swatch-label"><div class="swatch" style="background:#F57C20" data-color="#F57C20"></div><span>Orange</span></div>
+  <div class="swatch-label"><div class="swatch" style="background:#2E7D32" data-color="#2E7D32"></div><span>Success</span></div>
+  <div class="swatch-label"><div class="swatch" style="background:#C62828" data-color="#C62828"></div><span>Error</span></div>
+  <div class="swatch-label"><div class="swatch" style="background:#F5F5F5;border:1px solid #ccc" data-color="#F5F5F5"></div><span>BG</span></div>
+</div>
+
+<div class="direction-tabs">
+  <div class="direction-tab active" onclick="showDir('a', this)">Dirección A — Navy Sidebar</div>
+  <div class="direction-tab" onclick="showDir('b', this)">Dirección B — Sidebar Claro</div>
+  <div class="direction-tab" onclick="showDir('c', this)">Dirección C — Sidebar Icónico</div>
+  <div class="direction-tab" onclick="showDir('d', this)">Flujos Especiales</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIRECCIÓN A: NAVY SIDEBAR                                    -->
+<!-- ============================================================ -->
+<div id="dir-a" class="direction-panel active">
+  <div class="direction-intro">
+    <h2>Dirección A — Navy Sidebar Corporativo</h2>
+    <p>Navegación lateral con el color primario de KPG (navy <code>#0D3B5E</code>). Máximo contraste y jerarquía clara. Sensación de plataforma enterprise seria y confiable. El acento ámbar del logo marca el ítem activo.</p>
+    <div class="direction-tags">
+      <span class="tag">Profesional</span>
+      <span class="tag">Alto contraste</span>
+      <span class="tag amber">Acento ámbar</span>
+      <span class="tag">Adopción rápida</span>
+    </div>
+  </div>
+
+  <div class="screen-grid">
+
+    <!-- SCREEN A1: Registro de Horas - Empleado -->
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla 1 · Registro de Horas (Empleado)</div>
+      <div class="app-shell dir-a">
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-logo">
+              <div class="logo-icon"></div>
+              <div>
+                <div class="logo-name">kpg</div>
+                <div class="logo-sub">Timesheet</div>
+              </div>
+            </div>
+          </div>
+          <div class="user-info">
+            <div class="avatar">CA</div>
+            <div>
+              <div class="user-name">Carlos Andrade</div>
+              <div class="user-role">Empleado</div>
+            </div>
+          </div>
+          <div class="nav-section">
+            <div class="nav-label">Principal</div>
+            <div class="nav-item active">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+              Registro de Horas
+            </div>
+            <div class="nav-item">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+              Mis Registros
+            </div>
+          </div>
+          <div class="sidebar-footer">
+            <div class="nav-item">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Cerrar sesión
+            </div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="topbar">
+            <span class="topbar-title">Registro de Horas</span>
+            <span class="topbar-badge">Martes 12 Mayo</span>
+          </div>
+          <div class="page-content">
+            <div class="success-banner">
+              <span class="check">✓</span>
+              <span><strong>Turno AM guardado</strong> · Mar 12/05 · 8:00–13:00 · Grupo Financiero XYZ / Portal Web</span>
+            </div>
+            <div class="register-card">
+              <div class="register-card-header">
+                <h3>Seleccionar fecha</h3>
+                <div class="date-nav">
+                  <div class="date-arrow">‹</div>
+                  <div class="date-chip">Hoy · Mar 12</div>
+                  <div class="date-arrow">›</div>
+                </div>
+              </div>
+              <div class="turno-tabs">
+                <div class="turno-tab done">✓ Turno AM</div>
+                <div class="turno-tab active">Turno PM</div>
+              </div>
+              <div class="form-body">
+                <div class="recientes-label">Recientes</div>
+                <div class="recientes-chips">
+                  <div class="reciente-chip"><span class="star">★</span> Grupo Fin. XYZ / Portal Web</div>
+                  <div class="reciente-chip"><span class="star">★</span> BBVA / App Móvil v2</div>
+                  <div class="reciente-chip"><span class="star">★</span> Interno / Capacitación</div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <div class="form-label">Entrada</div>
+                    <input type="text" class="form-input filled" value="14:00" readonly>
+                  </div>
+                  <div class="form-group">
+                    <div class="form-label">Salida</div>
+                    <input type="text" class="form-input" placeholder="18:00">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <div class="form-label">Cliente</div>
+                    <select class="form-select"><option>Grupo Financiero XYZ</option></select>
+                  </div>
+                  <div class="form-group">
+                    <div class="form-label">Proyecto</div>
+                    <select class="form-select"><option>Portal Web</option></select>
+                  </div>
+                </div>
+                <div class="form-row single">
+                  <div class="form-group">
+                    <div class="form-label">Modalidad</div>
+                    <div class="modalidad-chips">
+                      <div class="mod-chip active">Presencial</div>
+                      <div class="mod-chip">Remoto</div>
+                      <div class="mod-chip">Mixto</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row single">
+                  <div class="form-group">
+                    <div class="form-label">Descripción de tarea</div>
+                    <textarea class="form-textarea" placeholder="Ej: Revisión de requerimientos con el equipo cliente..."></textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <span class="copy-link">↑ Copiar configuración del AM</span>
+                  <button class="btn-primary">Guardar turno PM</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN A2: Dashboard Supervisor -->
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla 2 · Dashboard (Supervisor)</div>
+      <div class="app-shell dir-a">
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-logo">
+              <div class="logo-icon"></div>
+              <div>
+                <div class="logo-name">kpg</div>
+                <div class="logo-sub">Timesheet</div>
+              </div>
+            </div>
+          </div>
+          <div class="user-info">
+            <div class="avatar" style="background:var(--kpg-orange)">LM</div>
+            <div>
+              <div class="user-name">Laura Méndez</div>
+              <div class="user-role">Supervisora</div>
+            </div>
+          </div>
+          <div class="nav-section">
+            <div class="nav-label">Principal</div>
+            <div class="nav-item active">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+              Dashboard
+            </div>
+            <div class="nav-item">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+              Registro Propio
+            </div>
+            <div class="nav-label">Reportes</div>
+            <div class="nav-item">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              Reporte Mensual
+            </div>
+          </div>
+          <div class="sidebar-footer">
+            <div class="nav-item">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Cerrar sesión
+            </div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="topbar">
+            <span class="topbar-title">Dashboard · Mi Equipo</span>
+            <span class="topbar-badge" style="background:#FFF3E0;color:#E65100">1 pendiente hoy</span>
+          </div>
+          <div class="page-content">
+            <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+              <div class="stat-card">
+                <div class="stat-value" style="color:#C62828">1</div>
+                <div class="stat-label">Sin registrar hoy</div>
+                <div class="stat-sub alert">⚠ Marcos R.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Con registro completo</div>
+                <div class="stat-sub ok">✓ 7 de 8</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">284</div>
+                <div class="stat-label">Horas registradas mayo</div>
+                <div class="stat-sub" style="color:var(--gray-500)">Meta: 320h</div>
+              </div>
+            </div>
+            <div class="team-grid">
+              <div class="team-grid-header">
+                <h3>Estado del equipo — Hoy</h3>
+                <span style="font-size:12px;color:var(--gray-500)">Mar 12 Mayo 2026</span>
+              </div>
+              <div class="team-member">
+                <div class="member-avatar">CA</div>
+                <div class="member-name">Carlos Andrade</div>
+                <div class="member-hours">7h AM · PM en curso</div>
+                <span class="status-badge done">Parcial</span>
+              </div>
+              <div class="team-member">
+                <div class="member-avatar" style="background:#7E57C2">AS</div>
+                <div class="member-name">Ana Sofía Torres</div>
+                <div class="member-hours">9h completadas</div>
+                <span class="status-badge done">Completo</span>
+              </div>
+              <div class="team-member">
+                <div class="member-avatar pending">MR</div>
+                <div class="member-name">Marcos Rodríguez</div>
+                <div class="member-hours">Sin registros hoy</div>
+                <span class="status-badge pending">Pendiente</span>
+              </div>
+              <div class="team-member">
+                <div class="member-avatar" style="background:#26A69A">JP</div>
+                <div class="member-name">Julia Pérez</div>
+                <div class="member-hours">8h completadas</div>
+                <span class="status-badge done">Completo</span>
+              </div>
+              <div class="team-member">
+                <div class="member-avatar" style="background:#EF5350">RG</div>
+                <div class="member-name">Roberto González</div>
+                <div class="member-hours">8h completadas</div>
+                <span class="status-badge done">Completo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="design-notes">
+    <div class="notes-grid">
+      <div class="note-item">
+        <h4>Por qué funciona</h4>
+        <p>El sidebar navy crea una jerarquía visual inmediata. Los usuarios saben dónde están siempre. El acento ámbar del logo KPG como indicador activo refuerza la identidad corporativa.</p>
+      </div>
+      <div class="note-item">
+        <h4>Para quién es ideal</h4>
+        <p>Usuarios que vienen de herramientas enterprise (ERP, portales internos). Transmite seriedad y confiabilidad — exactamente la emoción que buscamos para una herramienta de facturación.</p>
+      </div>
+      <div class="note-item">
+        <h4>Consideración técnica</h4>
+        <p>MudBlazor MudDrawer con variante Persistent en desktop. El tema se configura con <code>Primary = #0D3B5E</code> y <code>PrimaryDarken</code> para hover states. Implementación estimada: 4 horas.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIRECCIÓN B: SIDEBAR CLARO                                   -->
+<!-- ============================================================ -->
+<div id="dir-b" class="direction-panel">
+  <div class="direction-intro">
+    <h2>Dirección B — Sidebar Claro (Estilo Linear / Notion)</h2>
+    <p>Navegación lateral blanca con borde sutil. Más ligero y moderno. El navy aparece como acento en el ítem activo — el formulario y el contenido son el protagonista, no la navegación. Inspirado en Linear y Notion.</p>
+    <div class="direction-tags">
+      <span class="tag sky">Moderno</span>
+      <span class="tag">Minimalista</span>
+      <span class="tag">Foco en contenido</span>
+      <span class="tag amber">Más suave</span>
+    </div>
+  </div>
+
+  <div class="screen-grid">
+
+    <!-- SCREEN B1: Registro de Horas -->
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla 1 · Registro de Horas (Empleado)</div>
+      <div class="app-shell dir-b">
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-logo">
+              <div class="logo-icon"></div>
+              <div>
+                <div class="logo-name">kpg</div>
+                <div class="logo-sub">Timesheet</div>
+              </div>
+            </div>
+          </div>
+          <div class="user-info">
+            <div class="avatar">CA</div>
+            <div>
+              <div class="user-name">Carlos Andrade</div>
+              <div class="user-role" style="color:var(--gray-400)">Empleado</div>
+            </div>
+          </div>
+          <div class="nav-section">
+            <div class="nav-label">Principal</div>
+            <div class="nav-item active">
+              <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+              Registro de Horas
+            </div>
+            <div class="nav-item">
+              <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+              Mis Registros
+            </div>
+          </div>
+          <div class="sidebar-footer">
+            <div class="nav-item" style="color:var(--gray-400)">
+              <svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Cerrar sesión
+            </div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="topbar">
+            <span class="topbar-title">Registro de Horas</span>
+            <span style="font-size:12px;color:var(--gray-500)">Martes, 12 de Mayo 2026</span>
+          </div>
+          <div class="page-content">
+            <div class="success-banner">
+              <span class="check">✓</span>
+              <span><strong>Turno AM guardado</strong> · Mar 12/05 · 8:00–13:00 · Grupo Financiero XYZ / Portal Web</span>
+            </div>
+            <div class="register-card">
+              <div class="register-card-header" style="background:var(--gray-50)">
+                <h3>Fecha de registro</h3>
+                <div class="date-nav">
+                  <div class="date-arrow">‹</div>
+                  <div class="date-chip">Hoy · Mar 12</div>
+                  <div class="date-arrow">›</div>
+                </div>
+              </div>
+              <div class="turno-tabs">
+                <div class="turno-tab done">✓ AM</div>
+                <div class="turno-tab active">PM</div>
+              </div>
+              <div class="form-body">
+                <div class="recientes-label">Acceso rápido · Recientes</div>
+                <div class="recientes-chips">
+                  <div class="reciente-chip"><span class="star">★</span> Grupo Fin. XYZ / Portal Web</div>
+                  <div class="reciente-chip"><span class="star">★</span> BBVA / App Móvil v2</div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <div class="form-label">Entrada</div>
+                    <input class="form-input filled" value="14:00" readonly>
+                  </div>
+                  <div class="form-group">
+                    <div class="form-label">Salida</div>
+                    <input class="form-input" placeholder="18:00">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <div class="form-label">Cliente</div>
+                    <select class="form-select"><option>Grupo Financiero XYZ</option></select>
+                  </div>
+                  <div class="form-group">
+                    <div class="form-label">Proyecto</div>
+                    <select class="form-select"><option>Portal Web</option></select>
+                  </div>
+                </div>
+                <div class="form-row single">
+                  <div class="form-group">
+                    <div class="form-label">Modalidad</div>
+                    <div class="modalidad-chips">
+                      <div class="mod-chip active">Presencial</div>
+                      <div class="mod-chip">Remoto</div>
+                      <div class="mod-chip">Mixto</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row single">
+                  <div class="form-group">
+                    <div class="form-label">Descripción</div>
+                    <textarea class="form-textarea" placeholder="¿En qué trabajaste esta tarde?"></textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <span class="copy-link">↑ Copiar del AM</span>
+                  <button class="btn-primary">Guardar turno PM</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN B2: Selector de fecha con semáforo -->
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla 2 · Selector de fecha con semáforo de ventana</div>
+      <div class="app-shell dir-b" style="height:auto;min-height:280px;align-items:flex-start;padding:24px;gap:20px;background:white;box-shadow:0 4px 20px rgba(0,0,0,0.1);border-radius:8px;">
+        <div style="flex:1">
+          <div class="cal-mini" style="max-width:280px">
+            <div class="cal-mini-header">
+              <span class="cal-mini-title">Mayo 2026</span>
+              <div style="display:flex;gap:4px">
+                <div class="date-arrow">‹</div>
+                <div class="date-arrow">›</div>
+              </div>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-label">L</div><div class="cal-day-label">M</div><div class="cal-day-label">M</div><div class="cal-day-label">J</div><div class="cal-day-label">V</div><div class="cal-day-label">S</div><div class="cal-day-label">D</div>
+              <div class="cal-day blocked"></div><div class="cal-day blocked"></div><div class="cal-day blocked"></div>
+              <div class="cal-day blocked">1</div><div class="cal-day blocked">2</div><div class="cal-day blocked">3</div><div class="cal-day blocked">4</div>
+              <div class="cal-day blocked">5</div><div class="cal-day blocked">6</div><div class="cal-day blocked">7</div>
+              <div class="cal-day blocked">8</div><div class="cal-day blocked">9</div><div class="cal-day blocked">10</div><div class="cal-day blocked">11</div>
+              <div class="cal-day retro">12</div><div class="cal-day retro">13</div><div class="cal-day retro">14</div>
+              <div class="cal-day blocked">15</div><div class="cal-day blocked">16</div><div class="cal-day blocked">17</div><div class="cal-day blocked">18</div>
+              <div class="cal-day today">12</div><div class="cal-day future">13</div><div class="cal-day future">14</div>
+              <div class="cal-day future">15</div><div class="cal-day future">16</div><div class="cal-day blocked">17</div><div class="cal-day blocked">18</div>
+            </div>
+            <div class="cal-legend">
+              <div class="cal-legend-item"><div class="cal-dot" style="background:var(--kpg-navy)"></div>Hoy</div>
+              <div class="cal-legend-item"><div class="cal-dot" style="background:var(--kpg-amber)"></div>En ventana (3 días)</div>
+              <div class="cal-legend-item"><div class="cal-dot" style="background:var(--gray-300)"></div>Requiere excepción</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;padding-left:8px">
+          <div style="font-family:Poppins,sans-serif;font-size:15px;font-weight:600;color:var(--kpg-navy);margin-bottom:8px">Semáforo de disponibilidad</div>
+          <p style="font-size:13px;color:var(--gray-600);line-height:1.6;margin-bottom:12px">El calendario muestra de un vistazo qué fechas están disponibles, cuáles son retroactivas dentro de la ventana de 3 días hábiles, y cuáles requieren autorización del Admin.</p>
+          <div style="background:var(--kpg-warning-light);border:1px solid var(--kpg-amber);border-radius:6px;padding:10px 14px;font-size:12px;color:#E65100">
+            <strong>Al seleccionar una fecha gris:</strong><br>
+            "Esta fecha está fuera de la ventana de registro.<br>
+            ¿Deseas solicitar autorización?" <br>
+            <span style="text-decoration:underline;cursor:pointer;margin-top:6px;display:inline-block">→ Enviar solicitud con justificación</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="design-notes">
+    <div class="notes-grid">
+      <div class="note-item">
+        <h4>Por qué funciona</h4>
+        <p>El sidebar blanco reduce la carga visual y pone el formulario como protagonista. Usuarios menos acostumbrados a herramientas enterprise lo perciben como más amigable y moderno.</p>
+      </div>
+      <div class="note-item">
+        <h4>Para quién es ideal</h4>
+        <p>Colaboradores jóvenes o que usan Notion/Linear/Slack. El tono es profesional pero no intimidante. El Navy KPG aparece en acciones importantes, no como decoración.</p>
+      </div>
+      <div class="note-item">
+        <h4>Consideración técnica</h4>
+        <p>MudBlazor MudDrawer con fondo blanco y borde. El tema usa Navy solo en elementos interactivos activos. Mismo tiempo de implementación que Dirección A.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIRECCIÓN C: SIDEBAR ICÓNICO COMPACTO                       -->
+<!-- ============================================================ -->
+<div id="dir-c" class="direction-panel">
+  <div class="direction-intro">
+    <h2>Dirección C — Sidebar Icónico Compacto</h2>
+    <p>Navegación lateral reducida a íconos (64px). Maximiza el espacio de contenido. Ideal si los usuarios aprenden rápido los íconos — como Figma o VS Code. Requiere tooltips para orientación inicial.</p>
+    <div class="direction-tags">
+      <span class="tag">Máximo espacio</span>
+      <span class="tag sky">Avanzado</span>
+      <span class="tag">Curva de aprendizaje</span>
+    </div>
+  </div>
+
+  <div class="screen-grid">
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla 1 · Registro de Horas (Empleado)</div>
+      <div class="app-shell dir-c">
+        <div class="sidebar">
+          <div class="sidebar-logo">
+            <div class="logo-icon-sm"></div>
+          </div>
+          <div class="nav-icon-btn active" title="Registro">
+            <div class="icon-dot" style="width:16px;height:14px;border-radius:2px"></div>
+            <span>Reg.</span>
+          </div>
+          <div class="nav-icon-btn" title="Mis Registros">
+            <div class="icon-dot" style="width:16px;height:12px;border-radius:1px"></div>
+            <span>Lista</span>
+          </div>
+          <div style="flex:1"></div>
+          <div class="nav-icon-btn" title="Cerrar sesión">
+            <div class="icon-dot" style="width:14px;height:14px;border-radius:50%"></div>
+            <span>CA</span>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="topbar">
+            <span class="topbar-title">Registro de Horas · Martes 12 Mayo</span>
+            <div class="topbar-user">
+              <div class="avatar-sm">CA</div>
+              <span style="font-size:13px;color:var(--gray-600)">Carlos Andrade</span>
+            </div>
+          </div>
+          <div class="page-content">
+            <div style="display:grid;grid-template-columns:1fr 200px;gap:16px">
+              <div>
+                <div class="success-banner">
+                  <span class="check">✓</span>
+                  <span><strong>Turno AM guardado</strong> · 8:00–13:00 · Grupo Financiero XYZ / Portal Web</span>
+                </div>
+                <div class="register-card">
+                  <div class="register-card-header">
+                    <h3>Turno PM</h3>
+                    <div class="turno-tabs" style="border:none;gap:8px">
+                      <div class="turno-tab done" style="flex:0;padding:4px 12px;border:1px solid #A5D6A7;border-radius:12px;font-size:11px">✓ AM</div>
+                      <div class="turno-tab active" style="flex:0;padding:4px 12px;border:1px solid var(--kpg-navy);border-radius:12px;font-size:11px">PM activo</div>
+                    </div>
+                  </div>
+                  <div class="form-body" style="padding:12px 16px">
+                    <div class="recientes-chips">
+                      <div class="reciente-chip"><span class="star">★</span> Grupo Fin. XYZ / Portal Web</div>
+                      <div class="reciente-chip"><span class="star">★</span> BBVA / App Móvil v2</div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group"><div class="form-label">Entrada</div><input class="form-input filled" value="14:00" readonly></div>
+                      <div class="form-group"><div class="form-label">Salida</div><input class="form-input" placeholder="18:00"></div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group"><div class="form-label">Cliente</div><select class="form-select"><option>Grupo Financiero XYZ</option></select></div>
+                      <div class="form-group"><div class="form-label">Proyecto</div><select class="form-select"><option>Portal Web</option></select></div>
+                    </div>
+                    <div class="form-row single">
+                      <div class="form-group"><div class="form-label">Descripción</div><textarea class="form-textarea" placeholder="¿Qué hiciste esta tarde?"></textarea></div>
+                    </div>
+                    <div class="form-actions">
+                      <span class="copy-link">↑ Copiar del AM</span>
+                      <button class="btn-primary">Guardar PM</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="cal-mini">
+                  <div class="cal-mini-header">
+                    <span class="cal-mini-title" style="font-size:11px">Mayo 2026</span>
+                  </div>
+                  <div class="cal-grid">
+                    <div class="cal-day-label">L</div><div class="cal-day-label">M</div><div class="cal-day-label">M</div><div class="cal-day-label">J</div><div class="cal-day-label">V</div><div class="cal-day-label">S</div><div class="cal-day-label">D</div>
+                    <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day blocked">1</div><div class="cal-day blocked">2</div><div class="cal-day blocked">3</div><div class="cal-day blocked">4</div>
+                    <div class="cal-day blocked">5</div><div class="cal-day blocked">6</div><div class="cal-day blocked">7</div><div class="cal-day blocked">8</div><div class="cal-day blocked">9</div><div class="cal-day blocked">10</div><div class="cal-day blocked">11</div>
+                    <div class="cal-day retro" style="font-size:9px">8</div><div class="cal-day retro" style="font-size:9px">9</div><div class="cal-day retro" style="font-size:9px">10</div><div class="cal-day retro" style="font-size:9px">11</div>
+                    <div class="cal-day today" style="font-size:9px">12</div><div class="cal-day future" style="font-size:9px">13</div><div class="cal-day future" style="font-size:9px">14</div>
+                  </div>
+                  <div class="cal-legend" style="flex-direction:column;gap:4px;margin-top:8px">
+                    <div class="cal-legend-item"><div class="cal-dot" style="background:var(--kpg-navy)"></div>Hoy</div>
+                    <div class="cal-legend-item"><div class="cal-dot" style="background:var(--kpg-amber)"></div>En ventana</div>
+                    <div class="cal-legend-item"><div class="cal-dot" style="background:var(--gray-300)"></div>Excepción</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla 2 · Dashboard Supervisor (vista expandida)</div>
+      <div class="app-shell dir-c">
+        <div class="sidebar">
+          <div class="sidebar-logo"><div class="logo-icon-sm"></div></div>
+          <div class="nav-icon-btn active"><div class="icon-dot" style="width:16px;height:12px"></div><span>Panel</span></div>
+          <div class="nav-icon-btn"><div class="icon-dot" style="width:14px;height:14px;border-radius:2px"></div><span>Reg.</span></div>
+          <div class="nav-icon-btn"><div class="icon-dot" style="width:16px;height:12px;border-radius:1px"></div><span>Rep.</span></div>
+          <div style="flex:1"></div>
+          <div class="nav-icon-btn"><div class="icon-dot" style="width:14px;height:14px;border-radius:50%"></div><span>LM</span></div>
+        </div>
+        <div class="main-content">
+          <div class="topbar">
+            <span class="topbar-title">Dashboard · Equipo de Laura</span>
+            <span class="topbar-badge" style="background:#FFF3E0;color:#E65100">1 sin registrar</span>
+          </div>
+          <div class="page-content">
+            <div class="stats-row">
+              <div class="stat-card"><div class="stat-value" style="color:#C62828;font-size:36px">1</div><div class="stat-label">Sin registrar hoy</div></div>
+              <div class="stat-card"><div class="stat-value" style="font-size:36px">7</div><div class="stat-label">Completos hoy</div></div>
+              <div class="stat-card"><div class="stat-value" style="font-size:36px">284</div><div class="stat-label">Horas en mayo</div></div>
+              <div class="stat-card"><div class="stat-value" style="font-size:36px">3</div><div class="stat-label">Excepciones pendientes</div></div>
+            </div>
+            <div class="team-grid">
+              <div class="team-grid-header"><h3>Estado del equipo hoy</h3><button class="btn-primary" style="font-size:11px;padding:4px 12px">Exportar reporte Mayo</button></div>
+              <div class="team-member"><div class="member-avatar">CA</div><div class="member-name">Carlos Andrade</div><div class="member-hours">AM: 5h · PM: pendiente</div><span class="status-badge done">Parcial</span></div>
+              <div class="team-member"><div class="member-avatar" style="background:#7E57C2">AS</div><div class="member-name">Ana Sofía Torres</div><div class="member-hours">9h completas</div><span class="status-badge done">Completo</span></div>
+              <div class="team-member"><div class="member-avatar pending">MR</div><div class="member-name">Marcos Rodríguez</div><div class="member-hours">Sin registros</div><span class="status-badge pending">Pendiente</span></div>
+              <div class="team-member"><div class="member-avatar" style="background:#26A69A">JP</div><div class="member-name">Julia Pérez</div><div class="member-hours">8h completas</div><span class="status-badge done">Completo</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <div class="notes-grid">
+      <div class="note-item">
+        <h4>Ventaja clave</h4>
+        <p>Maximiza el espacio de trabajo — el formulario y el contenido tienen más espacio horizontal. Ideal si los usuarios van a pasar mucho tiempo en pantalla.</p>
+      </div>
+      <div class="note-item">
+        <h4>Riesgo a considerar</h4>
+        <p>Los íconos sin etiqueta requieren aprendizaje. Para 30 usuarios con una sesión de capacitación de &lt;1 hora, puede generar confusión inicial. Mitigable con tooltips on-hover.</p>
+      </div>
+      <div class="note-item">
+        <h4>Recomendación</h4>
+        <p>Esta dirección es ideal si se anticipa crecimiento de módulos. Para V1 con 4 secciones y 30 usuarios, puede ser sobrediseñado. Considerar como evolución futura de A o B.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DIRECCIÓN D: FLUJOS ESPECIALES                               -->
+<!-- ============================================================ -->
+<div id="dir-d" class="direction-panel">
+  <div class="direction-intro">
+    <h2>Flujos Especiales — Diálogo de Excepción y Login</h2>
+    <p>Componentes críticos que aplican a cualquier dirección elegida: el flujo de excepción de ventana de tiempo (el momento más delicado emocionalmente) y la pantalla de login corporativo.</p>
+    <div class="direction-tags">
+      <span class="tag amber">Flujos críticos</span>
+      <span class="tag">Independientes de la dirección</span>
+    </div>
+  </div>
+
+  <div class="screen-grid">
+
+    <!-- Exception Flow -->
+    <div class="screen-wrapper">
+      <div class="screen-label">Flujo de Excepción — "Fecha fuera de ventana"</div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:0 0 8px 8px;padding:40px 32px;display:flex;flex-direction:column;gap:24px;min-height:400px">
+
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="flex:1">
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Paso 1 · Al seleccionar fecha bloqueada</div>
+            <div style="background:var(--gray-100);border-radius:8px;overflow:hidden">
+              <div style="background:white;padding:12px 16px;border-bottom:1px solid var(--gray-200)">
+                <div class="date-chip retro" style="display:inline-flex;align-items:center;gap:6px">⚠ Lun 6 Mayo — Fuera de ventana</div>
+              </div>
+              <div style="padding:12px 16px;font-size:13px;color:var(--gray-600)">
+                Al hacer clic en esta fecha, el sistema no bloquea con un error — abre el diálogo de excepción.
+              </div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Paso 2 · Diálogo de ayuda</div>
+            <div class="exception-dialog">
+              <div class="exception-dialog-header">
+                <span class="icon">⏰</span>
+                <div>
+                  <h4>Fecha fuera de ventana</h4>
+                  <div style="font-size:11px;color:#F57F17">Lunes 6 de Mayo 2026</div>
+                </div>
+              </div>
+              <div class="exception-dialog-body">
+                <p>Esta fecha está fuera de la ventana de registro de 3 días hábiles. Necesitas autorización del administrador para registrar aquí.</p>
+                <div class="form-group" style="margin-bottom:0">
+                  <div class="form-label">Justificación (requerida)</div>
+                  <textarea class="exception-textarea" placeholder="Ej: Estuve en viaje con cliente sin acceso al sistema los días lunes a miércoles..."></textarea>
+                </div>
+              </div>
+              <div class="exception-dialog-footer">
+                <button class="btn-secondary">Cancelar</button>
+                <button class="btn-warning">Enviar solicitud</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="flex:1">
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Paso 3 · Confirmación de envío</div>
+            <div class="success-banner" style="max-width:380px">
+              <span class="check">✓</span>
+              <div>
+                <strong>Solicitud enviada</strong><br>
+                <span style="font-size:12px">Ricardo revisará tu solicitud. Recibirás acceso una vez aprobada.</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Paso 4 · Admin aprueba (vista Ricardo)</div>
+            <div style="background:white;border-radius:8px;overflow:hidden;max-width:380px">
+              <div style="background:var(--kpg-navy);padding:10px 16px;color:white;font-size:13px;font-weight:600">Solicitudes de excepción pendientes (1)</div>
+              <div style="padding:12px 16px">
+                <div style="font-size:13px;font-weight:600;color:var(--gray-900)">Ana Sofía Torres</div>
+                <div style="font-size:12px;color:var(--gray-500);margin:2px 0">Solicita: Lunes 6 Mayo · Hace 5 minutos</div>
+                <div style="font-size:12px;color:var(--gray-600);background:var(--gray-50);padding:8px;border-radius:4px;margin:8px 0;border-left:3px solid var(--kpg-amber)">"Estuve en viaje con cliente sin acceso al sistema..."</div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn-primary" style="font-size:12px;padding:6px 14px">✓ Aprobar</button>
+                  <button class="btn-secondary" style="font-size:12px;padding:6px 14px">✗ Rechazar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="screen-wrapper">
+      <div class="screen-label">Pantalla de Login</div>
+      <div style="background:var(--gray-100);border-radius:0 0 8px 8px;min-height:400px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <div style="background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);padding:40px;width:360px">
+          <div style="text-align:center;margin-bottom:28px">
+            <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:12px">
+              <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--kpg-amber),var(--kpg-orange));clip-path:polygon(0 0, 55% 0, 100% 50%, 55% 100%, 0 100%, 45% 50%)"></div>
+              <span style="font-family:Poppins,sans-serif;font-size:26px;font-weight:700;color:var(--kpg-navy)">kpg</span>
+            </div>
+            <div style="font-family:Poppins,sans-serif;font-size:14px;color:var(--gray-500);letter-spacing:0.5px">Timesheet Platform</div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div class="form-label" style="margin-bottom:4px">Usuario</div>
+            <input class="form-input" style="width:100%" placeholder="tu.nombre@kpginc.com" value="carlos.andrade@kpginc.com">
+          </div>
+          <div style="margin-bottom:24px">
+            <div class="form-label" style="margin-bottom:4px">Contraseña</div>
+            <input class="form-input" style="width:100%" type="password" value="••••••••">
+          </div>
+          <button class="btn-primary" style="width:100%;height:42px;font-size:14px">Iniciar sesión</button>
+          <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray-400)">¿Olvidaste tu contraseña? Contacta a Ricardo</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="design-notes">
+    <div class="notes-grid">
+      <div class="note-item">
+        <h4>El flujo de excepción es clave</h4>
+        <p>El diseño del diálogo de excepción es emocionalmente crítico: debe sentirse como ayuda, no como castigo. El ámbar KPG (no rojo) en el header del diálogo comunica advertencia, no error.</p>
+      </div>
+      <div class="note-item">
+        <h4>Login corporativo</h4>
+        <p>Pantalla de login limpia con identidad KPG clara. Sin opciones de "crear cuenta" ni flujos de recuperación complejos — es una herramienta interna donde el Admin gestiona los accesos.</p>
+      </div>
+      <div class="note-item">
+        <h4>Estos flujos son universales</h4>
+        <p>El diálogo de excepción y el login aplican igual en las Direcciones A, B y C. Son componentes independientes del esquema de navegación elegido.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDir(dir, el) {
+  document.querySelectorAll('.direction-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.direction-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('dir-' + dir).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 using KPG.Timesheet.Application.Common.Exceptions;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using NotFoundException = KPG.Timesheet.Application.Common.Exceptions.NotFoundException;
 
@@ -24,7 +25,12 @@ public class DeleteRegistroHorasCommandHandler : IRequestHandler<DeleteRegistroH
         if (registro is null)
             throw new NotFoundException($"RegistroHoras con id '{request.RegistroId}' no fue encontrado.");
 
-        if (registro.UserId != _user.Id)
+        // Supervisor/Admin pueden eliminar cualquier registro.
+        // Restricción de equipo por Supervisor se aplicará cuando exista entidad Team.
+        var isSupervisorOrAdmin = _user.Roles?.Contains(Roles.Admin) == true
+            || _user.Roles?.Contains(Roles.Supervisor) == true;
+
+        if (!isSupervisorOrAdmin && registro.UserId != _user.Id)
             throw new ForbiddenAccessException();
 
         _context.RegistrosHoras.Remove(registro);

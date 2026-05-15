@@ -20,6 +20,14 @@ builder.Services.AddAuthorizationCore();
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IRegistroHorasRepository, RegistroHorasRepository>();
+builder.Services.AddScoped<IParametroSistemaRepository, ParametroSistemaRepository>();
+builder.Services.AddScoped<ISolicitudExcepcionRepository, SolicitudExcepcionRepository>();
+builder.Services.AddScoped<ISolicitudExcepcionAdminRepository, SolicitudExcepcionAdminRepository>();
+builder.Services.AddScoped<IUserAdminRepository, UserAdminRepository>();
+builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IModalidadRepository, ModalidadRepository>();
+builder.Services.AddScoped<ILugarTrabajoRepository, LugarTrabajoRepository>();
 builder.Services.AddSingleton<AuthStateService>();
 builder.Services.AddScoped<KpgAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(

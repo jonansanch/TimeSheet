@@ -1,0 +1,243 @@
+@inject IClienteRepository Repo
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">Proyectos — @Cliente.Nombre</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (!string.IsNullOrWhiteSpace(_successMessage))
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
+            }
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            }
+
+            @if (_isLoading)
+            {
+                <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+            }
+            else if (_proyectos.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No hay proyectos registrados para este cliente.</MudAlert>
+            }
+            else
+            {
+                <MudList T="ProyectoResponse" Dense="true">
+                    @foreach (var proyecto in _proyectos)
+                    {
+                        <MudListItem>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudText>@proyecto.Nombre</MudText>
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="@(proyecto.Activo ? Color.Success : Color.Default)">
+                                        @(proyecto.Activo ? "Activo" : "Inactivo")
+                                    </MudChip>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="0">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Color="Color.Primary"
+                                                   Size="Size.Small"
+                                                   aria-label="Editar proyecto"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => AbrirEditarProyectoAsync(proyecto))" />
+                                    @if (proyecto.Activo)
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                       Color="Color.Warning"
+                                                       Size="Size.Small"
+                                                       aria-label="Desactivar proyecto"
+                                                       Disabled="_isProcesando"
+                                                       OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
+                                    }
+                                    else
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                       Color="Color.Success"
+                                                       Size="Size.Small"
+                                                       aria-label="Activar proyecto"
+                                                       Disabled="_isProcesando"
+                                                       OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+            <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+                <MessageContent>@_msgBoxContent</MessageContent>
+                <YesButton>
+                    <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+                </YesButton>
+            </MudMessageBox>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Color="Color.Primary"
+                   Disabled="_isProcesando"
+                   OnClick="AbrirCrearProyectoAsync">
+            Nuevo Proyecto
+        </MudButton>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined" OnClick="Cerrar">Cerrar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ClienteResponse Cliente { get; set; } = default!;
+
+    private List<ProyectoResponse> _proyectos = [];
+    private bool _isLoading = true;
+    private bool _isProcesando;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private MudMessageBox? _msgBox;
+    private string _msgBoxContent = string.Empty;
+    private Color _msgBoxColor = Color.Primary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProyectosAsync();
+    }
+
+    private async Task CargarProyectosAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        try
+        {
+            _proyectos = await Repo.GetProyectosAsync(Cliente.Id);
+        }
+        catch
+        {
+            _errorMessage = "No fue posible cargar los proyectos.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task AbrirCrearProyectoAsync()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgProyectoDialog>("Nuevo Proyecto", options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateProyectoRequest request)
+            return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, proyecto, error) = await Repo.CreateProyectoAsync(Cliente.Id, request);
+            if (ok && proyecto is not null)
+            {
+                _proyectos.Add(proyecto);
+                _proyectos = [.. _proyectos.OrderBy(p => p.Nombre)];
+                _successMessage = $"Proyecto \"{proyecto.Nombre}\" creado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible crear el proyecto.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirEditarProyectoAsync(ProyectoResponse item)
+    {
+        var parameters = new DialogParameters<KpgProyectoDialog> { { x => x.Proyecto, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgProyectoDialog>("Editar Proyecto", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not UpdateProyectoRequest request)
+            return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, proyecto, error) = await Repo.UpdateProyectoAsync(item.Id, request);
+            if (ok && proyecto is not null)
+            {
+                ReemplazarProyecto(item, proyecto);
+                _proyectos = [.. _proyectos.OrderBy(p => p.Nombre)];
+                _successMessage = $"Proyecto actualizado a \"{proyecto.Nombre}\".";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible actualizar el proyecto.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ConfirmarToggleProyectoAsync(ProyectoResponse item)
+    {
+        _msgBoxContent = item.Activo
+            ? $"Desactivar proyecto \"{item.Nombre}\"?"
+            : $"Activar proyecto \"{item.Nombre}\"?";
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, proyecto, error) = await Repo.ToggleProyectoActivoAsync(item.Id);
+            if (ok && proyecto is not null)
+            {
+                ReemplazarProyecto(item, proyecto);
+                _successMessage = proyecto.Activo
+                    ? $"\"{proyecto.Nombre}\" activado."
+                    : $"\"{proyecto.Nombre}\" desactivado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible cambiar el estado del proyecto.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private void ReemplazarProyecto(ProyectoResponse oldItem, ProyectoResponse newItem)
+    {
+        var idx = _proyectos.IndexOf(oldItem);
+        if (idx >= 0)
+            _proyectos[idx] = newItem;
+    }
+
+    private void Cerrar() => MudDialog.Close();
+}

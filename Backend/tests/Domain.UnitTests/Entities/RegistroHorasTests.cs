@@ -1,6 +1,7 @@
 using FluentAssertions;
 using KPG.Timesheet.Domain.Entities;
 using KPG.Timesheet.Domain.Enums;
+using KPG.Timesheet.Domain.Exceptions;
 using Xunit;
 
 namespace KPG.Timesheet.Domain.UnitTests.Entities;
@@ -14,7 +15,7 @@ public class RegistroHorasTests
             horaEntrada: new TimeOnly(13, 0),
             horaSalida: new TimeOnly(8, 0));
 
-        act.Should().Throw<ArgumentException>()
+        act.Should().Throw<DomainRuleException>()
             .WithMessage("*hora de salida*");
     }
 
@@ -23,7 +24,7 @@ public class RegistroHorasTests
     {
         var act = () => CreateRegistro(cliente: " ");
 
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<DomainRuleException>();
     }
 
     [Fact]

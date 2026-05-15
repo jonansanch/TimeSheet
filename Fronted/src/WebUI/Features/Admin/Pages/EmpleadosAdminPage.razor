@@ -1,0 +1,278 @@
+@page "/admin/empleados"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IEmpleadoRepository Repo
+@inject IDialogService DialogService
+
+<PageTitle>Empleados - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+                Empleados
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Catalogo de recursos disponibles para el registro de horas.
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   Disabled="_isProcesando"
+                   OnClick="AbrirCrearAsync">
+            Nuevo Empleado
+        </MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
+        }
+
+        @if (_empleados.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.People">
+                No hay empleados registrados.
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="EmpleadoResponse"
+                         Items="_empleados"
+                         Dense="true"
+                         Filterable="false"
+                         SortMode="SortMode.Single"
+                         QuickFilter="_quickFilter"
+                         RowsPerPage="25">
+                <ToolBarContent>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="_searchText"
+                                  Placeholder="Buscar por nombre..."
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Small"
+                                  Immediate="true"
+                                  Style="max-width:280px;" />
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
+                    <TemplateColumn Title="Estado" Sortable="true">
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="@(context.Item.Activo ? Color.Success : Color.Default)">
+                                @(context.Item.Activo ? "Activo" : "Inactivo")
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Acciones" Sortable="false">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           aria-label="Editar empleado"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AbrirEditarAsync(context.Item))" />
+                            @if (context.Item.Activo)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                               Color="Color.Warning"
+                                               Size="Size.Small"
+                                               aria-label="Desactivar empleado"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               aria-label="Activar empleado"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    }
+
+    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+        <MessageContent>@_msgBoxContent</MessageContent>
+        <YesButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+        </YesButton>
+    </MudMessageBox>
+</MudStack>
+
+@code {
+    private List<EmpleadoResponse> _empleados = [];
+    private bool _isLoading = true;
+    private bool _isProcesando;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private MudMessageBox? _msgBox;
+    private string _msgBoxContent = string.Empty;
+    private Color _msgBoxColor = Color.Primary;
+    private string _searchText = string.Empty;
+
+    private Func<EmpleadoResponse, bool> _quickFilter =>
+        e => string.IsNullOrWhiteSpace(_searchText)
+            || e.Nombre.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            _empleados = await Repo.GetAllAsync();
+        }
+        catch
+        {
+            _errorMessage = "No fue posible cargar los empleados. Intente nuevamente.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task AbrirCrearAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Nuevo Empleado", options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateEmpleadoRequest request)
+            return;
+
+        _isProcesando = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            var (ok, empleado, error) = await Repo.CreateAsync(request);
+            if (ok && empleado is not null)
+            {
+                _empleados.Add(empleado);
+                _empleados = [.. _empleados.OrderBy(e => e.Nombre)];
+                _successMessage = $"Empleado \"{empleado.Nombre}\" creado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible crear el empleado.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirEditarAsync(EmpleadoResponse item)
+    {
+        var parameters = new DialogParameters<KpgEmpleadoDialog>
+        {
+            { x => x.Empleado, item }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Editar Empleado", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not UpdateEmpleadoRequest request)
+            return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, empleado, error) = await Repo.UpdateAsync(item.Id, request);
+            if (ok && empleado is not null)
+            {
+                ReemplazarEmpleado(item, empleado);
+                _empleados = [.. _empleados.OrderBy(e => e.Nombre)];
+                _successMessage = $"Empleado actualizado a \"{empleado.Nombre}\".";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible actualizar el empleado.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ConfirmarToggleAsync(EmpleadoResponse item)
+    {
+        _msgBoxContent = item.Activo
+            ? $"Desactivar a \"{item.Nombre}\"? No aparecera en nuevos registros."
+            : $"Activar a \"{item.Nombre}\"?";
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, empleado, error) = await Repo.ToggleActivoAsync(item.Id);
+            if (ok && empleado is not null)
+            {
+                ReemplazarEmpleado(item, empleado);
+                _successMessage = empleado.Activo
+                    ? $"\"{empleado.Nombre}\" activado."
+                    : $"\"{empleado.Nombre}\" desactivado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible cambiar el estado del empleado.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private void ReemplazarEmpleado(EmpleadoResponse oldItem, EmpleadoResponse newItem)
+    {
+        var idx = _empleados.IndexOf(oldItem);
+        if (idx >= 0)
+            _empleados[idx] = newItem;
+    }
+}

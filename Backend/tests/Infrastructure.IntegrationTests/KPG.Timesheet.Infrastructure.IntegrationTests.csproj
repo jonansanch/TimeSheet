@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Api\KPG.Timesheet.Api.csproj" />
     <ProjectReference Include="..\..\src\Infrastructure\KPG.Timesheet.Infrastructure.csproj" />
   </ItemGroup>
 

@@ -1,0 +1,526 @@
+@page "/admin/parametros"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IParametroSistemaRepository SistemaRepo
+@inject IModalidadRepository ModalidadRepo
+@inject ILugarTrabajoRepository LugarRepo
+@inject IDialogService DialogService
+
+<PageTitle>Parámetros - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+            Parámetros del Sistema
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Configuracion general, modalidades y lugares de trabajo.
+        </MudText>
+    </div>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+    }
+    else
+    {
+        <!-- Configuracion general -->
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Configuración General</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudNumericField T="int"
+                                     Label="Ventana retroactividad (días)"
+                                     Variant="Variant.Outlined"
+                                     @bind-Value="_ventana"
+                                     Min="1"
+                                     Max="30"
+                                     HelperText="Dias habiles permitidos para registrar en el pasado (1-30)." />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField T="int"
+                                     Label="Umbral notificaciones (días)"
+                                     Variant="Variant.Outlined"
+                                     @bind-Value="_umbral"
+                                     Min="1"
+                                     Max="30"
+                                     HelperText="Dias sin registrar para enviar notificacion (1-30)." />
+                </MudItem>
+                <MudItem xs="12" md="4" Class="d-flex align-end">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="_isSavingConfig"
+                               OnClick="GuardarConfigAsync"
+                               StartIcon="@Icons.Material.Filled.Save">
+                        @(_isSavingConfig ? "Guardando..." : "Guardar Configuración")
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+            @if (!string.IsNullOrWhiteSpace(_configError))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@_configError</MudAlert>
+            }
+            @if (!string.IsNullOrWhiteSpace(_configSuccess))
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Class="mt-2" role="status">@_configSuccess</MudAlert>
+            }
+        </MudPaper>
+
+        <!-- Modalidades -->
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                <MudText Typo="Typo.h6" Style="font-weight:600;">Modalidades</MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           Disabled="_isProcesando"
+                           OnClick="AbrirCrearModalidadAsync">
+                    Nueva Modalidad
+                </MudButton>
+            </MudStack>
+
+            @if (!string.IsNullOrWhiteSpace(_modalidadSuccess))
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Class="mb-2" role="status">@_modalidadSuccess</MudAlert>
+            }
+            @if (!string.IsNullOrWhiteSpace(_modalidadError))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@_modalidadError</MudAlert>
+            }
+
+            @if (_modalidades.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Category">
+                    No hay modalidades registradas.
+                </MudAlert>
+            }
+            else
+            {
+                <MudDataGrid T="ModalidadResponse"
+                             Items="_modalidades"
+                             Dense="true"
+                             Filterable="false"
+                             SortMode="SortMode.None">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
+                        <TemplateColumn Title="Estado" Sortable="false">
+                            <CellTemplate>
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Color="@(context.Item.Activo ? Color.Success : Color.Default)">
+                                    @(context.Item.Activo ? "Activa" : "Inactiva")
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Acciones" Sortable="false">
+                            <CellTemplate>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               aria-label="Editar modalidad"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => AbrirEditarModalidadAsync(context.Item))" />
+                                @if (context.Item.Activo)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                   Color="Color.Warning"
+                                                   Size="Size.Small"
+                                                   aria-label="Desactivar modalidad"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleModalidadAsync(context.Item))" />
+                                }
+                                else
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                   Color="Color.Success"
+                                                   Size="Size.Small"
+                                                   aria-label="Activar modalidad"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleModalidadAsync(context.Item))" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+        </MudPaper>
+
+        <!-- Lugares de trabajo -->
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                <MudText Typo="Typo.h6" Style="font-weight:600;">Lugares de Trabajo</MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           Disabled="_isProcesando"
+                           OnClick="AbrirCrearLugarAsync">
+                    Nuevo Lugar
+                </MudButton>
+            </MudStack>
+
+            @if (!string.IsNullOrWhiteSpace(_lugarSuccess))
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Class="mb-2" role="status">@_lugarSuccess</MudAlert>
+            }
+            @if (!string.IsNullOrWhiteSpace(_lugarError))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@_lugarError</MudAlert>
+            }
+
+            @if (_lugares.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.LocationOn">
+                    No hay lugares de trabajo registrados.
+                </MudAlert>
+            }
+            else
+            {
+                <MudDataGrid T="LugarTrabajoResponse"
+                             Items="_lugares"
+                             Dense="true"
+                             Filterable="false"
+                             SortMode="SortMode.None">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
+                        <TemplateColumn Title="Estado" Sortable="false">
+                            <CellTemplate>
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Color="@(context.Item.Activo ? Color.Success : Color.Default)">
+                                    @(context.Item.Activo ? "Activo" : "Inactivo")
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Acciones" Sortable="false">
+                            <CellTemplate>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               aria-label="Editar lugar"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => AbrirEditarLugarAsync(context.Item))" />
+                                @if (context.Item.Activo)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                   Color="Color.Warning"
+                                                   Size="Size.Small"
+                                                   aria-label="Desactivar lugar"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleLugarAsync(context.Item))" />
+                                }
+                                else
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                   Color="Color.Success"
+                                                   Size="Size.Small"
+                                                   aria-label="Activar lugar"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleLugarAsync(context.Item))" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+        </MudPaper>
+    }
+
+    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+        <MessageContent>@_msgBoxContent</MessageContent>
+        <YesButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+        </YesButton>
+    </MudMessageBox>
+</MudStack>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isProcesando;
+    private bool _isSavingConfig;
+
+    private int _ventana = 3;
+    private int _umbral = 3;
+    private string? _configError;
+    private string? _configSuccess;
+
+    private List<ModalidadResponse> _modalidades = [];
+    private string? _modalidadError;
+    private string? _modalidadSuccess;
+
+    private List<LugarTrabajoResponse> _lugares = [];
+    private string? _lugarError;
+    private string? _lugarSuccess;
+
+    private MudMessageBox? _msgBox;
+    private string _msgBoxContent = string.Empty;
+    private Color _msgBoxColor = Color.Primary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var ventanaTask = SistemaRepo.GetVentanaRetroactividadAsync();
+            var umbralTask = SistemaRepo.GetUmbralNotificacionAsync();
+            var modalidadesTask = ModalidadRepo.GetAllAsync();
+            var lugaresTask = LugarRepo.GetAllAsync();
+
+            await Task.WhenAll(ventanaTask, umbralTask, modalidadesTask, lugaresTask);
+
+            _ventana = await ventanaTask;
+            _umbral = await umbralTask;
+            _modalidades = await modalidadesTask;
+            _lugares = await lugaresTask;
+        }
+        catch
+        {
+            _configError = "No fue posible cargar la configuracion. Intente nuevamente.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task GuardarConfigAsync()
+    {
+        _isSavingConfig = true;
+        _configError = null;
+        _configSuccess = null;
+
+        try
+        {
+            var (okV, errorV) = await SistemaRepo.UpdateVentanaRetroactividadAsync(_ventana);
+            var (okU, errorU) = await SistemaRepo.UpdateUmbralNotificacionAsync(_umbral);
+
+            if (!okV || !okU)
+                _configError = errorV ?? errorU ?? "No fue posible guardar la configuracion.";
+            else
+                _configSuccess = "Configuracion guardada correctamente.";
+        }
+        finally
+        {
+            _isSavingConfig = false;
+        }
+    }
+
+    private async Task AbrirCrearModalidadAsync()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgModalidadDialog>("Nueva Modalidad", options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateModalidadRequest request)
+            return;
+
+        _isProcesando = true;
+        _modalidadError = null;
+        _modalidadSuccess = null;
+
+        try
+        {
+            var (ok, modalidad, error) = await ModalidadRepo.CreateAsync(request);
+            if (ok && modalidad is not null)
+            {
+                _modalidades.Add(modalidad);
+                _modalidades = [.. _modalidades.OrderBy(m => m.Nombre)];
+                _modalidadSuccess = $"Modalidad \"{modalidad.Nombre}\" creada.";
+            }
+            else
+            {
+                _modalidadError = error ?? "No fue posible crear la modalidad.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirEditarModalidadAsync(ModalidadResponse item)
+    {
+        var parameters = new DialogParameters<KpgModalidadDialog> { { x => x.Modalidad, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgModalidadDialog>("Editar Modalidad", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not UpdateModalidadRequest request)
+            return;
+
+        _isProcesando = true;
+        _modalidadError = null;
+        _modalidadSuccess = null;
+
+        try
+        {
+            var (ok, modalidad, error) = await ModalidadRepo.UpdateAsync(item.Id, request);
+            if (ok && modalidad is not null)
+            {
+                ReemplazarModalidad(item, modalidad);
+                _modalidades = [.. _modalidades.OrderBy(m => m.Nombre)];
+                _modalidadSuccess = $"Modalidad actualizada a \"{modalidad.Nombre}\".";
+            }
+            else
+            {
+                _modalidadError = error ?? "No fue posible actualizar la modalidad.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ConfirmarToggleModalidadAsync(ModalidadResponse item)
+    {
+        _msgBoxContent = item.Activo
+            ? $"Desactivar modalidad \"{item.Nombre}\"?"
+            : $"Activar modalidad \"{item.Nombre}\"?";
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _modalidadError = null;
+        _modalidadSuccess = null;
+
+        try
+        {
+            var (ok, modalidad, error) = await ModalidadRepo.ToggleActivaAsync(item.Id);
+            if (ok && modalidad is not null)
+            {
+                ReemplazarModalidad(item, modalidad);
+                _modalidadSuccess = modalidad.Activo
+                    ? $"\"{modalidad.Nombre}\" activada."
+                    : $"\"{modalidad.Nombre}\" desactivada.";
+            }
+            else
+            {
+                _modalidadError = error ?? "No fue posible cambiar el estado.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private void ReemplazarModalidad(ModalidadResponse oldItem, ModalidadResponse newItem)
+    {
+        var idx = _modalidades.IndexOf(oldItem);
+        if (idx >= 0)
+            _modalidades[idx] = newItem;
+    }
+
+    private async Task AbrirCrearLugarAsync()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgLugarTrabajoDialog>("Nuevo Lugar de Trabajo", options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateLugarTrabajoRequest request)
+            return;
+
+        _isProcesando = true;
+        _lugarError = null;
+        _lugarSuccess = null;
+
+        try
+        {
+            var (ok, lugar, error) = await LugarRepo.CreateAsync(request);
+            if (ok && lugar is not null)
+            {
+                _lugares.Add(lugar);
+                _lugares = [.. _lugares.OrderBy(l => l.Nombre)];
+                _lugarSuccess = $"Lugar \"{lugar.Nombre}\" creado.";
+            }
+            else
+            {
+                _lugarError = error ?? "No fue posible crear el lugar de trabajo.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirEditarLugarAsync(LugarTrabajoResponse item)
+    {
+        var parameters = new DialogParameters<KpgLugarTrabajoDialog> { { x => x.Lugar, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgLugarTrabajoDialog>("Editar Lugar de Trabajo", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not UpdateLugarTrabajoRequest request)
+            return;
+
+        _isProcesando = true;
+        _lugarError = null;
+        _lugarSuccess = null;
+
+        try
+        {
+            var (ok, lugar, error) = await LugarRepo.UpdateAsync(item.Id, request);
+            if (ok && lugar is not null)
+            {
+                ReemplazarLugar(item, lugar);
+                _lugares = [.. _lugares.OrderBy(l => l.Nombre)];
+                _lugarSuccess = $"Lugar actualizado a \"{lugar.Nombre}\".";
+            }
+            else
+            {
+                _lugarError = error ?? "No fue posible actualizar el lugar de trabajo.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ConfirmarToggleLugarAsync(LugarTrabajoResponse item)
+    {
+        _msgBoxContent = item.Activo
+            ? $"Desactivar lugar \"{item.Nombre}\"?"
+            : $"Activar lugar \"{item.Nombre}\"?";
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _lugarError = null;
+        _lugarSuccess = null;
+
+        try
+        {
+            var (ok, lugar, error) = await LugarRepo.ToggleActivoAsync(item.Id);
+            if (ok && lugar is not null)
+            {
+                ReemplazarLugar(item, lugar);
+                _lugarSuccess = lugar.Activo
+                    ? $"\"{lugar.Nombre}\" activado."
+                    : $"\"{lugar.Nombre}\" desactivado.";
+            }
+            else
+            {
+                _lugarError = error ?? "No fue posible cambiar el estado.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private void ReemplazarLugar(LugarTrabajoResponse oldItem, LugarTrabajoResponse newItem)
+    {
+        var idx = _lugares.IndexOf(oldItem);
+        if (idx >= 0)
+            _lugares[idx] = newItem;
+    }
+}

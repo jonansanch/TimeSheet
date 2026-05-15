@@ -1,5 +1,6 @@
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
+using KPG.Timesheet.Application.Features.RegistroHoras.Commands.UpdateDescripcionRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetRegistrosRecientes;
 using KPG.Timesheet.Domain.Constants;
@@ -20,10 +21,16 @@ public class RegistroHoras : IEndpointGroup
             Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}"
         };
 
+        var supervisorAdmin = new AuthorizeAttribute
+        {
+            Roles = $"{Roles.Supervisor},{Roles.Admin}"
+        };
+
         groupBuilder.MapPost(Create).RequireAuthorization(auth);
         groupBuilder.MapGet("", GetMisRegistros).RequireAuthorization(auth);
         groupBuilder.MapGet("recientes", GetRecientes).RequireAuthorization(auth);
         groupBuilder.MapDelete("{id}", Delete).RequireAuthorization(auth);
+        groupBuilder.MapPatch("{id}/descripcion", UpdateDescripcion).RequireAuthorization(supervisorAdmin);
     }
 
     [EndpointSummary("Obtener historial de registros del usuario autenticado")]
@@ -67,6 +74,22 @@ public class RegistroHoras : IEndpointGroup
         return Results.NoContent();
     }
 
+    [EndpointSummary("Actualizar descripción de un registro")]
+    [EndpointDescription("Actualiza únicamente el campo descripción de un registro existente. Solo Supervisor y Admin pueden ejecutar esta acción.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> UpdateDescripcion(
+        int id,
+        [FromBody] UpdateDescripcionRequest body,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new UpdateDescripcionRegistroHorasCommand(id, body.Descripcion), cancellationToken);
+        return Results.NoContent();
+    }
+
     [EndpointSummary("Obtener sugerencias recientes de cliente/proyecto")]
     [EndpointDescription("Retorna las últimas combinaciones cliente/proyecto usadas por el usuario autenticado.")]
     [ProducesResponseType<IEnumerable<RegistroRecienteDto>>(StatusCodes.Status200OK)]
@@ -80,3 +103,5 @@ public class RegistroHoras : IEndpointGroup
         return Results.Ok(result);
     }
 }
+
+public record UpdateDescripcionRequest(string Descripcion);

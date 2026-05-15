@@ -1,0 +1,278 @@
+@page "/admin/clientes"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IClienteRepository Repo
+@inject IDialogService DialogService
+
+<PageTitle>Clientes - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+                Clientes
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Catalogo de clientes y sus proyectos asociados.
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="_isProcesando"
+                   OnClick="AbrirCrearAsync">
+            Nuevo Cliente
+        </MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
+        }
+
+        @if (_clientes.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Business">
+                No hay clientes registrados.
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="ClienteResponse"
+                         Items="_clientes"
+                         Dense="true"
+                         Filterable="false"
+                         SortMode="SortMode.Single"
+                         QuickFilter="_quickFilter"
+                         RowsPerPage="25">
+                <ToolBarContent>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="_searchText"
+                                  Placeholder="Buscar por nombre..."
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Small"
+                                  Immediate="true"
+                                  Style="max-width:280px;" />
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
+                    <TemplateColumn Title="Estado" Sortable="true">
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="@(context.Item.Activo ? Color.Success : Color.Default)">
+                                @(context.Item.Activo ? "Activo" : "Inactivo")
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Acciones" Sortable="false">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           aria-label="Editar cliente"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AbrirEditarAsync(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen"
+                                           Color="Color.Secondary"
+                                           Size="Size.Small"
+                                           aria-label="Gestionar proyectos"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AbrirProyectosAsync(context.Item))" />
+                            @if (context.Item.Activo)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                               Color="Color.Warning"
+                                               Size="Size.Small"
+                                               aria-label="Desactivar cliente"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               aria-label="Activar cliente"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    }
+
+    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+        <MessageContent>@_msgBoxContent</MessageContent>
+        <YesButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+        </YesButton>
+    </MudMessageBox>
+</MudStack>
+
+@code {
+    private List<ClienteResponse> _clientes = [];
+    private bool _isLoading = true;
+    private bool _isProcesando;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private MudMessageBox? _msgBox;
+    private string _msgBoxContent = string.Empty;
+    private Color _msgBoxColor = Color.Primary;
+    private string _searchText = string.Empty;
+
+    private Func<ClienteResponse, bool> _quickFilter =>
+        c => string.IsNullOrWhiteSpace(_searchText)
+            || c.Nombre.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            _clientes = await Repo.GetAllAsync();
+        }
+        catch
+        {
+            _errorMessage = "No fue posible cargar los clientes. Intente nuevamente.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task AbrirCrearAsync()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgClienteDialog>("Nuevo Cliente", options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateClienteRequest request)
+            return;
+
+        _isProcesando = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            var (ok, cliente, error) = await Repo.CreateAsync(request);
+            if (ok && cliente is not null)
+            {
+                _clientes.Add(cliente);
+                _clientes = [.. _clientes.OrderBy(c => c.Nombre)];
+                _successMessage = $"Cliente \"{cliente.Nombre}\" creado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible crear el cliente.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirEditarAsync(ClienteResponse item)
+    {
+        var parameters = new DialogParameters<KpgClienteDialog> { { x => x.Cliente, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgClienteDialog>("Editar Cliente", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not UpdateClienteRequest request)
+            return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, cliente, error) = await Repo.UpdateAsync(item.Id, request);
+            if (ok && cliente is not null)
+            {
+                ReemplazarCliente(item, cliente);
+                _clientes = [.. _clientes.OrderBy(c => c.Nombre)];
+                _successMessage = $"Cliente actualizado a \"{cliente.Nombre}\".";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible actualizar el cliente.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirProyectosAsync(ClienteResponse item)
+    {
+        var parameters = new DialogParameters<KpgProyectosClienteDialog> { { x => x.Cliente, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true };
+        await DialogService.ShowAsync<KpgProyectosClienteDialog>($"Proyectos — {item.Nombre}", parameters, options);
+    }
+
+    private async Task ConfirmarToggleAsync(ClienteResponse item)
+    {
+        _msgBoxContent = item.Activo
+            ? $"Desactivar a \"{item.Nombre}\"? Sus proyectos no apareceran en el formulario de registro."
+            : $"Activar a \"{item.Nombre}\"?";
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, cliente, error) = await Repo.ToggleActivoAsync(item.Id);
+            if (ok && cliente is not null)
+            {
+                ReemplazarCliente(item, cliente);
+                _successMessage = cliente.Activo
+                    ? $"\"{cliente.Nombre}\" activado."
+                    : $"\"{cliente.Nombre}\" desactivado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible cambiar el estado del cliente.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private void ReemplazarCliente(ClienteResponse oldItem, ClienteResponse newItem)
+    {
+        var idx = _clientes.IndexOf(oldItem);
+        if (idx >= 0)
+            _clientes[idx] = newItem;
+    }
+}

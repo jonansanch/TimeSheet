@@ -1,4 +1,11 @@
 @inject IRegistroHorasRepository RegistroHorasRepository
+@inject IParametroSistemaRepository ParametroSistemaRepository
+@inject IDialogService DialogService
+@inject ISolicitudExcepcionRepository SolicitudExcepcionRepository
+@inject IEmpleadoRepository EmpleadoRepository
+@inject IClienteRepository ClienteRepository
+@inject IModalidadRepository ModalidadRepository
+@inject ILugarTrabajoRepository LugarTrabajoRepository
 
 <MudPaper Elevation="1" Class="pa-6">
     <MudStack Spacing="4">
@@ -16,13 +23,30 @@
                                    Cliente="@_bannerCliente"
                                    Proyecto="@_bannerProyecto" />
 
-        <MudDatePicker Label="Fecha"
-                       Variant="Variant.Outlined"
+        <KpgDatePicker Label="Fecha"
+                       WindowDays="@_windowDays"
                        Date="@_fecha"
-                       DateChanged="HandleDateChanged"
-                       DateFormat="dd/MM/yyyy"
-                       Required="true"
-                       RequiredError="La fecha es requerida." />
+                       OnDateSelected="HandleDateSelected"
+                       OnExceptionRequested="HandleExceptionRequested" />
+
+        @if (_dateAvailability == DateAvailability.OutOfWindow && _fecha.HasValue)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
+                Esta fecha está fuera de la ventana de registro permitida (@_windowDays días hábiles).
+                <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small"
+                           OnClick="@(() => HandleExceptionRequested(DateOnly.FromDateTime(_fecha!.Value)))"
+                           Class="ml-2">
+                    Solicitar excepción
+                </MudButton>
+            </MudAlert>
+        }
+
+        @if (_excepcionEnviada)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" Class="mt-1">
+                Solicitud de excepción enviada para @_excepcionFecha.ToString("dd/MM/yyyy"). Recibirás confirmación cuando sea revisada.
+            </MudAlert>
+        }
 
         <KpgRecentSuggestions OnSuggestionSelected="HandleSuggestionSelected" />
 
@@ -102,6 +126,10 @@
     private bool _pmIsValid;
     private bool _isSaving;
     private string? _errorMessage;
+    private int _windowDays = 3;
+    private DateAvailability _dateAvailability = DateAvailability.Available;
+    private bool _excepcionEnviada;
+    private DateOnly _excepcionFecha;
 
     private bool _amGuardado;
     private bool _pmGuardado;
@@ -131,11 +159,15 @@
         HoraSalida = new TimeSpan(18, 0, 0)
     };
 
-    private static readonly string[] Clientes = ["KPG", "Cliente interno", "Cliente externo"];
-    private static readonly string[] Proyectos = ["Timesheet", "Soporte operativo", "Consultoria"];
-    private static readonly string[] Modalidades = ["Presencial", "Remoto", "Hibrido"];
-    private static readonly string[] Recursos = ["Consultor", "Analista", "Lider tecnico"];
-    private static readonly string[] Lugares = ["Presencial Oficina", "Presencial Viaje", "Presencial Cliente", "Remoto"];
+    private static readonly string[] ClientesFallback = ["KPG", "Cliente interno", "Cliente externo"];
+    private static readonly string[] ProyectosFallback = ["Timesheet", "Soporte operativo", "Consultoria"];
+    private List<ClienteConProyectosResponse> _catalogoClientes = [];
+    private static readonly string[] ModalidadesFallback = ["Presencial", "Remoto", "Hibrido"];
+    private List<string> _modalidades = ["Presencial", "Remoto", "Hibrido"];
+    private static readonly string[] RecursosFallback = ["Consultor", "Analista", "Lider tecnico"];
+    private List<string> _recursos = [];
+    private static readonly string[] LugaresFallback = ["Presencial Oficina", "Presencial Viaje", "Presencial Cliente", "Remoto"];
+    private List<string> _lugares = ["Presencial Oficina", "Presencial Viaje", "Presencial Cliente", "Remoto"];
 
     private string TotalHorasFormateado
     {
@@ -160,6 +192,58 @@
         {
             _sugerenciasRecientes = [];
         }
+
+        try
+        {
+            _windowDays = await ParametroSistemaRepository.GetVentanaRetroactividadAsync();
+        }
+        catch
+        {
+            _windowDays = 3;
+        }
+
+        try
+        {
+            var activos = await EmpleadoRepository.GetActivosAsync();
+            _recursos = activos.Select(e => e.Nombre).ToList();
+            if (_recursos.Count == 0)
+                _recursos = [.. RecursosFallback];
+        }
+        catch
+        {
+            _recursos = [.. RecursosFallback];
+        }
+
+        try
+        {
+            _catalogoClientes = await ClienteRepository.GetCatalogoAsync();
+        }
+        catch
+        {
+            _catalogoClientes = [];
+        }
+
+        try
+        {
+            var modalidades = await ModalidadRepository.GetActivasAsync();
+            if (modalidades.Count > 0)
+                _modalidades = modalidades.Select(m => m.Nombre).ToList();
+        }
+        catch
+        {
+            _modalidades = [.. ModalidadesFallback];
+        }
+
+        try
+        {
+            var lugares = await LugarTrabajoRepository.GetActivosAsync();
+            if (lugares.Count > 0)
+                _lugares = lugares.Select(l => l.Nombre).ToList();
+        }
+        catch
+        {
+            _lugares = [.. LugaresFallback];
+        }
     }
 
     private void HandleSuggestionSelected((string Cliente, string Proyecto) sugerencia)
@@ -172,9 +256,13 @@
 
     private Task<IEnumerable<string>> SearchClientesAsync(string text, CancellationToken token)
     {
+        var catalogoNombres = _catalogoClientes.Count > 0
+            ? _catalogoClientes.Select(c => c.Nombre)
+            : ClientesFallback.AsEnumerable();
+
         var opciones = _sugerenciasRecientes
             .Select(s => s.Cliente)
-            .Concat(Clientes)
+            .Concat(catalogoNombres)
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
         if (string.IsNullOrWhiteSpace(text))
@@ -188,19 +276,32 @@
     {
         IEnumerable<string> opciones;
 
-        if (!string.IsNullOrWhiteSpace(model.Cliente))
-        {
-            var delCliente = _sugerenciasRecientes
+        var sugerenciasDelCliente = string.IsNullOrWhiteSpace(model.Cliente)
+            ? []
+            : _sugerenciasRecientes
                 .Where(s => s.Cliente.Equals(model.Cliente, StringComparison.OrdinalIgnoreCase))
                 .Select(s => s.Proyecto)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            opciones = delCliente.Count > 0 ? delCliente : Proyectos;
+        if (!string.IsNullOrWhiteSpace(model.Cliente))
+        {
+            var entrada = _catalogoClientes
+                .FirstOrDefault(c => c.Nombre.Equals(model.Cliente, StringComparison.OrdinalIgnoreCase));
+
+            var proyectosBase = entrada is not null
+                ? entrada.ProyectosActivos.AsEnumerable()
+                : (sugerenciasDelCliente.Count > 0 ? sugerenciasDelCliente : ProyectosFallback.AsEnumerable());
+
+            opciones = sugerenciasDelCliente
+                .Concat(proyectosBase)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
         }
         else
         {
-            opciones = Proyectos;
+            opciones = _catalogoClientes.Count > 0
+                ? _catalogoClientes.SelectMany(c => c.ProyectosActivos).Distinct(StringComparer.OrdinalIgnoreCase)
+                : ProyectosFallback.AsEnumerable();
         }
 
         if (!string.IsNullOrWhiteSpace(text))
@@ -271,10 +372,10 @@
                  aria-labelledby="modalidad-label-@turnoId"
                  aria-describedby="modalidad-error-@turnoId"
                  style="display:flex;gap:6px;flex-wrap:wrap;">
-                @foreach (var m in Modalidades)
+                @foreach (var m in _modalidades)
                 {
                     var isSelected = model.Modalidad == m;
-                    var isFirst = m == Modalidades[0];
+                    var isFirst = _modalidades.Count > 0 && m == _modalidades[0];
                     var tabIdx = isSelected || (string.IsNullOrWhiteSpace(model.Modalidad) && isFirst) ? 0 : -1;
                     <MudButton Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
                                Color="Color.Primary"
@@ -297,7 +398,7 @@
         </MudItem>
         <MudItem xs="12" md="6">
             <MudSelect T="string" Label="Recurso" Variant="Variant.Outlined" @bind-Value="model.Recurso" Required="true" RequiredError="El recurso es requerido.">
-                @foreach (var recurso in Recursos)
+                @foreach (var recurso in _recursos)
                 {
                     <MudSelectItem Value="@recurso">@recurso</MudSelectItem>
                 }
@@ -305,7 +406,7 @@
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="string" Label="Lugar" Variant="Variant.Outlined" @bind-Value="model.Lugar" Required="true" RequiredError="El lugar es requerido.">
-                @foreach (var lugar in Lugares)
+                @foreach (var lugar in _lugares)
                 {
                     <MudSelectItem Value="@lugar">@lugar</MudSelectItem>
                 }
@@ -324,13 +425,13 @@
 
     private void HandleModalidadKey(KeyboardEventArgs e, ShiftFormModel model)
     {
-        if (e.Key is not ("ArrowLeft" or "ArrowRight" or "ArrowUp" or "ArrowDown"))
+        if (e.Key is not ("ArrowLeft" or "ArrowRight" or "ArrowUp" or "ArrowDown") || _modalidades.Count == 0)
             return;
-        var current = Array.IndexOf(Modalidades, model.Modalidad ?? Modalidades[0]);
+        var current = _modalidades.IndexOf(model.Modalidad ?? _modalidades[0]);
         if (current < 0) current = 0;
         model.Modalidad = e.Key is "ArrowRight" or "ArrowDown"
-            ? Modalidades[(current + 1) % Modalidades.Length]
-            : Modalidades[(current - 1 + Modalidades.Length) % Modalidades.Length];
+            ? _modalidades[(current + 1) % _modalidades.Count]
+            : _modalidades[(current - 1 + _modalidades.Count) % _modalidades.Count];
         StateHasChanged();
     }
 
@@ -342,12 +443,13 @@
     private bool CanSave(ShiftFormModel model, bool formIsValid) =>
         formIsValid &&
         _fecha.HasValue &&
+        _dateAvailability != DateAvailability.OutOfWindow &&
         model.HoraEntrada.HasValue &&
         model.HoraSalida.HasValue &&
         !IsInvalidTimeRange(model) &&
         !string.IsNullOrWhiteSpace(model.Modalidad);
 
-    private void HandleDateChanged(DateTime? value)
+    private void HandleDateSelected((DateTime? Date, DateAvailability Availability) selection)
     {
         _amGuardado = false;
         _pmGuardado = false;
@@ -355,8 +457,42 @@
         _pmResponse = null;
         _bannerVisible = false;
         _activeTurnoIndex = 0;
-        _fecha = value;
+        _fecha = selection.Date;
         _errorMessage = null;
+        _dateAvailability = selection.Availability;
+        _excepcionEnviada = false;
+    }
+
+    private async Task HandleExceptionRequested(DateOnly fecha)
+    {
+        var parameters = new DialogParameters<KpgExceptionDialog>
+        {
+            { x => x.Fecha, fecha }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgExceptionDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: string justificacion }
+            && !string.IsNullOrWhiteSpace(justificacion))
+        {
+            try
+            {
+                await SolicitudExcepcionRepository.CreateAsync(
+                    new CreateSolicitudExcepcionRequest(fecha, justificacion));
+                _excepcionEnviada = true;
+                _excepcionFecha = fecha;
+            }
+            catch
+            {
+                _errorMessage = "No fue posible enviar la solicitud de excepción. Intente nuevamente.";
+            }
+        }
     }
 
     private async Task SaveAsync(TurnoRegistro turno)

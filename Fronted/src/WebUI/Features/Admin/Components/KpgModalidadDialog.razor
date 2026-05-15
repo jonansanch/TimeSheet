@@ -1,0 +1,64 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Category" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_modalidad is null ? "Nueva Modalidad" : "Editar Modalidad")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string"
+                          Label="Nombre"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_nombre"
+                          MaxLength="100"
+                          Required="true"
+                          RequiredError="El nombre es requerido."
+                          aria-label="Nombre de la modalidad" />
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ModalidadResponse? Modalidad { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private ModalidadResponse? _modalidad;
+    private string _nombre = string.Empty;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        _modalidad = Modalidad;
+        _nombre = Modalidad?.Nombre ?? string.Empty;
+        _errorMessage = ErrorMessage;
+    }
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_nombre)
+        && (_modalidad is null || _nombre.Trim() != _modalidad.Nombre);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (_modalidad is null)
+            MudDialog.Close(DialogResult.Ok(new CreateModalidadRequest(_nombre.Trim())));
+        else
+            MudDialog.Close(DialogResult.Ok(new UpdateModalidadRequest(_nombre.Trim())));
+    }
+}

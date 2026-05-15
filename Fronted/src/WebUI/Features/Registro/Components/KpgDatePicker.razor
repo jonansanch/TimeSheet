@@ -1,0 +1,50 @@
+<MudDatePicker Label="@Label"
+               Variant="Variant.Outlined"
+               Date="@Date"
+               DateChanged="HandleDateChanged"
+               DateFormat="dd/MM/yyyy"
+               AdditionalDateClassesFunc="GetDateClass"
+               MaxDate="DateTime.Today"
+               Required="true"
+               RequiredError="La fecha es requerida." />
+
+@code {
+    [Parameter] public string Label { get; set; } = "Fecha";
+    [Parameter] public int WindowDays { get; set; } = 3;
+    [Parameter] public DateTime? Date { get; set; }
+    [Parameter] public EventCallback<(DateTime? Date, DateAvailability Availability)> OnDateSelected { get; set; }
+    [Parameter] public EventCallback<DateOnly> OnExceptionRequested { get; set; }
+
+    private string GetDateClass(DateTime date)
+    {
+        var d = DateOnly.FromDateTime(date);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var earliest = BusinessDayCalculator.GetEarliestAllowedDate(today, WindowDays);
+        return BusinessDayCalculator.GetAvailability(d, today, earliest) switch
+        {
+            DateAvailability.Available   => "kpg-date-available",
+            DateAvailability.Retroactive => "kpg-date-retroactive",
+            DateAvailability.OutOfWindow => "kpg-date-blocked",
+            _                            => string.Empty
+        };
+    }
+
+    private async Task HandleDateChanged(DateTime? value)
+    {
+        if (value is null)
+        {
+            await OnDateSelected.InvokeAsync((null, DateAvailability.Available));
+            return;
+        }
+
+        var d = DateOnly.FromDateTime(value.Value);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var earliest = BusinessDayCalculator.GetEarliestAllowedDate(today, WindowDays);
+        var availability = BusinessDayCalculator.GetAvailability(d, today, earliest);
+
+        if (availability == DateAvailability.OutOfWindow)
+            await OnExceptionRequested.InvokeAsync(d);
+        else
+            await OnDateSelected.InvokeAsync((value, availability));
+    }
+}

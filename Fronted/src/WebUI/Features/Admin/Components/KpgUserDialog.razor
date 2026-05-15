@@ -1,0 +1,96 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">Nuevo usuario</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+            }
+
+            <MudTextField @ref="_emailField"
+                          T="string"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_email"
+                          Required="true"
+                          RequiredError="El email es requerido."
+                          InputType="InputType.Email"
+                          autocomplete="off"
+                          aria-label="Email del usuario" />
+
+            <MudTextField T="string"
+                          Label="Contraseña temporal"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_password"
+                          Required="true"
+                          RequiredError="La contraseña es requerida."
+                          InputType="InputType.Password"
+                          autocomplete="new-password"
+                          HelperText="Minimo 6 caracteres con mayuscula, minuscula, numero y simbolo. Ejemplo: Empleado1234!"
+                          aria-label="Contraseña temporal" />
+
+            <MudSelect T="string"
+                       Label="Rol inicial"
+                       Variant="Variant.Outlined"
+                       @bind-Value="_role"
+                       Required="true"
+                       RequiredError="El rol es requerido."
+                       aria-label="Rol inicial">
+                @foreach (var role in RolesDisponibles)
+                {
+                    <MudSelectItem Value="@role">@role</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Crear
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private MudTextField<string> _emailField = default!;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string _role = Roles.Empleado;
+
+    private static readonly string[] RolesDisponibles = [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_email)
+        && _email.Contains('@')
+        && PasswordCumplePolitica(_password)
+        && !string.IsNullOrWhiteSpace(_role);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await _emailField.FocusAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(new CreateUserRequest(_email.Trim(), _password, _role)));
+
+    private static bool PasswordCumplePolitica(string password) =>
+        password.Length >= 6
+        && password.Any(char.IsUpper)
+        && password.Any(char.IsLower)
+        && password.Any(char.IsDigit)
+        && password.Any(ch => !char.IsLetterOrDigit(ch));
+}

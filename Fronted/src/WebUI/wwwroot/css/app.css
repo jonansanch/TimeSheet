@@ -161,3 +161,20 @@ code {
     outline-offset: 3px;
     border-radius: 4px;
 }
+
+/* KpgDatePicker — semáforo de ventana retroactiva */
+.mud-picker-calendar-day.kpg-date-available {
+    background-color: rgba(46, 125, 50, 0.15);
+    color: #2E7D32 !important;
+    font-weight: 600;
+}
+
+.mud-picker-calendar-day.kpg-date-retroactive {
+    background-color: rgba(255, 211, 0, 0.25);
+    color: #856500 !important;
+}
+
+.mud-picker-calendar-day.kpg-date-blocked {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #9E9E9E !important;
+}

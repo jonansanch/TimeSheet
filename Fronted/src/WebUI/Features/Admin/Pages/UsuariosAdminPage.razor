@@ -1,0 +1,335 @@
+@page "/admin/usuarios"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IUserAdminRepository Repo
+@inject IDialogService DialogService
+
+<PageTitle>Usuarios - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+                Usuarios
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Administra cuentas, estado de acceso y altas de colaboradores.
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="AbrirCrearAsync">
+            Nuevo
+        </MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
+        }
+
+        @if (_usuarios.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.People">
+                No hay usuarios registrados.
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="UserAdminResponse"
+                         Items="_usuarios"
+                         Dense="true"
+                         Filterable="false"
+                         SortMode="SortMode.Single"
+                         RowsPerPage="25">
+                <Columns>
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <PropertyColumn Property="x => x.Role" Title="Rol" />
+                    <TemplateColumn Title="Estado" Sortable="true">
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="@(context.Item.IsActive ? Color.Success : Color.Default)">
+                                @(context.Item.IsActive ? "Activo" : "Inactivo")
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Desactivado" Sortable="true">
+                        <CellTemplate>
+                            @(context.Item.DeactivatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Acciones" Sortable="false">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.ManageAccounts"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           aria-label="Cambiar rol"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AbrirCambiarRolAsync(context.Item))" />
+                            @if (context.Item.IsActive)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Block"
+                                               Color="Color.Warning"
+                                               Size="Size.Small"
+                                               aria-label="Desactivar usuario"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => ConfirmarDesactivarAsync(context.Item))" />
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               aria-label="Activar usuario"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => ActivarAsync(context.Item))" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           aria-label="Eliminar usuario"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    }
+
+    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+        <MessageContent>@_msgBoxContent</MessageContent>
+        <YesButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+        </YesButton>
+    </MudMessageBox>
+</MudStack>
+
+@code {
+    private List<UserAdminResponse> _usuarios = [];
+    private bool _isLoading = true;
+    private bool _isProcesando;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private MudMessageBox? _msgBox;
+    private string _msgBoxContent = string.Empty;
+    private Color _msgBoxColor = Color.Primary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var page = await Repo.GetUsersAsync(1, 100, "email", false);
+            _usuarios = page.Items;
+        }
+        catch
+        {
+            _errorMessage = "No fue posible cargar los usuarios. Intente nuevamente.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task AbrirCrearAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgUserDialog>("Nuevo usuario", options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateUserRequest request)
+            return;
+
+        _isProcesando = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            var (ok, user, error) = await Repo.CreateAsync(request);
+            if (ok && user is not null)
+            {
+                _usuarios.Add(user);
+                _usuarios = _usuarios.OrderBy(u => u.Email).ToList();
+                _successMessage = $"Usuario {user.Email} creado.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible crear el usuario.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirCambiarRolAsync(UserAdminResponse item)
+    {
+        var parameters = new DialogParameters<KpgUserRoleDialog>
+        {
+            { x => x.Email, item.Email },
+            { x => x.CurrentRole, item.Role }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgUserRoleDialog>("Cambiar rol", parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not ChangeUserRoleRequest request)
+            return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, user, error) = await Repo.ChangeRoleAsync(item.Id, request);
+            if (ok && user is not null)
+            {
+                ReemplazarUsuario(item, user);
+                _successMessage = $"Rol de {item.Email} actualizado a {user.Role}.";
+            }
+            else
+            {
+                _errorMessage = error ?? "No fue posible actualizar el rol.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ActivarAsync(UserAdminResponse item)
+    {
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, user) = await Repo.ActivateAsync(item.Id);
+            if (ok && user is not null)
+            {
+                ReemplazarUsuario(item, user);
+                _successMessage = $"Usuario {item.Email} activado.";
+            }
+            else
+            {
+                _errorMessage = "No fue posible activar el usuario.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ConfirmarDesactivarAsync(UserAdminResponse item)
+    {
+        _msgBoxContent = $"Desactivar el acceso de {item.Email}?";
+        _msgBoxColor = Color.Warning;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, user) = await Repo.DeactivateAsync(item.Id);
+            if (ok && user is not null)
+            {
+                ReemplazarUsuario(item, user);
+                _successMessage = $"Usuario {item.Email} desactivado.";
+            }
+            else
+            {
+                _errorMessage = "No fue posible desactivar el usuario.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task ConfirmarEliminarAsync(UserAdminResponse item)
+    {
+        _msgBoxContent = $"Eliminar la cuenta de {item.Email}? Si tiene historia, se conservara inactiva.";
+        _msgBoxColor = Color.Error;
+        StateHasChanged();
+
+        var confirmed = await _msgBox!.ShowAsync();
+        if (confirmed != true) return;
+
+        _isProcesando = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var (ok, result) = await Repo.DeleteAsync(item.Id);
+            if (ok && result is not null)
+            {
+                if (result.WasHardDeleted)
+                {
+                    _usuarios.Remove(item);
+                    _successMessage = $"Usuario {item.Email} eliminado.";
+                }
+                else
+                {
+                    ReemplazarUsuario(item, item with { IsActive = false, DeactivatedAt = DateTimeOffset.Now });
+                    _successMessage = $"Usuario {item.Email} conservado como inactivo por trazabilidad.";
+                }
+            }
+            else
+            {
+                _errorMessage = "No fue posible eliminar el usuario.";
+            }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private void ReemplazarUsuario(UserAdminResponse oldItem, UserAdminResponse newItem)
+    {
+        var idx = _usuarios.IndexOf(oldItem);
+        if (idx >= 0)
+            _usuarios[idx] = newItem;
+    }
+}

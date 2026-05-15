@@ -85,10 +85,66 @@ public class DeleteRegistroHorasCommandHandlerTests
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
+    [Fact]
+    public async Task Handle_WhenAdminEliminaRegistroAjeno_Succeeds()
+    {
+        await using var context = CreateContext();
+        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 14));
+        context.RegistrosHoras.Add(registro);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Admin));
+        await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
+
+        var deleted = await context.RegistrosHoras.FindAsync(registro.Id);
+        deleted.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenSupervisorEliminaRegistroAjeno_Succeeds()
+    {
+        await using var context = CreateContext();
+        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 14));
+        context.RegistrosHoras.Add(registro);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Supervisor));
+        await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
+
+        var deleted = await context.RegistrosHoras.FindAsync(registro.Id);
+        deleted.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenEmpleadoEliminaRegistroAjeno_ThrowsForbiddenAccessException()
+    {
+        await using var context = CreateContext();
+        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 14));
+        context.RegistrosHoras.Add(registro);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Empleado));
+        var act = () => handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ForbiddenAccessException>();
+    }
+
     private sealed class TestUser : IUser
     {
         public TestUser(string id) => Id = id;
         public string? Id { get; }
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
+    }
+
+    private sealed class TestUserWithRol : IUser
+    {
+        public TestUserWithRol(string id, string rol)
+        {
+            Id = id;
+            Roles = [rol];
+        }
+
+        public string? Id { get; }
+        public List<string>? Roles { get; }
     }
 }

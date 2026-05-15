@@ -1,0 +1,64 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_cliente is null ? "Nuevo Cliente" : "Editar Cliente")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string"
+                          Label="Nombre"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_nombre"
+                          MaxLength="200"
+                          Required="true"
+                          RequiredError="El nombre es requerido."
+                          aria-label="Nombre del cliente" />
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ClienteResponse? Cliente { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private ClienteResponse? _cliente;
+    private string _nombre = string.Empty;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        _cliente = Cliente;
+        _nombre = Cliente?.Nombre ?? string.Empty;
+        _errorMessage = ErrorMessage;
+    }
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_nombre)
+        && (_cliente is null || _nombre.Trim() != _cliente.Nombre);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (_cliente is null)
+            MudDialog.Close(DialogResult.Ok(new CreateClienteRequest(_nombre.Trim())));
+        else
+            MudDialog.Close(DialogResult.Ok(new UpdateClienteRequest(_nombre.Trim())));
+    }
+}

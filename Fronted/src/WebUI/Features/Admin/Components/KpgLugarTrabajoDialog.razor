@@ -1,0 +1,64 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_lugar is null ? "Nuevo Lugar de Trabajo" : "Editar Lugar de Trabajo")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string"
+                          Label="Nombre"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_nombre"
+                          MaxLength="200"
+                          Required="true"
+                          RequiredError="El nombre es requerido."
+                          aria-label="Nombre del lugar de trabajo" />
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            Guardar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public LugarTrabajoResponse? Lugar { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private LugarTrabajoResponse? _lugar;
+    private string _nombre = string.Empty;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        _lugar = Lugar;
+        _nombre = Lugar?.Nombre ?? string.Empty;
+        _errorMessage = ErrorMessage;
+    }
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_nombre)
+        && (_lugar is null || _nombre.Trim() != _lugar.Nombre);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (_lugar is null)
+            MudDialog.Close(DialogResult.Ok(new CreateLugarTrabajoRequest(_nombre.Trim())));
+        else
+            MudDialog.Close(DialogResult.Ok(new UpdateLugarTrabajoRequest(_nombre.Trim())));
+    }
+}

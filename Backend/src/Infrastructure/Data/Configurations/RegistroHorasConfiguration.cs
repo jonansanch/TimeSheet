@@ -23,8 +23,8 @@ public class RegistroHorasConfiguration : IEntityTypeConfiguration<RegistroHoras
         builder.Property(r => r.Recurso).HasMaxLength(100).IsRequired();
         builder.Property(r => r.Descripcion).HasMaxLength(1000).IsRequired();
         builder.Property(r => r.Lugar).HasMaxLength(200).IsRequired();
+        builder.Property(r => r.EsRetroactivo).IsRequired().HasDefaultValue(false);
 
-        builder.HasIndex(r => new { r.UserId, r.FechaRegistro, r.Turno }).IsUnique();
         builder.HasIndex(r => r.FechaRegistro);
     }
 }

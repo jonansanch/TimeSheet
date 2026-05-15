@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using KPG.Timesheet.Domain.Exceptions;
 using ForbiddenAccessException = KPG.Timesheet.Application.Common.Exceptions.ForbiddenAccessException;
 using NotFoundException = KPG.Timesheet.Application.Common.Exceptions.NotFoundException;
 using ValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
@@ -21,6 +22,13 @@ public class ProblemDetailsExceptionHandler : IExceptionHandler
             ValidationException ve => (StatusCodes.Status400BadRequest, (ProblemDetails)new ValidationProblemDetails(ve.Errors)
             {
                 Status = StatusCodes.Status400BadRequest,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+            }),
+            DomainRuleException dre => (StatusCodes.Status400BadRequest, new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Regla de negocio invalida.",
+                Detail = dre.Message,
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
             }),
             NotFoundException ne => (StatusCodes.Status404NotFound, new ProblemDetails

@@ -1,4 +1,3 @@
-using KPG.Timesheet.Application.Common.Exceptions;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
@@ -6,18 +5,19 @@ using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
 using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using ValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
 
 public class SupervisorRegistroHorasTests
 {
+    private static readonly DateOnly TestToday = new(2026, 5, 14);
+
     [Fact]
     public async Task Handle_WhenSupervisorCreatesRegistro_ShouldPersistWithSupervisorUserId()
     {
-        await using var context = CreateContext();
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"));
+        await using var context = CreateContextWithVentana(3);
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday));
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 
@@ -29,21 +29,21 @@ public class SupervisorRegistroHorasTests
     }
 
     [Fact]
-    public async Task Handle_WhenSupervisorHasDuplicateRegistro_ShouldThrowValidationException()
+    public async Task Handle_WhenSupervisorCreatesMultipleRegistrosSameTurno_ShouldAllowAll()
     {
-        await using var context = CreateContext();
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"));
+        await using var context = CreateContextWithVentana(3);
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday));
 
         await handler.Handle(ValidCommand(), CancellationToken.None);
-        var act = () => handler.Handle(ValidCommand(), CancellationToken.None);
+        await handler.Handle(ValidCommand(), CancellationToken.None);
 
-        await act.Should().ThrowAsync<ValidationException>();
+        context.RegistrosHoras.Count(r => r.UserId == "supervisor-1" && r.Turno == TurnoRegistro.AM).Should().Be(2);
     }
 
     [Fact]
     public async Task Handle_WhenSupervisorQueriesHistorial_ShouldReturnOnlyOwnRecords()
     {
-        await using var context = CreateContext();
+        await using var context = CreateContextWithVentana(3);
         context.RegistrosHoras.Add(MakeRegistro("supervisor-1", new DateOnly(2026, 5, 10)));
         context.RegistrosHoras.Add(MakeRegistro("empleado-1", new DateOnly(2026, 5, 11)));
         await context.SaveChangesAsync(CancellationToken.None);
@@ -58,7 +58,7 @@ public class SupervisorRegistroHorasTests
     [Fact]
     public async Task Handle_WhenSupervisorDeletesOwnRegistro_ShouldRemoveIt()
     {
-        await using var context = CreateContext();
+        await using var context = CreateContextWithVentana(3);
         var registro = MakeRegistro("supervisor-1", new DateOnly(2026, 5, 10));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -70,25 +70,33 @@ public class SupervisorRegistroHorasTests
     }
 
     [Fact]
-    public async Task Handle_WhenSupervisorDeletesOtherUserRegistro_ShouldThrowForbiddenAccessException()
+    public async Task Handle_WhenSupervisorDeletesOtherUserRegistro_ShouldSucceed()
     {
-        await using var context = CreateContext();
+        // Story 3.5: Supervisor tiene permiso para eliminar registros ajenos
+        await using var context = CreateContextWithVentana(3);
         var registro = MakeRegistro("empleado-1", new DateOnly(2026, 5, 10));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new DeleteRegistroHorasCommandHandler(context, new TestUser("supervisor-1"));
-        var act = () => handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
+        await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
+        context.RegistrosHoras.Should().BeEmpty();
     }
 
-    private static ApplicationDbContext CreateContext()
+    private static ApplicationDbContext CreateContextWithVentana(int dias)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        return new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options);
+        context.ParametrosSistema.Add(new KPG.Timesheet.Domain.Entities.ParametroSistema
+        {
+            Clave = KPG.Timesheet.Domain.Constants.ParametrosSistema.VentanaRetroactividad,
+            Valor = dias.ToString()
+        });
+        context.SaveChanges();
+        return context;
     }
 
     private static RegistroHorasEntity MakeRegistro(string userId, DateOnly fecha,
@@ -107,5 +115,11 @@ public class SupervisorRegistroHorasTests
         public TestUser(string id) => Id = id;
         public string? Id { get; }
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Supervisor];
+    }
+
+    private sealed class TestClock : IClock
+    {
+        public TestClock(DateOnly today) => Today = today;
+        public DateOnly Today { get; }
     }
 }

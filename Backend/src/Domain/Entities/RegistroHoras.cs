@@ -1,4 +1,5 @@
 using KPG.Timesheet.Domain.Enums;
+using KPG.Timesheet.Domain.Exceptions;
 
 namespace KPG.Timesheet.Domain.Entities;
 
@@ -17,7 +18,8 @@ public class RegistroHoras : BaseAuditableEntity
         string modalidad,
         string recurso,
         string descripcion,
-        string lugar)
+        string lugar,
+        bool esRetroactivo = false)
     {
         ThrowIfBlank(userId, nameof(userId));
         ThrowIfBlank(cliente, nameof(cliente));
@@ -28,7 +30,7 @@ public class RegistroHoras : BaseAuditableEntity
         ThrowIfBlank(lugar, nameof(lugar));
 
         if (horaSalida <= horaEntrada)
-            throw new ArgumentException("La hora de salida debe ser mayor que la hora de entrada.", nameof(horaSalida));
+            throw new DomainRuleException("La hora de salida debe ser mayor que la hora de entrada.");
 
         UserId = userId;
         FechaRegistro = fechaRegistro;
@@ -41,6 +43,7 @@ public class RegistroHoras : BaseAuditableEntity
         Recurso = recurso.Trim();
         Descripcion = descripcion.Trim();
         Lugar = lugar.Trim();
+        EsRetroactivo = esRetroactivo;
     }
 
     public string UserId { get; private set; } = string.Empty;
@@ -54,10 +57,19 @@ public class RegistroHoras : BaseAuditableEntity
     public string Recurso { get; private set; } = string.Empty;
     public string Descripcion { get; private set; } = string.Empty;
     public string Lugar { get; private set; } = string.Empty;
+    public bool EsRetroactivo { get; private set; }
+
+    public void UpdateDescripcion(string nuevaDescripcion)
+    {
+        ThrowIfBlank(nuevaDescripcion, nameof(nuevaDescripcion));
+        if (nuevaDescripcion.Length > 1000)
+            throw new DomainRuleException("La descripcion no puede superar 1000 caracteres.");
+        Descripcion = nuevaDescripcion.Trim();
+    }
 
     private static void ThrowIfBlank(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("El valor es requerido.", parameterName);
+            throw new DomainRuleException("El valor es requerido.");
     }
 }

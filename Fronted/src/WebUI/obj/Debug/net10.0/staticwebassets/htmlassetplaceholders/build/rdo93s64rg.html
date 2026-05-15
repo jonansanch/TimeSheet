@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KPG Timesheet</title>
+    <base href="/" />
+    <link href="_framework/dotnet.i43wlhghit.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-0jAPD7pglac7U8bM3jvcD3Aj7A+LnILOM15ZbYmKnCE=" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;500&display=swap" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="KPG.Timesheet.WebUI.styles.css" rel="stylesheet" />
+    <script type="importmap">{
+  "imports": {
+    "./_content/Blazor-ApexCharts/js/apexcharts.esm.js": "./_content/Blazor-ApexCharts/js/apexcharts.esm.h882x6wr7v.js",
+    "./_content/Blazor-ApexCharts/js/blazor-apexcharts.js": "./_content/Blazor-ApexCharts/js/blazor-apexcharts.zql1jd3hot.js",
+    "./_content/MudBlazor/MudBlazor.min.js": "./_content/MudBlazor/MudBlazor.min.gtd3sm4n1q.js",
+    "./_framework/Microsoft.DotNet.HotReload.WebAssembly.Browser.lib.module.js": "./_framework/Microsoft.DotNet.HotReload.WebAssembly.Browser.99zm1jdh75.lib.module.js",
+    "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.zxhwjtv6sc.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.i43wlhghit.js",
+    "./_framework/dotnet.native.js": "./_framework/dotnet.native.rjbmzc4jpg.js",
+    "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.r2kbxkuujc.js",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.min.js": "./lib/bootstrap/dist/js/bootstrap.bundle.min.493y06b0oq.js",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.js": "./lib/bootstrap/dist/js/bootstrap.bundle.vpl3cor3y8.js",
+    "./lib/bootstrap/dist/js/bootstrap.esm.min.js": "./lib/bootstrap/dist/js/bootstrap.esm.min.jj8uyg4cgr.js",
+    "./lib/bootstrap/dist/js/bootstrap.esm.js": "./lib/bootstrap/dist/js/bootstrap.esm.tvzo76q7ay.js",
+    "./lib/bootstrap/dist/js/bootstrap.js": "./lib/bootstrap/dist/js/bootstrap.m3in5dwigm.js",
+    "./lib/bootstrap/dist/js/bootstrap.min.js": "./lib/bootstrap/dist/js/bootstrap.min.63fj8s7r0e.js"
+  },
+  "scopes": {},
+  "integrity": {
+    "./_content/Blazor-ApexCharts/js/apexcharts.esm.h882x6wr7v.js": "sha256-Me/0pVM/DeNNyCbOqiYTyK/B2Xdev4YSA0cw3FI0I0g=",
+    "./_content/Blazor-ApexCharts/js/apexcharts.esm.js": "sha256-Me/0pVM/DeNNyCbOqiYTyK/B2Xdev4YSA0cw3FI0I0g=",
+    "./_content/Blazor-ApexCharts/js/blazor-apexcharts.js": "sha256-pSTiNp0EHiK1R8oo+Fxk/lg9ZZRfmqmR/z89YjJ2SXU=",
+    "./_content/Blazor-ApexCharts/js/blazor-apexcharts.zql1jd3hot.js": "sha256-pSTiNp0EHiK1R8oo+Fxk/lg9ZZRfmqmR/z89YjJ2SXU=",
+    "./_content/MudBlazor/MudBlazor.min.gtd3sm4n1q.js": "sha256-TOPYwKltorv5iM1JqqzJayZWZx7LFnfSq2AhkWFNwrg=",
+    "./_content/MudBlazor/MudBlazor.min.js": "sha256-TOPYwKltorv5iM1JqqzJayZWZx7LFnfSq2AhkWFNwrg=",
+    "./_framework/Microsoft.DotNet.HotReload.WebAssembly.Browser.99zm1jdh75.lib.module.js": "sha256-A8e6zZwhOqf7lDQqbbCYcAUv4wGE9aQxOo4WyYxR//0=",
+    "./_framework/Microsoft.DotNet.HotReload.WebAssembly.Browser.lib.module.js": "sha256-A8e6zZwhOqf7lDQqbbCYcAUv4wGE9aQxOo4WyYxR//0=",
+    "./_framework/blazor.webassembly.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
+    "./_framework/blazor.webassembly.zxhwjtv6sc.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
+    "./_framework/dotnet.i43wlhghit.js": "sha256-0jAPD7pglac7U8bM3jvcD3Aj7A+LnILOM15ZbYmKnCE=",
+    "./_framework/dotnet.js": "sha256-0jAPD7pglac7U8bM3jvcD3Aj7A+LnILOM15ZbYmKnCE=",
+    "./_framework/dotnet.native.js": "sha256-95bE510j3EADMNW2OKa/DMBhu8N632dl5HGeBfXNEf4=",
+    "./_framework/dotnet.native.rjbmzc4jpg.js": "sha256-95bE510j3EADMNW2OKa/DMBhu8N632dl5HGeBfXNEf4=",
+    "./_framework/dotnet.runtime.js": "sha256-YyudibIWETMKrLb+nAZdJ+xDY7HY6BWf6s32UAdcvCU=",
+    "./_framework/dotnet.runtime.r2kbxkuujc.js": "sha256-YyudibIWETMKrLb+nAZdJ+xDY7HY6BWf6s32UAdcvCU=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.js": "sha256-TRN3HEAp4oSe08eF40BHL2rF7U6i6jwDWKFnjdV5i8Y=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.min.493y06b0oq.js": "sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.min.js": "sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.vpl3cor3y8.js": "sha256-TRN3HEAp4oSe08eF40BHL2rF7U6i6jwDWKFnjdV5i8Y=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.js": "sha256-V5Xdos7LtFT/h3fFsCcdiNL4c4uaPm3I9zR8R6dGsO4=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.min.jj8uyg4cgr.js": "sha256-QZdFT1ZNdly4rmgUBtXmXFS9BU1FTa+sPe6h794sFRQ=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.min.js": "sha256-QZdFT1ZNdly4rmgUBtXmXFS9BU1FTa+sPe6h794sFRQ=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.tvzo76q7ay.js": "sha256-V5Xdos7LtFT/h3fFsCcdiNL4c4uaPm3I9zR8R6dGsO4=",
+    "./lib/bootstrap/dist/js/bootstrap.js": "sha256-YrT1R620xatdJbaXLTTytJFw9ifPcUfLyXugHtFHdvQ=",
+    "./lib/bootstrap/dist/js/bootstrap.m3in5dwigm.js": "sha256-YrT1R620xatdJbaXLTTytJFw9ifPcUfLyXugHtFHdvQ=",
+    "./lib/bootstrap/dist/js/bootstrap.min.63fj8s7r0e.js": "sha256-3gQJhtmj7YnV1fmtbVcnAV6eI4ws0Tr48bVZCThtCGQ=",
+    "./lib/bootstrap/dist/js/bootstrap.min.js": "sha256-3gQJhtmj7YnV1fmtbVcnAV6eI4ws0Tr48bVZCThtCGQ="
+  }
+}</script>
+</head>
+
+<body>
+    <div id="app">
+        <div id="kpg-loading">
+            <div class="kpg-loading-brand">
+                <svg class="kpg-loading-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#5BB8D4" width="48" height="48">
+                    <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.53 4.92.42-3.73 3.23L16.23 18z"/>
+                </svg>
+                <span class="kpg-brand-title">KPG Timesheet</span>
+            </div>
+            <p class="kpg-loading-text">Cargando KPG Timesheet...</p>
+            <div class="kpg-loading-bar-wrap">
+                <div class="kpg-loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Ocurrió un error inesperado.
+        <a href="." class="reload">Recargar</a>
+        <span class="dismiss">✕</span>
+    </div>
+    <script src="_framework/blazor.webassembly.zxhwjtv6sc.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+</body>
+
+</html>
