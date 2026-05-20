@@ -1,3 +1,4 @@
+using ApexCharts;
 using KPG.Timesheet.WebUI;
 using KPG.Timesheet.WebUI.Infrastructure.Repositories;
 using KPG.Timesheet.WebUI.Shared.Services;
@@ -16,6 +17,7 @@ var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
 
 builder.Services.AddMudServices();
+builder.Services.AddApexCharts();
 builder.Services.AddAuthorizationCore();
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();

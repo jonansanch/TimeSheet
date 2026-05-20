@@ -1,5 +1,16 @@
 namespace KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
 
+public record DistribucionHorasResponse(
+    DateOnly Desde,
+    DateOnly Hasta,
+    decimal TotalHorasEquipo,
+    List<DistribucionConsultorDto> Consultores);
+
+public record DistribucionConsultorDto(
+    string UserId,
+    string Nombre,
+    decimal TotalHoras);
+
 public record EstadoEquipoResponse(
     DateOnly Fecha,
     int TotalEmpleados,

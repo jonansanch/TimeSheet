@@ -1,31 +1,31 @@
 @page "/dashboard"
 @attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@using ApexCharts
+@using Color = MudBlazor.Color
+@using Size = MudBlazor.Size
 @inject IDashboardRepository Repo
 
 <PageTitle>Dashboard - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
+
+    {{!-- ── Encabezado ─────────────────────────────────────────────── --}}
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
         <div>
-            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-                Dashboard
-            </MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Estado diario del equipo
-            </MudText>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Dashboard</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Estado diario del equipo</MudText>
         </div>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudDatePicker Label="Fecha"
-                           Date="_fechaDate"
-                           DateChanged="OnFechaChangedAsync"
-                           MaxDate="DateTime.Today"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Style="max-width:180px;" />
-        </MudStack>
+        <MudDatePicker Label="Fecha"
+                       Date="_fechaDate"
+                       DateChanged="OnFechaChangedAsync"
+                       MaxDate="DateTime.Today"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Style="max-width:180px;" />
     </MudStack>
 
-    @if (_isLoading)
+    {{!-- ── Sección: Estado diario ─────────────────────────────────── --}}
+    @if (_isLoadingEstado)
     {
         <MudGrid>
             @for (var i = 0; i < 4; i++)
@@ -35,38 +35,30 @@
                 </MudItem>
             }
         </MudGrid>
-        <KpgTableSkeleton Rows="8" />
+        <KpgTableSkeleton Rows="6" />
     }
-    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    else if (!string.IsNullOrWhiteSpace(_errorEstado))
     {
-        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorEstado</MudAlert>
     }
     else if (_estado is not null)
     {
         <MudGrid>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Total empleados"
-                             Value="_estado.TotalEmpleados"
-                             Icon="@Icons.Material.Filled.People"
-                             Color="Color.Primary" />
+                <KpgStatCard Label="Total empleados" Value="_estado.TotalEmpleados"
+                             Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Completo"
-                             Value="_estado.TotalCompletos"
-                             Icon="@Icons.Material.Filled.CheckCircle"
-                             Color="Color.Success" />
+                <KpgStatCard Label="Completo" Value="_estado.TotalCompletos"
+                             Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Parcial"
-                             Value="_estado.TotalParciales"
-                             Icon="@Icons.Material.Filled.Pending"
-                             Color="Color.Warning" />
+                <KpgStatCard Label="Parcial" Value="_estado.TotalParciales"
+                             Icon="@Icons.Material.Filled.Pending" Color="Color.Warning" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Pendiente"
-                             Value="_estado.TotalPendientes"
-                             Icon="@Icons.Material.Filled.HourglassEmpty"
-                             Color="Color.Default" />
+                <KpgStatCard Label="Pendiente" Value="_estado.TotalPendientes"
+                             Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Default" />
             </MudItem>
         </MudGrid>
 
@@ -89,42 +81,181 @@
             </MudGrid>
         }
     }
+
+    <MudDivider />
+
+    {{!-- ── Sección: Distribución de horas ────────────────────────── --}}
+    <MudStack Spacing="2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.h6" Style="font-weight:600;">Distribución de horas</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" OverrideStyles="false">
+                    <MudButton Color="@(_periodo == Periodo.Hoy ? Color.Primary : Color.Default)"
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Hoy))">Hoy</MudButton>
+                    <MudButton Color="@(_periodo == Periodo.Semana ? Color.Primary : Color.Default)"
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Semana))">Esta semana</MudButton>
+                    <MudButton Color="@(_periodo == Periodo.Mes ? Color.Primary : Color.Default)"
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Mes))">Este mes</MudButton>
+                    <MudButton Color="@(_periodo == Periodo.Personalizado ? Color.Primary : Color.Default)"
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Personalizado))">Personalizado</MudButton>
+                </MudButtonGroup>
+                @if (_periodo == Periodo.Personalizado)
+                {
+                    <MudDateRangePicker DateRange="_rangoPersonalizado"
+                                        DateRangeChanged="OnRangoPersonalizadoChangedAsync"
+                                        MaxDate="DateTime.Today"
+                                        Variant="Variant.Outlined"
+                                        Margin="Margin.Dense"
+                                        Style="max-width:280px;" />
+                }
+            </MudStack>
+        </MudStack>
+
+        @if (_isLoadingDistribucion)
+        {
+            <MudSkeleton Width="100%" Height="300px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+        }
+        else if (!string.IsNullOrWhiteSpace(_errorDistribucion))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorDistribucion</MudAlert>
+        }
+        else if (_distribucion is not null)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Size="Size.Small" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Total equipo: <strong>@_distribucion.TotalHorasEquipo.ToString("F1") h</strong>
+                    (@_distribucion.Desde.ToString("dd/MM") – @_distribucion.Hasta.ToString("dd/MM/yyyy"))
+                </MudText>
+            </MudStack>
+
+            @if (_distribucion.Consultores.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No hay registros de horas en el período seleccionado.</MudAlert>
+            }
+            else
+            {
+                <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                    <ApexChart TItem="DistribucionConsultorDto"
+                               Title=""
+                               Options="_chartOptions"
+                               Height="@Math.Max(200, _distribucion.Consultores.Count * 48)">
+                        <ApexPointSeries TItem="DistribucionConsultorDto"
+                                         Items="_distribucion.Consultores"
+                                         Name="Horas"
+                                         XValue="@(e => e.Nombre)"
+                                         YValue="@(e => e.TotalHoras)"
+                                         SeriesType="SeriesType.Bar" />
+                    </ApexChart>
+                </MudPaper>
+            }
+        }
+    </MudStack>
+
 </MudStack>
 
 @code {
+    // ── Estado diario ────────────────────────────────────────────────
     private EstadoEquipoResponse? _estado;
-    private bool _isLoading = true;
-    private string _errorMessage = string.Empty;
+    private bool _isLoadingEstado = true;
+    private string _errorEstado = string.Empty;
     private DateOnly _fecha = DateOnly.FromDateTime(DateTime.Today);
     private DateTime? _fechaDate => _fecha.ToDateTime(TimeOnly.MinValue);
 
-    protected override async Task OnInitializedAsync() => await CargarAsync();
+    // ── Distribución de horas ────────────────────────────────────────
+    private DistribucionHorasResponse? _distribucion;
+    private bool _isLoadingDistribucion = true;
+    private string _errorDistribucion = string.Empty;
+    private Periodo _periodo = Periodo.Semana;
+    private DateRange _rangoPersonalizado = new(DateTime.Today.AddDays(-6), DateTime.Today);
+
+    private ApexChartOptions<DistribucionConsultorDto> _chartOptions = new()
+    {
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar { Horizontal = true, BorderRadius = 4 }
+        },
+        Xaxis = new XAxis { Title = new AxisTitle { Text = "Horas" } },
+        DataLabels = new DataLabels { Enabled = true },
+        Legend = new Legend { Show = false },
+        Grid = new Grid { BorderColor = "#e0e0e0" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarEstadoAsync(), CargarDistribucionAsync());
+    }
 
     private async Task OnFechaChangedAsync(DateTime? date)
     {
         if (date is null) return;
         _fecha = DateOnly.FromDateTime(date.Value);
-        await CargarAsync();
+        await CargarEstadoAsync();
     }
 
-    private async Task CargarAsync()
+    private async Task CambiarPeriodoAsync(Periodo periodo)
     {
-        _isLoading = true;
-        _errorMessage = string.Empty;
+        _periodo = periodo;
+        await CargarDistribucionAsync();
+    }
+
+    private async Task OnRangoPersonalizadoChangedAsync(DateRange rango)
+    {
+        _rangoPersonalizado = rango;
+        if (rango.Start.HasValue && rango.End.HasValue)
+            await CargarDistribucionAsync();
+    }
+
+    private async Task CargarEstadoAsync()
+    {
+        _isLoadingEstado = true;
+        _errorEstado = string.Empty;
         StateHasChanged();
         try
         {
             _estado = await Repo.GetEstadoEquipoAsync(_fecha);
-            if (_estado is null)
-                _errorMessage = "No se pudo obtener el estado del equipo.";
+            if (_estado is null) _errorEstado = "No se pudo obtener el estado del equipo.";
         }
-        catch
-        {
-            _errorMessage = "Error al comunicarse con el servidor.";
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        catch { _errorEstado = "Error al comunicarse con el servidor."; }
+        finally { _isLoadingEstado = false; }
     }
+
+    private async Task CargarDistribucionAsync()
+    {
+        _isLoadingDistribucion = true;
+        _errorDistribucion = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var (desde, hasta) = ObtenerRango();
+            _distribucion = await Repo.GetDistribucionHorasAsync(desde, hasta);
+            if (_distribucion is null) _errorDistribucion = "No se pudo obtener la distribución de horas.";
+        }
+        catch { _errorDistribucion = "Error al comunicarse con el servidor."; }
+        finally { _isLoadingDistribucion = false; }
+    }
+
+    private (DateOnly desde, DateOnly hasta) ObtenerRango()
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        return _periodo switch
+        {
+            Periodo.Hoy          => (hoy, hoy),
+            Periodo.Semana       => (InicioSemana(hoy), hoy),
+            Periodo.Mes          => (new DateOnly(hoy.Year, hoy.Month, 1), hoy),
+            Periodo.Personalizado => (
+                _rangoPersonalizado.Start.HasValue ? DateOnly.FromDateTime(_rangoPersonalizado.Start.Value) : hoy.AddDays(-6),
+                _rangoPersonalizado.End.HasValue   ? DateOnly.FromDateTime(_rangoPersonalizado.End.Value)   : hoy),
+            _ => (hoy, hoy)
+        };
+    }
+
+    private static DateOnly InicioSemana(DateOnly fecha)
+    {
+        var diff = (int)fecha.DayOfWeek - (int)DayOfWeek.Monday;
+        if (diff < 0) diff += 7;
+        return fecha.AddDays(-diff);
+    }
+
+    private enum Periodo { Hoy, Semana, Mes, Personalizado }
 }
