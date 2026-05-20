@@ -7,7 +7,8 @@
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
-            <MudTextField T="string"
+            <MudTextField @ref="_nombreField"
+                          T="string"
                           Label="Nombre"
                           Variant="Variant.Outlined"
                           @bind-Value="_nombre"
@@ -37,9 +38,16 @@
     [Parameter] public EmpleadoResponse? Empleado { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
 
+    private MudTextField<string> _nombreField = default!;
     private EmpleadoResponse? _empleado;
     private string _nombre = string.Empty;
     private string? _errorMessage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await _nombreField.FocusAsync();
+    }
 
     protected override void OnInitialized()
     {

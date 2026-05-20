@@ -1,0 +1,10 @@
+<MudStack Spacing="1">
+    @for (var i = 0; i < Rows; i++)
+    {
+        <MudSkeleton Width="100%" Height="48px" SkeletonType="SkeletonType.Rectangle" />
+    }
+</MudStack>
+
+@code {
+    [Parameter] public int Rows { get; set; } = 5;
+}

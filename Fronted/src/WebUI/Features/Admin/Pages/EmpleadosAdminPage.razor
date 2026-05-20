@@ -26,11 +26,11 @@
 
     @if (_isLoading)
     {
-        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+        <KpgTableSkeleton />
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
     else
     {

@@ -25,11 +25,11 @@
 
     @if (_isLoading)
     {
-        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+        <KpgTableSkeleton />
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
     else
     {
@@ -51,7 +51,18 @@
                          Dense="true"
                          Filterable="false"
                          SortMode="SortMode.Single"
+                         QuickFilter="_quickFilter"
                          RowsPerPage="25">
+                <ToolBarContent>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="_searchText"
+                                  Placeholder="Buscar por email..."
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Small"
+                                  Immediate="true"
+                                  Style="max-width:280px;" />
+                </ToolBarContent>
                 <Columns>
                     <PropertyColumn Property="x => x.Email" Title="Email" />
                     <PropertyColumn Property="x => x.Role" Title="Rol" />
@@ -125,6 +136,11 @@
     private MudMessageBox? _msgBox;
     private string _msgBoxContent = string.Empty;
     private Color _msgBoxColor = Color.Primary;
+    private string _searchText = string.Empty;
+
+    private Func<UserAdminResponse, bool> _quickFilter =>
+        u => string.IsNullOrWhiteSpace(_searchText)
+            || u.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {

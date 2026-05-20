@@ -19,7 +19,7 @@
 
     @if (_isLoading)
     {
-        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
+        <KpgTableSkeleton />
     }
     else
     {
@@ -57,7 +57,7 @@
             </MudGrid>
             @if (!string.IsNullOrWhiteSpace(_configError))
             {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@_configError</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" aria-live="polite">@_configError</MudAlert>
             }
             @if (!string.IsNullOrWhiteSpace(_configSuccess))
             {
@@ -84,7 +84,7 @@
             }
             @if (!string.IsNullOrWhiteSpace(_modalidadError))
             {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@_modalidadError</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2" aria-live="polite">@_modalidadError</MudAlert>
             }
 
             @if (_modalidades.Count == 0)
@@ -163,7 +163,7 @@
             }
             @if (!string.IsNullOrWhiteSpace(_lugarError))
             {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@_lugarError</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2" aria-live="polite">@_lugarError</MudAlert>
             }
 
             @if (_lugares.Count == 0)
