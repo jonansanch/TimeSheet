@@ -2,6 +2,7 @@ using KPG.Timesheet.Application.Features.Dashboard.Queries.GetDashboardGerencial
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetMetricasGlobales;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetDistribucionHoras;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetEstadoEquipo;
+using KPG.Timesheet.Application.Features.Dashboard.Queries.GetPendientesCriticos;
 using KPG.Timesheet.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,7 @@ public class Dashboard : IEndpointGroup
         groupBuilder.MapGet("distribucion-horas", GetDistribucionHoras).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("gerencial", GetDashboardGerencial).RequireAuthorization(gerenteAndAbove);
         groupBuilder.MapGet("admin", GetMetricasGlobales).RequireAuthorization(soloAdmin);
+        groupBuilder.MapGet("pendientes-criticos", GetPendientesCriticos).RequireAuthorization(supervisorAndAbove);
     }
 
     [EndpointSummary("Estado diario del equipo")]
@@ -115,6 +117,19 @@ public class Dashboard : IEndpointGroup
 
         var query = new GetMetricasGlobalesQuery(desdeEfectivo, hastaEfectivo);
         var result = await sender.Send(query, cancellationToken);
+        return Results.Ok(result);
+    }
+
+    [EndpointSummary("Pendientes críticos por días sin registro")]
+    [EndpointDescription("Retorna empleados que superan el umbral de días hábiles sin registrar horas.")]
+    [ProducesResponseType<PendientesCriticosResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> GetPendientesCriticos(
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetPendientesCriticosQuery(), cancellationToken);
         return Results.Ok(result);
     }
 

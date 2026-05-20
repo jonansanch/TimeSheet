@@ -82,6 +82,54 @@
         }
     }
 
+    {{!-- ── Sección: Pendientes Críticos ─────────────────────────── --}}
+    @if (_isLoadingCriticos)
+    {
+        <MudSkeleton Width="100%" Height="60px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorCriticos))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorCriticos</MudAlert>
+    }
+    else if (_criticos is not null && _criticos.Pendientes.Count > 0)
+    {
+        <MudExpansionPanels Elevation="2" Style="border-radius:12px;">
+            <MudExpansionPanel>
+                <TitleContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
+                        <MudText Style="font-weight:600;">Pendientes críticos</MudText>
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
+                            @_criticos.Pendientes.Count
+                        </MudChip>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            sin registrar hace más de @_criticos.Umbral días hábiles
+                        </MudText>
+                    </MudStack>
+                </TitleContent>
+                <ChildContent>
+                    <MudList T="PendienteCriticoDto" Dense="true">
+                        @foreach (var p in _criticos.Pendientes)
+                        {
+                            <MudListItem T="PendienteCriticoDto">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                                    <MudIcon Icon="@Icons.Material.Filled.PersonOff"
+                                             Color="Color.Error" Size="Size.Small" />
+                                    <MudText Style="font-weight:600;">@p.Nombre</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@p.Email</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                             Color="@(p.DiasSinRegistro >= 999 ? Color.Error : Color.Warning)">
+                                        @(p.DiasSinRegistro >= 999 ? "Sin registros" : $"{p.DiasSinRegistro} d sin registro")
+                                    </MudChip>
+                                </MudStack>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+
     <MudDivider />
 
     {{!-- ── Sección: Distribución de horas ────────────────────────── --}}
@@ -362,6 +410,11 @@
     private DateOnly _fecha = DateOnly.FromDateTime(DateTime.Today);
     private DateTime? _fechaDate => _fecha.ToDateTime(TimeOnly.MinValue);
 
+    // ── Pendientes críticos ──────────────────────────────────────────
+    private PendientesCriticosResponse? _criticos;
+    private bool _isLoadingCriticos = true;
+    private string _errorCriticos = string.Empty;
+
     // ── Distribución de horas ────────────────────────────────────────
     private DistribucionHorasResponse? _distribucion;
     // ── Dashboard gerencial ──────────────────────────────────────────
@@ -416,7 +469,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarEstadoAsync(), CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
+        await Task.WhenAll(CargarEstadoAsync(), CargarCriticosAsync(), CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
     }
 
     private async Task OnFechaChangedAsync(DateTime? date)
@@ -437,6 +490,20 @@
         _rangoPersonalizado = rango;
         if (rango.Start.HasValue && rango.End.HasValue)
             await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
+    }
+
+    private async Task CargarCriticosAsync()
+    {
+        _isLoadingCriticos = true;
+        _errorCriticos = string.Empty;
+        StateHasChanged();
+        try
+        {
+            _criticos = await Repo.GetPendientesCriticosAsync();
+            if (_criticos is null) _errorCriticos = "No se pudo obtener los pendientes críticos.";
+        }
+        catch { _errorCriticos = "Error al comunicarse con el servidor."; }
+        finally { _isLoadingCriticos = false; }
     }
 
     private async Task CargarEstadoAsync()

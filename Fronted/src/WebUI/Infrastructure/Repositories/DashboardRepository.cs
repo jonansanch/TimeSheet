@@ -79,4 +79,19 @@ public class DashboardRepository : IDashboardRepository
 
         return await response.Content.ReadFromJsonAsync<MetricasGlobalesResponse>(cancellationToken: cancellationToken);
     }
+
+    public async Task<PendientesCriticosResponse?> GetPendientesCriticosAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            throw new UnauthorizedAccessException("No hay token de acceso activo.");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/dashboard/pendientes-criticos");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+
+        var response = await _http.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<PendientesCriticosResponse>(cancellationToken: cancellationToken);
+    }
 }

@@ -8,4 +8,5 @@ public interface IDashboardRepository
     Task<DistribucionHorasResponse?> GetDistribucionHorasAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
     Task<DashboardGerencialResponse?> GetDashboardGerencialAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
     Task<MetricasGlobalesResponse?> GetMetricasGlobalesAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
+    Task<PendientesCriticosResponse?> GetPendientesCriticosAsync(CancellationToken cancellationToken = default);
 }
