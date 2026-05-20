@@ -1,0 +1,130 @@
+@page "/dashboard"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject IDashboardRepository Repo
+
+<PageTitle>Dashboard - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+                Dashboard
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Estado diario del equipo
+            </MudText>
+        </div>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudDatePicker Label="Fecha"
+                           Date="_fechaDate"
+                           DateChanged="OnFechaChangedAsync"
+                           MaxDate="DateTime.Today"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Style="max-width:180px;" />
+        </MudStack>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudGrid>
+            @for (var i = 0; i < 4; i++)
+            {
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSkeleton Width="100%" Height="90px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+                </MudItem>
+            }
+        </MudGrid>
+        <KpgTableSkeleton Rows="8" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    else if (_estado is not null)
+    {
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="3">
+                <KpgStatCard Label="Total empleados"
+                             Value="_estado.TotalEmpleados"
+                             Icon="@Icons.Material.Filled.People"
+                             Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpgStatCard Label="Completo"
+                             Value="_estado.TotalCompletos"
+                             Icon="@Icons.Material.Filled.CheckCircle"
+                             Color="Color.Success" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpgStatCard Label="Parcial"
+                             Value="_estado.TotalParciales"
+                             Icon="@Icons.Material.Filled.Pending"
+                             Color="Color.Warning" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpgStatCard Label="Pendiente"
+                             Value="_estado.TotalPendientes"
+                             Icon="@Icons.Material.Filled.HourglassEmpty"
+                             Color="Color.Default" />
+            </MudItem>
+        </MudGrid>
+
+        @if (_estado.Equipo.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No hay miembros del equipo registrados.</MudAlert>
+        }
+        else
+        {
+            <MudGrid>
+                @foreach (var miembro in _estado.Equipo)
+                {
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <KpgTeamStatusCard Nombre="@miembro.Nombre"
+                                           Estado="@miembro.Estado"
+                                           TieneAm="@miembro.TieneAm"
+                                           TienePm="@miembro.TienePm" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    }
+</MudStack>
+
+@code {
+    private EstadoEquipoResponse? _estado;
+    private bool _isLoading = true;
+    private string _errorMessage = string.Empty;
+    private DateOnly _fecha = DateOnly.FromDateTime(DateTime.Today);
+    private DateTime? _fechaDate => _fecha.ToDateTime(TimeOnly.MinValue);
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task OnFechaChangedAsync(DateTime? date)
+    {
+        if (date is null) return;
+        _fecha = DateOnly.FromDateTime(date.Value);
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            _estado = await Repo.GetEstadoEquipoAsync(_fecha);
+            if (_estado is null)
+                _errorMessage = "No se pudo obtener el estado del equipo.";
+        }
+        catch
+        {
+            _errorMessage = "Error al comunicarse con el servidor.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

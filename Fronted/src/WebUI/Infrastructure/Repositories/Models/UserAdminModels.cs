@@ -3,6 +3,7 @@ namespace KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
 public record UserAdminResponse(
     string Id,
     string Email,
+    string? NombreCompleto,
     bool IsActive,
     string Role,
     DateTimeOffset Created,
@@ -14,7 +15,7 @@ public record UsersPageResponse(
     int PageNumber,
     int PageSize);
 
-public record CreateUserRequest(string Email, string Password, string Role);
+public record CreateUserRequest(string Email, string Password, string Role, string? NombreCompleto = null);
 
 public record ChangeUserRoleRequest(string Role);
 

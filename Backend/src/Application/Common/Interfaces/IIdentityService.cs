@@ -20,7 +20,7 @@ public interface IIdentityService
         bool sortDescending,
         CancellationToken cancellationToken = default);
 
-    Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role);
+    Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role, string? nombreCompleto = null);
 
     Task<Result> ActivateUserAsync(string userId);
 

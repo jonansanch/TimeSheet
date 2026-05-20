@@ -12,14 +12,14 @@ public class CreateUserCommandValidatorTests
     [Fact]
     public void Validate_WhenValid_ShouldPass()
     {
-        var result = _validator.Validate(new CreateUserCommand("nuevo@kpg.com", "Empleado1234!", Roles.Empleado));
+        var result = _validator.Validate(new CreateUserCommand("nuevo@kpg.com", "Empleado1234!", Roles.Empleado, null));
         result.IsValid.Should().BeTrue();
     }
 
     [Fact]
     public void Validate_WhenRoleInvalid_ShouldFail()
     {
-        var result = _validator.Validate(new CreateUserCommand("nuevo@kpg.com", "Empleado1234!", "Root"));
+        var result = _validator.Validate(new CreateUserCommand("nuevo@kpg.com", "Empleado1234!", "Root", null));
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateUserCommand.Role));
     }

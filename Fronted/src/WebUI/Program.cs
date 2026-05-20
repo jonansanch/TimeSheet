@@ -28,6 +28,7 @@ builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IModalidadRepository, ModalidadRepository>();
 builder.Services.AddScoped<ILugarTrabajoRepository, LugarTrabajoRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddSingleton<AuthStateService>();
 builder.Services.AddScoped<KpgAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(

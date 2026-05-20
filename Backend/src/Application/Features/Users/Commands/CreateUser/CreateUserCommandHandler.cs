@@ -16,7 +16,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserA
 
     public async Task<UserAdminDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
-        var (result, user) = await _identityService.CreateUserAsync(request.Email.Trim(), request.Password, request.Role);
+        var (result, user) = await _identityService.CreateUserAsync(request.Email.Trim(), request.Password, request.Role, request.NombreCompleto?.Trim());
         if (!result.Succeeded || user is null)
         {
             throw new ValidationException(result.Errors.Select(error => new ValidationFailure(nameof(request.Email), error)));

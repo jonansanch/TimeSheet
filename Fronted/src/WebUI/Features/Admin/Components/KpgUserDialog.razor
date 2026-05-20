@@ -24,6 +24,14 @@
                           aria-label="Email del usuario" />
 
             <MudTextField T="string"
+                          Label="Nombre completo"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_nombreCompleto"
+                          Placeholder="Opcional"
+                          autocomplete="off"
+                          aria-label="Nombre completo del usuario" />
+
+            <MudTextField T="string"
                           Label="Contraseña temporal"
                           Variant="Variant.Outlined"
                           @bind-Value="_password"
@@ -67,6 +75,7 @@
     private string _email = string.Empty;
     private string _password = string.Empty;
     private string _role = Roles.Empleado;
+    private string _nombreCompleto = string.Empty;
 
     private static readonly string[] RolesDisponibles = [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
 
@@ -85,7 +94,11 @@
     private void Cancel() => MudDialog.Cancel();
 
     private void Submit() =>
-        MudDialog.Close(DialogResult.Ok(new CreateUserRequest(_email.Trim(), _password, _role)));
+        MudDialog.Close(DialogResult.Ok(new CreateUserRequest(
+            _email.Trim(),
+            _password,
+            _role,
+            string.IsNullOrWhiteSpace(_nombreCompleto) ? null : _nombreCompleto.Trim())));
 
     private static bool PasswordCumplePolitica(string password) =>
         password.Length >= 6

@@ -46,6 +46,9 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
+        builder.Services.AddScoped<System.Data.IDbConnection>(_ =>
+            new Microsoft.Data.SqlClient.SqlConnection(sqlBuilder.ConnectionString));
+
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 
         var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()

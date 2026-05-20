@@ -59,6 +59,7 @@ public class IdentityService : IIdentityService
             {
                 u.Id,
                 u.Email,
+                u.NombreCompleto,
                 u.IsActive,
                 u.Created,
                 u.DeactivatedAt
@@ -73,6 +74,7 @@ public class IdentityService : IIdentityService
             items.Add(new UserAdminDto(
                 user.Id,
                 user.Email ?? string.Empty,
+                user.NombreCompleto,
                 user.IsActive,
                 roles.FirstOrDefault() ?? string.Empty,
                 user.Created,
@@ -101,12 +103,13 @@ public class IdentityService : IIdentityService
         return new UsersPageDto(pageItems, total, pageNumber, pageSize);
     }
 
-    public async Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role)
+    public async Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role, string? nombreCompleto = null)
     {
         var user = new ApplicationUser
         {
             UserName = email,
             Email = email,
+            NombreCompleto = string.IsNullOrWhiteSpace(nombreCompleto) ? null : nombreCompleto.Trim(),
             IsActive = true,
             Created = DateTimeOffset.UtcNow
         };
@@ -122,7 +125,7 @@ public class IdentityService : IIdentityService
             return (roleResult.ToApplicationResult(), null);
         }
 
-        return (Result.Success(), new UserAdminDto(user.Id, user.Email ?? email, user.IsActive, role, user.Created, user.DeactivatedAt));
+        return (Result.Success(), new UserAdminDto(user.Id, user.Email ?? email, user.NombreCompleto, user.IsActive, role, user.Created, user.DeactivatedAt));
     }
 
     public async Task<Result> ActivateUserAsync(string userId)
@@ -247,7 +250,7 @@ public class IdentityService : IIdentityService
         role is Roles.Admin or Roles.Gerente or Roles.Supervisor or Roles.Empleado;
 
     private static UserAdminDto ToUserAdminDto(ApplicationUser user, string role) =>
-        new(user.Id, user.Email ?? string.Empty, user.IsActive, role, user.Created, user.DeactivatedAt);
+        new(user.Id, user.Email ?? string.Empty, user.NombreCompleto, user.IsActive, role, user.Created, user.DeactivatedAt);
 
     private async Task<bool> HasAnotherActiveAdminAsync(string userId, CancellationToken cancellationToken)
     {

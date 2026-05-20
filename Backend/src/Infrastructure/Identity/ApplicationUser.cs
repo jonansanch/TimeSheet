@@ -4,6 +4,7 @@ namespace KPG.Timesheet.Infrastructure.Identity;
 
 public class ApplicationUser : IdentityUser
 {
+    public string? NombreCompleto { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset Created { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? DeactivatedAt { get; set; }

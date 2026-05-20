@@ -1,0 +1,45 @@
+@using KPG.Timesheet.WebUI.Infrastructure.Repositories.Models
+
+<MudPaper Class="pa-0" Elevation="2" Style="border-radius:12px;overflow:hidden;">
+    <MudStack Spacing="0">
+        <MudStack Class="pa-3" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
+                  Style="background:var(--mud-palette-surface);">
+            <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@Nombre</MudText>
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Color="@EstadoColor"
+                     Variant="Variant.Filled">
+                @Estado
+            </MudChip>
+        </MudStack>
+        <MudDivider />
+        <MudStack Class="pa-3" Row="true" Spacing="4">
+            <MudStack Spacing="0" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@(TieneAm ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
+                         Color="@(TieneAm ? Color.Success : Color.Default)"
+                         Size="Size.Small" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">AM</MudText>
+            </MudStack>
+            <MudStack Spacing="0" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@(TienePm ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
+                         Color="@(TienePm ? Color.Success : Color.Default)"
+                         Size="Size.Small" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">PM</MudText>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Nombre { get; set; } = default!;
+    [Parameter, EditorRequired] public string Estado { get; set; } = default!;
+    [Parameter] public bool TieneAm { get; set; }
+    [Parameter] public bool TienePm { get; set; }
+
+    private Color EstadoColor => Estado switch
+    {
+        "Completo"  => Color.Success,
+        "Parcial"   => Color.Warning,
+        _           => Color.Default
+    };
+}
