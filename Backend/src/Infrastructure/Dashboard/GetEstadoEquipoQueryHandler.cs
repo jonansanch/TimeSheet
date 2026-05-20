@@ -33,13 +33,15 @@ public class GetEstadoEquipoQueryHandler(IDbConnection db)
 
         var equipo = rows.Select(r =>
         {
-            var estado = (r.TieneAM, r.TienePM) switch
+            var tieneAm = r.TieneAM == 1;
+            var tienePm = r.TienePM == 1;
+            var estado = (tieneAm, tienePm) switch
             {
                 (true, true)   => "Completo",
                 (false, false) => "Pendiente",
                 _              => "Parcial"
             };
-            return new MiembroEstadoDto(r.UserId, r.Nombre, r.Email, r.TieneAM, r.TienePM, estado);
+            return new MiembroEstadoDto(r.UserId, r.Nombre, r.Email, tieneAm, tienePm, estado);
         }).ToList();
 
         return new EstadoEquipoResponse(
@@ -51,5 +53,5 @@ public class GetEstadoEquipoQueryHandler(IDbConnection db)
             Equipo:          equipo);
     }
 
-    private sealed record RawRow(string UserId, string Nombre, string Email, bool TieneAM, bool TienePM);
+    private sealed record RawRow(string UserId, string Nombre, string Email, int TieneAM, int TienePM);
 }
