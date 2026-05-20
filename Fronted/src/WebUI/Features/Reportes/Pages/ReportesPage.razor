@@ -98,7 +98,8 @@
                                Color="Color.Success"
                                StartIcon="@Icons.Material.Filled.TableView"
                                OnClick="@(() => ExportarAsync("excel"))"
-                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)">
+                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)"
+                               aria-label="Exportar reporte a Excel">
                         @if (_isExporting && _exportandoFormato == "excel")
                         { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
                         Excel
@@ -107,7 +108,8 @@
                                Color="Color.Error"
                                StartIcon="@Icons.Material.Filled.PictureAsPdf"
                                OnClick="@(() => ExportarAsync("pdf"))"
-                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)">
+                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)"
+                               aria-label="Exportar reporte a PDF">
                         @if (_isExporting && _exportandoFormato == "pdf")
                         { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
                         PDF

@@ -17,13 +17,15 @@
             <MudStack Spacing="0" AlignItems="AlignItems.Center">
                 <MudIcon Icon="@(TieneAm ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
                          Color="@(TieneAm ? Color.Success : Color.Default)"
-                         Size="Size.Small" />
+                         Size="Size.Small"
+                         Title="@(TieneAm ? "AM: registrado" : "AM: pendiente")" />
                 <MudText Typo="Typo.caption" Color="Color.Secondary">AM</MudText>
             </MudStack>
             <MudStack Spacing="0" AlignItems="AlignItems.Center">
                 <MudIcon Icon="@(TienePm ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
                          Color="@(TienePm ? Color.Success : Color.Default)"
-                         Size="Size.Small" />
+                         Size="Size.Small"
+                         Title="@(TienePm ? "PM: registrado" : "PM: pendiente")" />
                 <MudText Typo="Typo.caption" Color="Color.Secondary">PM</MudText>
             </MudStack>
         </MudStack>
