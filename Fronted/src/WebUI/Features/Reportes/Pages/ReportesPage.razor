@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @inject IReportesRepository Repo
 @inject IUserAdminRepository UsuariosRepo
+@inject IJSRuntime JS
 
 <PageTitle>Reportes - KPG Timesheet</PageTitle>
 
@@ -83,16 +84,42 @@
                               aria-label="Filtrar por proyecto" />
             </MudItem>
 
-            {{!-- Botón --}}
+            {{!-- Botones acción --}}
             <MudItem xs="12">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Search"
-                           OnClick="GenerarReporteAsync"
-                           Disabled="_isLoading">
-                    Generar reporte
-                </MudButton>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Search"
+                               OnClick="GenerarReporteAsync"
+                               Disabled="@(_isLoading || _isExporting)">
+                        Generar reporte
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.TableView"
+                               OnClick="@(() => ExportarAsync("excel"))"
+                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)">
+                        @if (_isExporting && _exportandoFormato == "excel")
+                        { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                        Excel
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                               OnClick="@(() => ExportarAsync("pdf"))"
+                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)">
+                        @if (_isExporting && _exportandoFormato == "pdf")
+                        { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                        PDF
+                    </MudButton>
+                </MudStack>
             </MudItem>
+            @if (!string.IsNullOrWhiteSpace(_errorExport))
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorExport</MudAlert>
+                </MudItem>
+            }
 
         </MudGrid>
     </MudPaper>
@@ -178,6 +205,9 @@
     private ReporteHorasResponse? _reporte;
     private bool _isLoading = false;
     private string _errorMessage = string.Empty;
+    private bool _isExporting = false;
+    private string _exportandoFormato = string.Empty;
+    private string _errorExport = string.Empty;
 
     private List<UserAdminResponse> _usuarios = [];
     private string? _filtroUserId;
@@ -259,6 +289,38 @@
         var desde = _rango.Start.HasValue ? DateOnly.FromDateTime(_rango.Start.Value) : DateOnly.FromDateTime(DateTime.Today);
         var hasta = _rango.End.HasValue   ? DateOnly.FromDateTime(_rango.End.Value)   : DateOnly.FromDateTime(DateTime.Today);
         return (desde, hasta);
+    }
+
+    private async Task ExportarAsync(string formato)
+    {
+        _isExporting = true;
+        _exportandoFormato = formato;
+        _errorExport = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var (desde, hasta) = ObtenerRango();
+            var result = await Repo.ExportarAsync(
+                desde, hasta, formato,
+                string.IsNullOrWhiteSpace(_filtroUserId)   ? null : _filtroUserId,
+                string.IsNullOrWhiteSpace(_filtroCliente)  ? null : _filtroCliente,
+                string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto);
+
+            if (result is null)
+            {
+                _errorExport = "No se pudo generar el archivo de exportación.";
+                return;
+            }
+
+            var (bytes, contentType, fileName) = result.Value;
+            await JS.InvokeVoidAsync("downloadFile", fileName, contentType, Convert.ToBase64String(bytes));
+        }
+        catch { _errorExport = "Error al generar la exportación."; }
+        finally
+        {
+            _isExporting = false;
+            _exportandoFormato = string.Empty;
+        }
     }
 
     private static DateTime InicioSemana(DateTime fecha)

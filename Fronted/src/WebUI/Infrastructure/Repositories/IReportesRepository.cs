@@ -11,4 +11,13 @@ public interface IReportesRepository
         string? cliente = null,
         string? proyecto = null,
         CancellationToken cancellationToken = default);
+
+    Task<(byte[] Contenido, string ContentType, string FileName)?> ExportarAsync(
+        DateOnly desde,
+        DateOnly hasta,
+        string formato,
+        string? userId = null,
+        string? cliente = null,
+        string? proyecto = null,
+        CancellationToken cancellationToken = default);
 }

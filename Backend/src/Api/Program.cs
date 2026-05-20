@@ -1,5 +1,8 @@
 using KPG.Timesheet.Infrastructure.Data;
+using QuestPDF.Infrastructure;
 using Scalar.AspNetCore;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
