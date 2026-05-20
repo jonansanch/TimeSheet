@@ -1,4 +1,5 @@
 using System.Text;
+using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Infrastructure.Data;
@@ -21,6 +22,9 @@ public static class DependencyInjection
 {
     public static void AddInfrastructureServices(this IHostApplicationBuilder builder)
     {
+        SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+        SqlMapper.AddTypeHandler(new NullableDateOnlyTypeHandler());
+
         var raw = builder.Configuration.GetConnectionString("DefaultConnection");
         Guard.Against.Null(raw, message: "Connection string 'DefaultConnection' not found.");
 
