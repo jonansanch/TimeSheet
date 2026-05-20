@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<Proyecto> Proyectos => Set<Proyecto>();
     public DbSet<Modalidad> Modalidades => Set<Modalidad>();
     public DbSet<LugarTrabajo> LugaresTrabajo => Set<LugarTrabajo>();
+    public DbSet<NotificacionEnviada> NotificacionesEnviadas => Set<NotificacionEnviada>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

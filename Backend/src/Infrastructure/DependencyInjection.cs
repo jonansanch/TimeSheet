@@ -3,6 +3,7 @@ using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Infrastructure.Data;
 using KPG.Timesheet.Infrastructure.Data.Interceptors;
+using KPG.Timesheet.Infrastructure.Email;
 using KPG.Timesheet.Infrastructure.Identity;
 using KPG.Timesheet.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -81,5 +82,8 @@ public static class DependencyInjection
         builder.Services.AddSingleton<IClock, SystemClock>();
         builder.Services.AddTransient<IIdentityService, IdentityService>();
         builder.Services.AddTransient<IJwtTokenService, JwtTokenService>();
+
+        builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
+        builder.Services.AddTransient<IEmailService, SmtpEmailService>();
     }
 }

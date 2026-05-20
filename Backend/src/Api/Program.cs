@@ -1,4 +1,5 @@
 using KPG.Timesheet.Infrastructure.Data;
+using KPG.Timesheet.Infrastructure.Jobs;
 using QuestPDF.Infrastructure;
 using Scalar.AspNetCore;
 
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddApplicationServices();
 builder.AddInfrastructureServices();
 builder.AddWebServices();
+builder.Services.AddHostedService<NotificacionesPendientesJob>();
 
 var app = builder.Build();
 

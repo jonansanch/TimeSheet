@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<Proyecto> Proyectos { get; }
     DbSet<Modalidad> Modalidades { get; }
     DbSet<LugarTrabajo> LugaresTrabajo { get; }
+    DbSet<NotificacionEnviada> NotificacionesEnviadas { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
