@@ -85,5 +85,9 @@ public static class DependencyInjection
 
         builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
         builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+
+        // Registrar handlers de MediatR que viven en Infrastructure (Dapper handlers)
+        builder.Services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(SmtpEmailService).Assembly));
     }
 }
