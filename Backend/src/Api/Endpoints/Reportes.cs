@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Features.Reportes.Queries.ExportarReporteHoras;
+using KPG.Timesheet.Application.Features.Reportes.Queries.ExportarTimesheet;
 using KPG.Timesheet.Application.Features.Reportes.Queries.GetReporteHoras;
 using KPG.Timesheet.Domain.Constants;
 using MediatR;
@@ -21,6 +22,7 @@ public class Reportes : IEndpointGroup
         groupBuilder.MapGet("horas", GetReporteHoras).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("horas/excel", ExportarExcel).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("horas/pdf", ExportarPdf).RequireAuthorization(supervisorAndAbove);
+        groupBuilder.MapGet("timesheet/excel", ExportarTimesheet).RequireAuthorization(supervisorAndAbove);
     }
 
     [EndpointSummary("Reporte de horas con filtros")]
@@ -79,6 +81,33 @@ public class Reportes : IEndpointGroup
         [FromQuery] string? cliente = null,
         [FromQuery] string? proyecto = null)
         => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, ExportFormato.Pdf);
+
+    [EndpointSummary("Exportar timesheet mensual por empleado en Excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> ExportarTimesheet(
+        ISender sender,
+        CancellationToken cancellationToken,
+        [FromQuery] string? userId = null,
+        [FromQuery] int? mes = null,
+        [FromQuery] int? anio = null)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return Results.BadRequest("Se requiere el parámetro 'userId'.");
+
+        var hoy = DateTime.Today;
+        var mesEfectivo  = mes  ?? hoy.Month;
+        var anioEfectivo = anio ?? hoy.Year;
+
+        if (mesEfectivo < 1 || mesEfectivo > 12)
+            return Results.BadRequest("'mes' debe estar entre 1 y 12.");
+
+        var query  = new ExportarTimesheetQuery(userId, mesEfectivo, anioEfectivo);
+        var result = await sender.Send(query, cancellationToken);
+        return Results.File(result.Contenido, result.ContentType, result.FileName);
+    }
 
     private static async Task<IResult> Exportar(
         ISender sender,

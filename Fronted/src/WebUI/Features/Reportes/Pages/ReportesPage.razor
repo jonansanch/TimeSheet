@@ -13,11 +13,79 @@
         <MudText Typo="Typo.body2" Color="Color.Secondary">Consulta y filtra registros de horas del equipo.</MudText>
     </div>
 
-    {{!-- ── Panel de filtros ──────────────────────────────────────── --}}
+    @* ── Timesheet Excel por empleado/mes ──────────────────────────────── *@
+    <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;border-left:4px solid #0D3B5E;">
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.TableChart" Color="Color.Primary" />
+                <MudText Typo="Typo.h6" Style="font-weight:600;">Timesheet individual</MudText>
+            </MudStack>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Genera el Excel de timesheet mensual con el formato oficial KPG para un empleado.
+            </MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudSelect T="string"
+                               Label="Empleado"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_tsUserId"
+                               Required="true"
+                               aria-label="Seleccionar empleado para timesheet">
+                        @foreach (var u in _usuarios)
+                        {
+                            <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="3" md="2">
+                    <MudSelect T="int"
+                               Label="Mes"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_tsMes"
+                               aria-label="Seleccionar mes">
+                        @foreach (var (num, nombre) in _meses)
+                        {
+                            <MudSelectItem Value="@num">@nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="3" md="2">
+                    <MudNumericField T="int"
+                                     Label="Año"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     @bind-Value="_tsAnio"
+                                     Min="2020"
+                                     Max="2099"
+                                     aria-label="Año del timesheet" />
+                </MudItem>
+                <MudItem xs="12" sm="12" md="4" Class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Download"
+                               OnClick="DescargarTimesheetAsync"
+                               Disabled="@(_isTsExporting || string.IsNullOrWhiteSpace(_tsUserId))"
+                               FullWidth="false">
+                        @if (_isTsExporting)
+                        { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                        Descargar Timesheet
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+            @if (!string.IsNullOrWhiteSpace(_errorTs))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorTs</MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+
+    <MudDivider />
+
     <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
         <MudGrid Spacing="2">
 
-            {{!-- Período --}}
             <MudItem xs="12">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
                     <MudText Typo="Typo.body2" Style="font-weight:600;min-width:60px;">Período</MudText>
@@ -36,6 +104,8 @@
                         <MudDateRangePicker DateRange="_rango"
                                             DateRangeChanged="OnRangoChangedAsync"
                                             MaxDate="DateTime.Today"
+                                            IsDateDisabledFunc="@(d => d.DayOfWeek == DayOfWeek.Sunday)"
+                                            PickerVariant="PickerVariant.Dialog"
                                             Variant="Variant.Outlined"
                                             Margin="Margin.Dense"
                                             Style="max-width:300px;" />
@@ -43,7 +113,6 @@
                 </MudStack>
             </MudItem>
 
-            {{!-- Empleado --}}
             <MudItem xs="12" sm="6" md="4">
                 <MudSelect T="string"
                            Label="Empleado"
@@ -60,7 +129,6 @@
                 </MudSelect>
             </MudItem>
 
-            {{!-- Cliente --}}
             <MudItem xs="12" sm="6" md="4">
                 <MudTextField T="string"
                               Label="Cliente"
@@ -72,7 +140,6 @@
                               aria-label="Filtrar por cliente" />
             </MudItem>
 
-            {{!-- Proyecto --}}
             <MudItem xs="12" sm="6" md="4">
                 <MudTextField T="string"
                               Label="Proyecto"
@@ -84,7 +151,6 @@
                               aria-label="Filtrar por proyecto" />
             </MudItem>
 
-            {{!-- Botones acción --}}
             <MudItem xs="12">
                 <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                     <MudButton Variant="Variant.Filled"
@@ -126,7 +192,6 @@
         </MudGrid>
     </MudPaper>
 
-    {{!-- ── Resultados ─────────────────────────────────────────────── --}}
     @if (_isLoading)
     {
         <KpgTableSkeleton Rows="10" />
@@ -204,6 +269,21 @@
 </MudStack>
 
 @code {
+    // ── Timesheet individual ─────────────────────────────────────────
+    private string?  _tsUserId;
+    private int      _tsMes  = DateTime.Today.Month;
+    private int      _tsAnio = DateTime.Today.Year;
+    private bool     _isTsExporting;
+    private string   _errorTs = string.Empty;
+
+    private static readonly (int Num, string Nombre)[] _meses =
+    [
+        (1,"Enero"),(2,"Febrero"),(3,"Marzo"),(4,"Abril"),
+        (5,"Mayo"),(6,"Junio"),(7,"Julio"),(8,"Agosto"),
+        (9,"Septiembre"),(10,"Octubre"),(11,"Noviembre"),(12,"Diciembre")
+    ];
+
+    // ── Reporte general ──────────────────────────────────────────────
     private ReporteHorasResponse? _reporte;
     private bool _isLoading = false;
     private string _errorMessage = string.Empty;
@@ -225,6 +305,23 @@
     {
         await CargarUsuariosAsync();
         await GenerarReporteAsync();
+    }
+
+    private async Task DescargarTimesheetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_tsUserId)) return;
+        _isTsExporting = true;
+        _errorTs = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var result = await Repo.ExportarTimesheetAsync(_tsUserId, _tsMes, _tsAnio);
+            if (result is null) { _errorTs = "No se pudo generar el timesheet."; return; }
+            var (bytes, contentType, fileName) = result.Value;
+            await JS.InvokeVoidAsync("downloadFile", fileName, contentType, Convert.ToBase64String(bytes));
+        }
+        catch { _errorTs = "Error al generar el timesheet."; }
+        finally { _isTsExporting = false; }
     }
 
     private async Task CargarUsuariosAsync()

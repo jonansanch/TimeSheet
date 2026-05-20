@@ -4,6 +4,8 @@
                DateChanged="HandleDateChanged"
                DateFormat="dd/MM/yyyy"
                AdditionalDateClassesFunc="GetDateClass"
+               IsDateDisabledFunc="@(d => d.DayOfWeek == DayOfWeek.Sunday)"
+               PickerVariant="PickerVariant.Dialog"
                MaxDate="DateTime.Today"
                Required="true"
                RequiredError="La fecha es requerida." />

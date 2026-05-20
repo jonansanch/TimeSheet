@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KPG Timesheet</title>
     <base href="/" />
-    <link href="_framework/dotnet.frmt48jyws.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-e2wT67i0xsY5uaaSDB3qfAcCU9v2RAreZn9YpHRGcw4=" />
+    <link href="_framework/dotnet.zx7eypbhtd.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-SYoLG3p+pxugLNg3wYevFbJJtdd1zhROKkeNER4JupA=" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;500&display=swap" />
@@ -20,9 +20,9 @@
     "./_content/Blazor-ApexCharts/js/blazor-apexcharts.js": "./_content/Blazor-ApexCharts/js/blazor-apexcharts.zql1jd3hot.js",
     "./_content/MudBlazor/MudBlazor.min.js": "./_content/MudBlazor/MudBlazor.min.gtd3sm4n1q.js",
     "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.zxhwjtv6sc.js",
-    "./_framework/dotnet.js": "./_framework/dotnet.frmt48jyws.js",
     "./_framework/dotnet.native.js": "./_framework/dotnet.native.rjbmzc4jpg.js",
     "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.r2kbxkuujc.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.zx7eypbhtd.js",
     "./lib/bootstrap/dist/js/bootstrap.bundle.min.js": "./lib/bootstrap/dist/js/bootstrap.bundle.min.493y06b0oq.js",
     "./lib/bootstrap/dist/js/bootstrap.bundle.js": "./lib/bootstrap/dist/js/bootstrap.bundle.vpl3cor3y8.js",
     "./lib/bootstrap/dist/js/bootstrap.esm.min.js": "./lib/bootstrap/dist/js/bootstrap.esm.min.jj8uyg4cgr.js",
@@ -40,12 +40,12 @@
     "./_content/MudBlazor/MudBlazor.min.js": "sha256-TOPYwKltorv5iM1JqqzJayZWZx7LFnfSq2AhkWFNwrg=",
     "./_framework/blazor.webassembly.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
     "./_framework/blazor.webassembly.zxhwjtv6sc.js": "sha256-1xlHuu1iNOJiMMz2BCq95uekwHf6pdpTcgVNKVBboPs=",
-    "./_framework/dotnet.frmt48jyws.js": "sha256-e2wT67i0xsY5uaaSDB3qfAcCU9v2RAreZn9YpHRGcw4=",
-    "./_framework/dotnet.js": "sha256-e2wT67i0xsY5uaaSDB3qfAcCU9v2RAreZn9YpHRGcw4=",
+    "./_framework/dotnet.js": "sha256-SYoLG3p+pxugLNg3wYevFbJJtdd1zhROKkeNER4JupA=",
     "./_framework/dotnet.native.js": "sha256-95bE510j3EADMNW2OKa/DMBhu8N632dl5HGeBfXNEf4=",
     "./_framework/dotnet.native.rjbmzc4jpg.js": "sha256-95bE510j3EADMNW2OKa/DMBhu8N632dl5HGeBfXNEf4=",
     "./_framework/dotnet.runtime.js": "sha256-YyudibIWETMKrLb+nAZdJ+xDY7HY6BWf6s32UAdcvCU=",
     "./_framework/dotnet.runtime.r2kbxkuujc.js": "sha256-YyudibIWETMKrLb+nAZdJ+xDY7HY6BWf6s32UAdcvCU=",
+    "./_framework/dotnet.zx7eypbhtd.js": "sha256-SYoLG3p+pxugLNg3wYevFbJJtdd1zhROKkeNER4JupA=",
     "./lib/bootstrap/dist/js/bootstrap.bundle.js": "sha256-TRN3HEAp4oSe08eF40BHL2rF7U6i6jwDWKFnjdV5i8Y=",
     "./lib/bootstrap/dist/js/bootstrap.bundle.min.493y06b0oq.js": "sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=",
     "./lib/bootstrap/dist/js/bootstrap.bundle.min.js": "sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=",
@@ -85,6 +85,16 @@
     </div>
     <script src="_framework/blazor.webassembly.zxhwjtv6sc.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        globalThis.downloadFile = function (fileName, contentType, base64) {
+            const a = document.createElement('a');
+            a.href = 'data:' + contentType + ';base64,' + base64;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        };
+    </script>
 </body>
 
 </html>

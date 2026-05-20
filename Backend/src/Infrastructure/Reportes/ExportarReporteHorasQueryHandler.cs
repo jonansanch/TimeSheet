@@ -16,7 +16,7 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
         SELECT ISNULL(u.NombreCompleto, u.Email)                          AS Empleado,
                u.Email,
                CONVERT(varchar(10), r.FechaRegistro, 103)                 AS Fecha,
-               CASE r.Turno WHEN 1 THEN 'AM' ELSE 'PM' END               AS Turno,
+               r.Turno                                                     AS Turno,
                CONVERT(varchar(5), r.HoraEntrada, 108)                    AS Entrada,
                CONVERT(varchar(5), r.HoraSalida, 108)                     AS Salida,
                ROUND(DATEDIFF(MINUTE, r.HoraEntrada, r.HoraSalida) / 60.0, 2) AS Horas,

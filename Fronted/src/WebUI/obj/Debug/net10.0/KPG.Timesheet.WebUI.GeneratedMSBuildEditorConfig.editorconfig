@@ -21,137 +21,161 @@ build_property.EntryPointFilePath =
 build_property._SupportedPlatformList = browser
 build_property.RootNamespace = KPG.Timesheet.WebUI
 build_property.RootNamespace = KPG.Timesheet.WebUI
-build_property.ProjectDir = c:\ProyectosIA\Timesheet\Fronted\src\WebUI\
+build_property.ProjectDir = C:\ProyectosIA\Timesheet\Fronted\src\WebUI\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = false
 build_property.RazorLangVersion = 10.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = c:\ProyectosIA\Timesheet\Fronted\src\WebUI
+build_property.MSBuildProjectDirectory = C:\ProyectosIA\Timesheet\Fronted\src\WebUI
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/App.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/App.razor]
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgClienteDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgClienteDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdDbGllbnRlRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgEmpleadoDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgEmpleadoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdFbXBsZWFkb0RpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgLugarTrabajoDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgLugarTrabajoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdMdWdhclRyYWJham9EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgModalidadDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgModalidadDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdNb2RhbGlkYWREaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgProyectoDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgProyectoDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdQcm95ZWN0b0RpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgProyectosClienteDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgProyectosClienteDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdQcm95ZWN0b3NDbGllbnRlRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgUserDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgUserDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdVc2VyRGlhbG9nLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgUserRoleDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Components/KpgUserRoleDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdVc2VyUm9sZURpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ClientesAdminPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ClientesAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcQ2xpZW50ZXNBZG1pblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/EmpleadosAdminPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/EmpleadosAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcRW1wbGVhZG9zQWRtaW5QYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcUGFyYW1ldHJvc0FkbWluUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/SolicitudesExcepcionAdminPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/SolicitudesExcepcionAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcU29saWNpdHVkZXNFeGNlcGNpb25BZG1pblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/UsuariosAdminPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/UsuariosAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcVXN1YXJpb3NBZG1pblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Layout/LoginLayout.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Layout/LoginLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxMYXlvdXRcTG9naW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxQYWdlc1xMb2dpblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgDatePicker.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Dashboard/Components/KpgTeamStatusCard.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcRGFzaGJvYXJkXENvbXBvbmVudHNcS3BnVGVhbVN0YXR1c0NhcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Dashboard/Pages/DashboardPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcRGFzaGJvYXJkXFBhZ2VzXERhc2hib2FyZFBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Notificaciones/Pages/NotificacionesPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcTm90aWZpY2FjaW9uZXNcUGFnZXNcTm90aWZpY2FjaW9uZXNQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgDatePicker.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdEYXRlUGlja2VyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgEditDescripcionDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgEditDescripcionDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdFZGl0RGVzY3JpcGNpb25EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgExceptionDialog.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgExceptionDialog.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdFeGNlcHRpb25EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgRecentSuggestions.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgRecentSuggestions.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdSZWNlbnRTdWdnZXN0aW9ucy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgShiftForm.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgShiftForm.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdTaGlmdEZvcm0ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Pages/HistorialPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Pages/HistorialPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cUGFnZXNcSGlzdG9yaWFsUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Pages/RegistroPage.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Pages/RegistroPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cUGFnZXNcUmVnaXN0cm9QYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Counter.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Reportes/Pages/ReportesPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVwb3J0ZXNcUGFnZXNcUmVwb3J0ZXNQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Home.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSG9tZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/NotFound.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/NotFound.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTm90Rm91bmQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Weather.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Weather.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcV2VhdGhlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgSaveConfirmationBanner.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgSaveConfirmationBanner.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcS3BnU2F2ZUNvbmZpcm1hdGlvbkJhbm5lci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/_Imports.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgStatCard.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcS3BnU3RhdENhcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgTableSkeleton.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcS3BnVGFibGVTa2VsZXRvbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Layout/MainLayout.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE1haW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-utgquwishu
 
-[c:/ProyectosIA/Timesheet/Fronted/src/WebUI/Layout/NavMenu.razor]
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE5hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-hbxfhtd1cu

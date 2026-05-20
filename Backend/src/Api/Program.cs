@@ -27,7 +27,8 @@ app.UseHttpsRedirection();
 app.UseCors(static builder =>
     builder.AllowAnyMethod()
         .AllowAnyHeader()
-        .AllowAnyOrigin());
+        .AllowAnyOrigin()
+        .WithExposedHeaders("Content-Disposition"));
 
 app.UseAuthentication();
 app.UseAuthorization();

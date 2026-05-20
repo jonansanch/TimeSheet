@@ -68,9 +68,35 @@ public class ReportesRepository : IReportesRepository
 
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var ext = formato == "excel" ? "xlsx" : formato;
         var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
                     ?? response.Content.Headers.ContentDisposition?.FileName
-                    ?? $"reporte.{formato}";
+                    ?? $"reporte.{ext}";
+
+        return (bytes, contentType, fileName.Trim('"'));
+    }
+
+    public async Task<(byte[] Contenido, string ContentType, string FileName)?> ExportarTimesheetAsync(
+        string userId,
+        int mes,
+        int anio,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            throw new UnauthorizedAccessException("No hay token de acceso activo.");
+
+        var url = $"api/reportes/timesheet/excel?userId={Uri.EscapeDataString(userId)}&mes={mes}&anio={anio}";
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+
+        var response = await _http.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var bytes      = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var fileName   = response.Content.Headers.ContentDisposition?.FileNameStar
+                      ?? response.Content.Headers.ContentDisposition?.FileName
+                      ?? $"timesheet-{mes:00}-{anio}.xlsx";
 
         return (bytes, contentType, fileName.Trim('"'));
     }
