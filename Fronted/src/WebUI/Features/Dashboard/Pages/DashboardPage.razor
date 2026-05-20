@@ -152,6 +152,113 @@
         }
     </MudStack>
 
+    {{!-- ── Sección gerencial (Gerente / Admin) ───────────────────── --}}
+    <AuthorizeView Roles="@($"{Roles.Gerente},{Roles.Admin}")">
+        <Authorized>
+            <MudDivider />
+            <MudStack Spacing="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.Insights" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Style="font-weight:600;">Vista gerencial</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Período: @_distribucion?.Desde.ToString("dd/MM") – @_distribucion?.Hasta.ToString("dd/MM/yyyy")
+                    </MudText>
+                </MudStack>
+
+                @if (_isLoadingGerencial)
+                {
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudSkeleton Width="100%" Height="300px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSkeleton Width="100%" Height="300px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+                        </MudItem>
+                    </MudGrid>
+                }
+                else if (!string.IsNullOrWhiteSpace(_errorGerencial))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorGerencial</MudAlert>
+                }
+                else if (_gerencial is not null)
+                {
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total horas</MudText>
+                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@_gerencial.TotalHoras.ToString("F1") h</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Clientes activos</MudText>
+                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@_gerencial.TotalClientes</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+                        @if (_gerencial.PorCliente.Count > 0)
+                        {
+                            <MudItem xs="12" sm="12" md="6">
+                                <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">Top cliente</MudText>
+                                        <MudText Typo="Typo.h6" Style="font-weight:600;">@_gerencial.PorCliente[0].Cliente</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_gerencial.PorCliente[0].TotalHoras.ToString("F1") h</MudText>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+
+                    @if (_gerencial.PorCliente.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info">No hay registros de horas en el período seleccionado.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudGrid>
+                            <MudItem xs="12" md="5">
+                                <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">Horas por cliente</MudText>
+                                    <ApexChart TItem="HorasPorClienteDto"
+                                               Options="_donutOptions"
+                                               Height="280">
+                                        <ApexPointSeries TItem="HorasPorClienteDto"
+                                                         Items="_gerencial.PorCliente"
+                                                         Name="Horas"
+                                                         XValue="@(e => e.Cliente)"
+                                                         YValue="@(e => e.TotalHoras)"
+                                                         SeriesType="SeriesType.Donut" />
+                                    </ApexChart>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" md="7">
+                                <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">Horas por proyecto</MudText>
+                                    <ApexChart TItem="HorasPorProyectoDto"
+                                               Options="_barProyectoOptions"
+                                               Height="@Math.Max(200, _gerencial.PorProyecto.Count * 40)">
+                                        <ApexPointSeries TItem="HorasPorProyectoDto"
+                                                         Items="_gerencial.PorProyecto"
+                                                         Name="Horas"
+                                                         XValue="@(e => e.Proyecto)"
+                                                         YValue="@(e => e.TotalHoras)"
+                                                         SeriesType="SeriesType.Bar" />
+                                    </ApexChart>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    }
+                }
+            </MudStack>
+        </Authorized>
+    </AuthorizeView>
+
 </MudStack>
 
 @code {
@@ -164,6 +271,10 @@
 
     // ── Distribución de horas ────────────────────────────────────────
     private DistribucionHorasResponse? _distribucion;
+    // ── Dashboard gerencial ──────────────────────────────────────────
+    private DashboardGerencialResponse? _gerencial;
+    private bool _isLoadingGerencial = true;
+    private string _errorGerencial = string.Empty;
     private bool _isLoadingDistribucion = true;
     private string _errorDistribucion = string.Empty;
     private Periodo _periodo = Periodo.Semana;
@@ -181,9 +292,26 @@
         Grid = new Grid { BorderColor = "#e0e0e0" }
     };
 
+    private ApexChartOptions<HorasPorClienteDto> _donutOptions = new()
+    {
+        DataLabels = new DataLabels { Enabled = true },
+        Legend = new Legend { Position = LegendPosition.Bottom }
+    };
+
+    private ApexChartOptions<HorasPorProyectoDto> _barProyectoOptions = new()
+    {
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar { Horizontal = true, BorderRadius = 4 }
+        },
+        DataLabels = new DataLabels { Enabled = true },
+        Legend = new Legend { Show = false },
+        Grid = new Grid { BorderColor = "#e0e0e0" }
+    };
+
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarEstadoAsync(), CargarDistribucionAsync());
+        await Task.WhenAll(CargarEstadoAsync(), CargarDistribucionAsync(), CargarGerencialAsync());
     }
 
     private async Task OnFechaChangedAsync(DateTime? date)
@@ -196,14 +324,14 @@
     private async Task CambiarPeriodoAsync(Periodo periodo)
     {
         _periodo = periodo;
-        await CargarDistribucionAsync();
+        await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync());
     }
 
     private async Task OnRangoPersonalizadoChangedAsync(DateRange rango)
     {
         _rangoPersonalizado = rango;
         if (rango.Start.HasValue && rango.End.HasValue)
-            await CargarDistribucionAsync();
+            await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync());
     }
 
     private async Task CargarEstadoAsync()
@@ -248,6 +376,21 @@
                 _rangoPersonalizado.End.HasValue   ? DateOnly.FromDateTime(_rangoPersonalizado.End.Value)   : hoy),
             _ => (hoy, hoy)
         };
+    }
+
+    private async Task CargarGerencialAsync()
+    {
+        _isLoadingGerencial = true;
+        _errorGerencial = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var (desde, hasta) = ObtenerRango();
+            _gerencial = await Repo.GetDashboardGerencialAsync(desde, hasta);
+            if (_gerencial is null) _errorGerencial = "No se pudo obtener el dashboard gerencial.";
+        }
+        catch { _errorGerencial = "Error al comunicarse con el servidor."; }
+        finally { _isLoadingGerencial = false; }
     }
 
     private static DateOnly InicioSemana(DateOnly fecha)

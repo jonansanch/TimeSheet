@@ -47,4 +47,20 @@ public class DashboardRepository : IDashboardRepository
 
         return await response.Content.ReadFromJsonAsync<DistribucionHorasResponse>(cancellationToken: cancellationToken);
     }
+
+    public async Task<DashboardGerencialResponse?> GetDashboardGerencialAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            throw new UnauthorizedAccessException("No hay token de acceso activo.");
+
+        var url = $"api/dashboard/gerencial?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}";
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+
+        var response = await _http.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<DashboardGerencialResponse>(cancellationToken: cancellationToken);
+    }
 }
