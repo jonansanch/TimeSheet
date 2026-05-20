@@ -1,0 +1,272 @@
+@page "/reportes"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject IReportesRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+
+<PageTitle>Reportes - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Reportes</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Consulta y filtra registros de horas del equipo.</MudText>
+    </div>
+
+    {{!-- ── Panel de filtros ──────────────────────────────────────── --}}
+    <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+        <MudGrid Spacing="2">
+
+            {{!-- Período --}}
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudText Typo="Typo.body2" Style="font-weight:600;min-width:60px;">Período</MudText>
+                    <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" OverrideStyles="false">
+                        <MudButton Color="@(_periodo == Periodo.Mes ? Color.Primary : Color.Default)"
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Mes))">Este mes</MudButton>
+                        <MudButton Color="@(_periodo == Periodo.Semana ? Color.Primary : Color.Default)"
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Semana))">Esta semana</MudButton>
+                        <MudButton Color="@(_periodo == Periodo.Hoy ? Color.Primary : Color.Default)"
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Hoy))">Hoy</MudButton>
+                        <MudButton Color="@(_periodo == Periodo.Personalizado ? Color.Primary : Color.Default)"
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Personalizado))">Personalizado</MudButton>
+                    </MudButtonGroup>
+                    @if (_periodo == Periodo.Personalizado)
+                    {
+                        <MudDateRangePicker DateRange="_rango"
+                                            DateRangeChanged="OnRangoChangedAsync"
+                                            MaxDate="DateTime.Today"
+                                            Variant="Variant.Outlined"
+                                            Margin="Margin.Dense"
+                                            Style="max-width:300px;" />
+                    }
+                </MudStack>
+            </MudItem>
+
+            {{!-- Empleado --}}
+            <MudItem xs="12" sm="6" md="4">
+                <MudSelect T="string"
+                           Label="Empleado"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Value="_filtroUserId"
+                           ValueChanged="v => _filtroUserId = v"
+                           aria-label="Filtrar por empleado">
+                    @foreach (var u in _usuarios)
+                    {
+                        <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            {{!-- Cliente --}}
+            <MudItem xs="12" sm="6" md="4">
+                <MudTextField T="string"
+                              Label="Cliente"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Clearable="true"
+                              @bind-Value="_filtroCliente"
+                              Placeholder="Filtrar por nombre de cliente"
+                              aria-label="Filtrar por cliente" />
+            </MudItem>
+
+            {{!-- Proyecto --}}
+            <MudItem xs="12" sm="6" md="4">
+                <MudTextField T="string"
+                              Label="Proyecto"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Clearable="true"
+                              @bind-Value="_filtroProyecto"
+                              Placeholder="Filtrar por nombre de proyecto"
+                              aria-label="Filtrar por proyecto" />
+            </MudItem>
+
+            {{!-- Botón --}}
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="GenerarReporteAsync"
+                           Disabled="_isLoading">
+                    Generar reporte
+                </MudButton>
+            </MudItem>
+
+        </MudGrid>
+    </MudPaper>
+
+    {{!-- ── Resultados ─────────────────────────────────────────────── --}}
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton Rows="10" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    else if (_reporte is not null)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small">
+                @_reporte.TotalRegistros registros
+            </MudChip>
+            <MudChip T="string" Color="Color.Success" Size="Size.Small">
+                @_reporte.TotalHoras.ToString("F1") h totales
+            </MudChip>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @_reporte.Desde.ToString("dd/MM/yyyy") – @_reporte.Hasta.ToString("dd/MM/yyyy")
+            </MudText>
+        </MudStack>
+
+        @if (_reporte.Items.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SearchOff">
+                No hay registros que coincidan con los filtros seleccionados. Intenta ampliar el período o ajustar los criterios.
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="ReporteHorasItemDto"
+                         Items="_reporte.Items"
+                         Dense="true"
+                         Filterable="false"
+                         SortMode="SortMode.Single"
+                         RowsPerPage="25"
+                         Style="border-radius:12px;overflow:hidden;">
+                <Columns>
+                    <PropertyColumn Property="x => x.FechaRegistro" Title="Fecha"
+                                    CellStyle="white-space:nowrap;"
+                                    Format="dd/MM/yyyy" />
+                    <PropertyColumn Property="x => x.NombreEmpleado" Title="Empleado" />
+                    <TemplateColumn Title="Turno" Sortable="true">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(context.Item.Turno == 1 ? Color.Info : Color.Warning)">
+                                @(context.Item.Turno == 1 ? "AM" : "PM")
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Entrada" Sortable="false">
+                        <CellTemplate>@context.Item.HoraEntrada.ToString("HH:mm")</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Salida" Sortable="false">
+                        <CellTemplate>@context.Item.HoraSalida.ToString("HH:mm")</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Horas" Sortable="true">
+                        <CellTemplate>
+                            <strong>@context.Item.Horas.ToString("F2")</strong>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Cliente" Title="Cliente" />
+                    <PropertyColumn Property="x => x.Proyecto" Title="Proyecto" />
+                    <PropertyColumn Property="x => x.Modalidad" Title="Modalidad" />
+                    <PropertyColumn Property="x => x.Lugar" Title="Lugar" />
+                    <PropertyColumn Property="x => x.Descripcion" Title="Descripción" />
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="ReporteHorasItemDto" PageSizeOptions="new[] { 25, 50, 100 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    }
+
+</MudStack>
+
+@code {
+    private ReporteHorasResponse? _reporte;
+    private bool _isLoading = false;
+    private string _errorMessage = string.Empty;
+
+    private List<UserAdminResponse> _usuarios = [];
+    private string? _filtroUserId;
+    private string _filtroCliente = string.Empty;
+    private string _filtroProyecto = string.Empty;
+
+    private Periodo _periodo = Periodo.Mes;
+    private DateRange _rango = new(
+        new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+        DateTime.Today);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuariosAsync();
+        await GenerarReporteAsync();
+    }
+
+    private async Task CargarUsuariosAsync()
+    {
+        try
+        {
+            var paged = await UsuariosRepo.GetUsersAsync(pageNumber: 1, pageSize: 200, sortBy: "email", sortDescending: false);
+            _usuarios = paged?.Items ?? [];
+        }
+        catch { /* lista vacía — el filtro de empleado no estará disponible */ }
+    }
+
+    private void CambiarPeriodo(Periodo periodo)
+    {
+        _periodo = periodo;
+        var hoy = DateTime.Today;
+        _rango = periodo switch
+        {
+            Periodo.Hoy    => new DateRange(hoy, hoy),
+            Periodo.Semana => new DateRange(InicioSemana(hoy), hoy),
+            Periodo.Mes    => new DateRange(new DateTime(hoy.Year, hoy.Month, 1), hoy),
+            _              => _rango
+        };
+    }
+
+    private Task OnRangoChangedAsync(DateRange rango)
+    {
+        _rango = rango;
+        return Task.CompletedTask;
+    }
+
+    private async Task GenerarReporteAsync()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var (desde, hasta) = ObtenerRango();
+            _reporte = await Repo.GetReporteHorasAsync(
+                desde, hasta,
+                string.IsNullOrWhiteSpace(_filtroUserId)   ? null : _filtroUserId,
+                string.IsNullOrWhiteSpace(_filtroCliente)  ? null : _filtroCliente,
+                string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto);
+            if (_reporte is null)
+                _errorMessage = "No se pudo generar el reporte.";
+        }
+        catch { _errorMessage = "Error al comunicarse con el servidor."; }
+        finally { _isLoading = false; }
+    }
+
+    private (DateOnly desde, DateOnly hasta) ObtenerRango()
+    {
+        if (_periodo != Periodo.Personalizado || (!_rango.Start.HasValue && !_rango.End.HasValue))
+        {
+            var hoy = DateOnly.FromDateTime(DateTime.Today);
+            return _periodo switch
+            {
+                Periodo.Hoy    => (hoy, hoy),
+                Periodo.Semana => (DateOnly.FromDateTime(InicioSemana(DateTime.Today)), hoy),
+                _              => (new DateOnly(hoy.Year, hoy.Month, 1), hoy)
+            };
+        }
+        var desde = _rango.Start.HasValue ? DateOnly.FromDateTime(_rango.Start.Value) : DateOnly.FromDateTime(DateTime.Today);
+        var hasta = _rango.End.HasValue   ? DateOnly.FromDateTime(_rango.End.Value)   : DateOnly.FromDateTime(DateTime.Today);
+        return (desde, hasta);
+    }
+
+    private static DateTime InicioSemana(DateTime fecha)
+    {
+        var diff = (int)fecha.DayOfWeek - (int)DayOfWeek.Monday;
+        if (diff < 0) diff += 7;
+        return fecha.AddDays(-diff).Date;
+    }
+
+    private enum Periodo { Hoy, Semana, Mes, Personalizado }
+}
