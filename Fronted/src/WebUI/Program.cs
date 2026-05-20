@@ -32,6 +32,7 @@ builder.Services.AddScoped<IModalidadRepository, ModalidadRepository>();
 builder.Services.AddScoped<ILugarTrabajoRepository, LugarTrabajoRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IReportesRepository, ReportesRepository>();
+builder.Services.AddScoped<INotificacionesRepository, NotificacionesRepository>();
 builder.Services.AddSingleton<AuthStateService>();
 builder.Services.AddScoped<KpgAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(

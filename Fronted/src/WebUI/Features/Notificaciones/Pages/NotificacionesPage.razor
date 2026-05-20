@@ -1,0 +1,205 @@
+@page "/notificaciones"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject INotificacionesRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+
+<PageTitle>Notificaciones - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Notificaciones</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Historial de correos automáticos enviados por días sin registro.</MudText>
+    </div>
+
+    {{!-- ── Filtros ──────────────────────────────────────────────────── --}}
+    <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+        <MudGrid Spacing="2">
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Desde"
+                               Date="_filtroDesdeDate"
+                               DateChanged="d => _filtroDesde = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
+                               MaxDate="DateTime.Today"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               aria-label="Fecha desde" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Hasta"
+                               Date="_filtroHastaDate"
+                               DateChanged="d => _filtroHasta = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
+                               MaxDate="DateTime.Today"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               aria-label="Fecha hasta" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string"
+                           Label="Empleado"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Value="_filtroUserId"
+                           ValueChanged="v => _filtroUserId = v"
+                           aria-label="Filtrar por empleado">
+                    @foreach (var u in _usuarios)
+                    {
+                        <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="bool?"
+                           Label="Estado"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="_filtroSoloErrores"
+                           ValueChanged="v => _filtroSoloErrores = v"
+                           aria-label="Filtrar por estado de envío">
+                    <MudSelectItem T="bool?" Value="@((bool?)null)">Todos</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)false)">Solo exitosos</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)true)">Solo errores</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="BuscarAsync"
+                           Disabled="_isLoading">
+                    Buscar
+                </MudButton>
+            </MudItem>
+
+        </MudGrid>
+    </MudPaper>
+
+    {{!-- ── Resultados ─────────────────────────────────────────────── --}}
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton Rows="8" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    else if (_historial is not null)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small">
+                @_historial.Total notificaciones
+            </MudChip>
+        </MudStack>
+
+        @if (_historial.Items.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.NotificationsOff">
+                No hay notificaciones que coincidan con los filtros seleccionados.
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="NotificacionItemDto"
+                         Items="_historial.Items"
+                         Dense="true"
+                         Filterable="false"
+                         SortMode="SortMode.Single"
+                         RowsPerPage="25"
+                         Style="border-radius:12px;overflow:hidden;">
+                <Columns>
+                    <TemplateColumn Title="Fecha envío" Sortable="true">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="white-space:nowrap;">
+                                @context.Item.FechaEnvio.LocalDateTime.ToString("dd/MM/yyyy HH:mm")
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Nombre" Title="Empleado" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <TemplateColumn Title="Días sin registro" Sortable="true">
+                        <CellTemplate>
+                            @(context.Item.DiasAcumulados >= 999 ? "Sin registros" : $"{context.Item.DiasAcumulados} d")
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Ref. fecha" Sortable="false">
+                        <CellTemplate>@context.Item.FechaReferencia.ToString("dd/MM/yyyy")</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Estado" Sortable="true">
+                        <CellTemplate>
+                            @if (context.Item.Exitoso)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">
+                                    Enviado
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudTooltip Text="@context.Item.ErrorDetalle">
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
+                                        Error
+                                    </MudChip>
+                                </MudTooltip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="NotificacionItemDto" PageSizeOptions="new[] { 25, 50, 100 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    }
+
+</MudStack>
+
+@code {
+    private HistorialNotificacionesResponse? _historial;
+    private bool _isLoading = false;
+    private string _errorMessage = string.Empty;
+
+    private List<UserAdminResponse> _usuarios = [];
+    private string? _filtroUserId;
+    private DateOnly? _filtroDesde;
+    private DateOnly? _filtroHasta;
+    private bool? _filtroSoloErrores;
+
+    private DateTime? _filtroDesdeDate => _filtroDesde?.ToDateTime(TimeOnly.MinValue);
+    private DateTime? _filtroHastaDate => _filtroHasta?.ToDateTime(TimeOnly.MinValue);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarUsuariosAsync(), BuscarAsync());
+    }
+
+    private async Task CargarUsuariosAsync()
+    {
+        try
+        {
+            var paged = await UsuariosRepo.GetUsersAsync(pageNumber: 1, pageSize: 200, sortBy: "email", sortDescending: false);
+            _usuarios = paged?.Items ?? [];
+        }
+        catch { /* lista vacía */ }
+    }
+
+    private async Task BuscarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            _historial = await Repo.GetHistorialAsync(_filtroDesde, _filtroHasta, _filtroUserId, _filtroSoloErrores);
+            if (_historial is null)
+                _errorMessage = "No se pudo obtener el historial de notificaciones.";
+        }
+        catch { _errorMessage = "Error al comunicarse con el servidor."; }
+        finally { _isLoading = false; }
+    }
+}
