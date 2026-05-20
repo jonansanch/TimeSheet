@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetDashboardGerencial;
+using KPG.Timesheet.Application.Features.Dashboard.Queries.GetMetricasGlobales;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetDistribucionHoras;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetEstadoEquipo;
 using KPG.Timesheet.Domain.Constants;
@@ -22,10 +23,12 @@ public class Dashboard : IEndpointGroup
         {
             Roles = $"{Roles.Gerente},{Roles.Admin}"
         };
+        var soloAdmin = new AuthorizeAttribute { Roles = Roles.Admin };
 
         groupBuilder.MapGet("estado-equipo", GetEstadoEquipo).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("distribucion-horas", GetDistribucionHoras).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("gerencial", GetDashboardGerencial).RequireAuthorization(gerenteAndAbove);
+        groupBuilder.MapGet("admin", GetMetricasGlobales).RequireAuthorization(soloAdmin);
     }
 
     [EndpointSummary("Estado diario del equipo")]
@@ -87,6 +90,30 @@ public class Dashboard : IEndpointGroup
             return Results.BadRequest("'desde' no puede ser posterior a 'hasta'.");
 
         var query = new GetDashboardGerencialQuery(desdeEfectivo, hastaEfectivo);
+        var result = await sender.Send(query, cancellationToken);
+        return Results.Ok(result);
+    }
+
+    [EndpointSummary("Métricas globales del sistema")]
+    [EndpointDescription("Retorna métricas globales de uso: registros, horas, usuarios, tendencia diaria. Solo Admin.")]
+    [ProducesResponseType<MetricasGlobalesResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> GetMetricasGlobales(
+        ISender sender,
+        CancellationToken cancellationToken,
+        [FromQuery] DateOnly? desde = null,
+        [FromQuery] DateOnly? hasta = null)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var desdeEfectivo = desde ?? InicioSemana(hoy);
+        var hastaEfectivo = hasta ?? hoy;
+
+        if (desdeEfectivo > hastaEfectivo)
+            return Results.BadRequest("'desde' no puede ser posterior a 'hasta'.");
+
+        var query = new GetMetricasGlobalesQuery(desdeEfectivo, hastaEfectivo);
         var result = await sender.Send(query, cancellationToken);
         return Results.Ok(result);
     }

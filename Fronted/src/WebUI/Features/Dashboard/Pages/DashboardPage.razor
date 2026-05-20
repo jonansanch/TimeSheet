@@ -259,6 +259,99 @@
         </Authorized>
     </AuthorizeView>
 
+    {{!-- ── Sección admin (solo Admin) ───────────────────────────── --}}
+    <AuthorizeView Roles="@Roles.Admin">
+        <Authorized>
+            <MudDivider />
+            <MudStack Spacing="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Style="font-weight:600;">Métricas globales</MudText>
+                </MudStack>
+
+                @if (_isLoadingAdmin)
+                {
+                    <MudGrid>
+                        @for (var i = 0; i < 4; i++)
+                        {
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudSkeleton Width="100%" Height="90px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                    <MudSkeleton Width="100%" Height="260px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+                }
+                else if (!string.IsNullOrWhiteSpace(_errorAdmin))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorAdmin</MudAlert>
+                }
+                else if (_metricas is not null)
+                {
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="3">
+                            <KpgStatCard Label="Total registros"
+                                         Value="_metricas.TotalRegistros"
+                                         Icon="@Icons.Material.Filled.Assignment"
+                                         Color="Color.Primary" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                                <MudStack Spacing="1">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Success" Size="Size.Medium" />
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total horas</MudText>
+                                    </MudStack>
+                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@_metricas.TotalHoras.ToString("F1") h</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <KpgStatCard Label="Usuarios activos"
+                                         Value="_metricas.UsuariosActivos"
+                                         Icon="@Icons.Material.Filled.People"
+                                         Color="Color.Info" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <KpgStatCard Label="Sin registrar hoy"
+                                         Value="_metricas.PendientesHoy"
+                                         Icon="@Icons.Material.Filled.Warning"
+                                         Color="@(_metricas.PendientesHoy > 0 ? Color.Warning : Color.Success)" />
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (_metricas.Tendencia.Count > 0)
+                    {
+                        <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                            <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">
+                                Tendencia de registros (@_metricas.Desde.ToString("dd/MM") – @_metricas.Hasta.ToString("dd/MM/yyyy"))
+                            </MudText>
+                            <ApexChart TItem="TendenciaDiaDto"
+                                       Options="_lineOptions"
+                                       Height="240">
+                                <ApexPointSeries TItem="TendenciaDiaDto"
+                                                 Items="_metricas.Tendencia"
+                                                 Name="Registros"
+                                                 XValue="@(e => e.Fecha.ToString("dd/MM"))"
+                                                 YValue="@(e => (decimal)e.TotalRegistros)"
+                                                 SeriesType="SeriesType.Line" />
+                                <ApexPointSeries TItem="TendenciaDiaDto"
+                                                 Items="_metricas.Tendencia"
+                                                 Name="Horas"
+                                                 XValue="@(e => e.Fecha.ToString("dd/MM"))"
+                                                 YValue="@(e => e.TotalHoras)"
+                                                 SeriesType="SeriesType.Line" />
+                            </ApexChart>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info">No hay registros en el período seleccionado.</MudAlert>
+                    }
+                }
+            </MudStack>
+        </Authorized>
+    </AuthorizeView>
+
 </MudStack>
 
 @code {
@@ -275,6 +368,10 @@
     private DashboardGerencialResponse? _gerencial;
     private bool _isLoadingGerencial = true;
     private string _errorGerencial = string.Empty;
+    // ── Métricas globales (Admin) ────────────────────────────────────
+    private MetricasGlobalesResponse? _metricas;
+    private bool _isLoadingAdmin = true;
+    private string _errorAdmin = string.Empty;
     private bool _isLoadingDistribucion = true;
     private string _errorDistribucion = string.Empty;
     private Periodo _periodo = Periodo.Semana;
@@ -289,6 +386,14 @@
         Xaxis = new XAxis { Title = new AxisTitle { Text = "Horas" } },
         DataLabels = new DataLabels { Enabled = true },
         Legend = new Legend { Show = false },
+        Grid = new Grid { BorderColor = "#e0e0e0" }
+    };
+
+    private ApexChartOptions<TendenciaDiaDto> _lineOptions = new()
+    {
+        Stroke = new Stroke { Curve = Curve.Smooth, Width = [2, 2] },
+        DataLabels = new DataLabels { Enabled = false },
+        Legend = new Legend { Position = LegendPosition.Top },
         Grid = new Grid { BorderColor = "#e0e0e0" }
     };
 
@@ -311,7 +416,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarEstadoAsync(), CargarDistribucionAsync(), CargarGerencialAsync());
+        await Task.WhenAll(CargarEstadoAsync(), CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
     }
 
     private async Task OnFechaChangedAsync(DateTime? date)
@@ -324,14 +429,14 @@
     private async Task CambiarPeriodoAsync(Periodo periodo)
     {
         _periodo = periodo;
-        await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync());
+        await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
     }
 
     private async Task OnRangoPersonalizadoChangedAsync(DateRange rango)
     {
         _rangoPersonalizado = rango;
         if (rango.Start.HasValue && rango.End.HasValue)
-            await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync());
+            await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
     }
 
     private async Task CargarEstadoAsync()
@@ -391,6 +496,21 @@
         }
         catch { _errorGerencial = "Error al comunicarse con el servidor."; }
         finally { _isLoadingGerencial = false; }
+    }
+
+    private async Task CargarAdminAsync()
+    {
+        _isLoadingAdmin = true;
+        _errorAdmin = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var (desde, hasta) = ObtenerRango();
+            _metricas = await Repo.GetMetricasGlobalesAsync(desde, hasta);
+            if (_metricas is null) _errorAdmin = "No se pudo obtener las métricas globales.";
+        }
+        catch { _errorAdmin = "Error al comunicarse con el servidor."; }
+        finally { _isLoadingAdmin = false; }
     }
 
     private static DateOnly InicioSemana(DateOnly fecha)

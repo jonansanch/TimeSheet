@@ -7,4 +7,5 @@ public interface IDashboardRepository
     Task<EstadoEquipoResponse?> GetEstadoEquipoAsync(DateOnly? fecha = null, CancellationToken cancellationToken = default);
     Task<DistribucionHorasResponse?> GetDistribucionHorasAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
     Task<DashboardGerencialResponse?> GetDashboardGerencialAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
+    Task<MetricasGlobalesResponse?> GetMetricasGlobalesAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
 }
