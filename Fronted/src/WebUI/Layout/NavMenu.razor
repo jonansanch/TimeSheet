@@ -49,6 +49,16 @@
         </Authorized>
     </AuthorizeView>
 
+    <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente}")">
+        <Authorized>
+            <MudNavLink Href="/bitacora"
+                        Icon="@Icons.Material.Filled.ManageSearch"
+                        IconColor="Color.Secondary">
+                Bitácora
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
     <AuthorizeView Roles="@Roles.Admin">
         <Authorized>
             <MudNavLink Href="/admin/usuarios"
@@ -70,6 +80,11 @@
                         Icon="@Icons.Material.Filled.PendingActions"
                         IconColor="Color.Secondary">
                 Solicitudes
+            </MudNavLink>
+            <MudNavLink Href="/admin/bitacora"
+                        Icon="@Icons.Material.Filled.ManageSearch"
+                        IconColor="Color.Secondary">
+                Bitácora
             </MudNavLink>
             <MudNavLink Href="/admin/parametros"
                         Icon="@Icons.Material.Filled.Settings"

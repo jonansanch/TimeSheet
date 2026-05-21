@@ -21,6 +21,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<Modalidad> Modalidades => Set<Modalidad>();
     public DbSet<LugarTrabajo> LugaresTrabajo => Set<LugarTrabajo>();
     public DbSet<NotificacionEnviada> NotificacionesEnviadas => Set<NotificacionEnviada>();
+    public DbSet<BitacoraAuditoria> BitacoraAuditoria => Set<BitacoraAuditoria>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

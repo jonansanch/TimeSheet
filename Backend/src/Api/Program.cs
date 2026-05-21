@@ -2,10 +2,14 @@ using KPG.Timesheet.Infrastructure.Data;
 using KPG.Timesheet.Infrastructure.Jobs;
 using QuestPDF.Infrastructure;
 using Scalar.AspNetCore;
+using Serilog;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((ctx, lc) =>
+    lc.ReadFrom.Configuration(ctx.Configuration));
 
 builder.AddApplicationServices();
 builder.AddInfrastructureServices();
@@ -24,6 +28,8 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseSerilogRequestLogging(opts =>
+    opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} → {StatusCode} en {Elapsed:0.0000} ms");
 app.UseCors(static builder =>
     builder.AllowAnyMethod()
         .AllowAnyHeader()

@@ -15,6 +15,7 @@ public interface IApplicationDbContext
     DbSet<Modalidad> Modalidades { get; }
     DbSet<LugarTrabajo> LugaresTrabajo { get; }
     DbSet<NotificacionEnviada> NotificacionesEnviadas { get; }
+    DbSet<BitacoraAuditoria> BitacoraAuditoria { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

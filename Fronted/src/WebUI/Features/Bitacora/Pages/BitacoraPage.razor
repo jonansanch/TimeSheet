@@ -1,0 +1,227 @@
+@page "/bitacora"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente}")]
+@inject IBitacoraRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+
+<PageTitle>Bitácora - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Bitácora de auditoría</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Consulta y filtra eventos según tu alcance de rol.</MudText>
+    </div>
+
+    <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+        <MudGrid Spacing="2">
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Desde"
+                               Date="_filtroDesdeDate"
+                               DateChanged="d => _filtroDesde = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
+                               MaxDate="DateTime.Today"
+                               PickerVariant="PickerVariant.Dialog"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               aria-label="Fecha desde" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Hasta"
+                               Date="_filtroHastaDate"
+                               DateChanged="d => _filtroHasta = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
+                               MaxDate="DateTime.Today"
+                               PickerVariant="PickerVariant.Dialog"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               aria-label="Fecha hasta" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string"
+                           Label="Usuario"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Value="_filtroActorId"
+                           ValueChanged="v => _filtroActorId = v"
+                           aria-label="Filtrar por usuario">
+                    @foreach (var u in _usuarios)
+                    {
+                        <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string"
+                           Label="Tipo de evento"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Value="_filtroTipoEvento"
+                           ValueChanged="v => _filtroTipoEvento = v"
+                           aria-label="Filtrar por tipo de evento">
+                    @foreach (var tipo in _tiposEvento)
+                    {
+                        <MudSelectItem Value="@tipo">@tipo</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="BuscarAsync"
+                           Disabled="_isLoading">
+                    Buscar
+                </MudButton>
+            </MudItem>
+
+        </MudGrid>
+    </MudPaper>
+
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton Rows="8" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    else if (_bitacora is not null)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small">
+                @_bitacora.Total evento@(_bitacora.Total == 1 ? "" : "s")
+            </MudChip>
+        </MudStack>
+
+        @if (_bitacora.Items.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SearchOff">
+                No hay eventos que coincidan con los filtros seleccionados.
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="BitacoraItemDto"
+                         Items="_bitacora.Items"
+                         Dense="true"
+                         Filterable="false"
+                         SortMode="SortMode.Single"
+                         RowsPerPage="25"
+                         Style="border-radius:12px;overflow:hidden;">
+                <Columns>
+                    <TemplateColumn Title="Fecha y hora" Sortable="true">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="white-space:nowrap;">
+                                @context.Item.Timestamp.LocalDateTime.ToString("dd/MM/yyyy HH:mm")
+                            </MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Tipo de evento" Sortable="true">
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="@GetTipoColor(context.Item.TipoEvento)"
+                                     Variant="Variant.Filled">
+                                @context.Item.TipoEvento
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actor" Sortable="false">
+                        <CellTemplate>
+                            @(context.Item.ActorNombre ?? context.Item.ActorEmail ?? context.Item.ActorId)
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.EntidadAfectada" Title="Entidad" />
+                    <PropertyColumn Property="x => x.EntidadId" Title="ID entidad" Sortable="false" />
+                    <TemplateColumn Title="Metadata" Sortable="false">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.MetadataJson))
+                            {
+                                <MudTooltip Text="@context.Item.MetadataJson" Placement="Placement.Left">
+                                    <MudText Typo="Typo.caption"
+                                             Style="cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;display:block;white-space:nowrap;">
+                                        @(context.Item.MetadataJson.Length > 40
+                                            ? context.Item.MetadataJson[..40] + "…"
+                                            : context.Item.MetadataJson)
+                                    </MudText>
+                                </MudTooltip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="BitacoraItemDto" PageSizeOptions="new[] { 25, 50, 100 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    }
+
+</MudStack>
+
+@code {
+    private BitacoraResponse? _bitacora;
+    private bool _isLoading;
+    private string _errorMessage = string.Empty;
+
+    private List<UserAdminResponse> _usuarios = [];
+    private string? _filtroActorId;
+    private DateOnly? _filtroDesde;
+    private DateOnly? _filtroHasta;
+    private string? _filtroTipoEvento;
+
+    private DateTime? _filtroDesdeDate => _filtroDesde?.ToDateTime(TimeOnly.MinValue);
+    private DateTime? _filtroHastaDate => _filtroHasta?.ToDateTime(TimeOnly.MinValue);
+
+    private static readonly List<string> _tiposEvento =
+    [
+        "LoginExitoso", "AltaUsuario", "BajaUsuario", "ReactivacionUsuario",
+        "EliminacionUsuario", "CambioRol", "AprobacionExcepcion", "RechazoExcepcion",
+        "ModificacionDescripcion", "EliminacionRegistro", "NotificacionEnviada"
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarUsuariosAsync(), BuscarAsync());
+    }
+
+    private async Task CargarUsuariosAsync()
+    {
+        try
+        {
+            var paged = await UsuariosRepo.GetUsersAsync(pageNumber: 1, pageSize: 200, sortBy: "email", sortDescending: false);
+            _usuarios = paged?.Items ?? [];
+        }
+        catch { /* lista vacía */ }
+    }
+
+    private async Task BuscarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+        try
+        {
+            _bitacora = await Repo.GetMiAlcanceAsync(_filtroDesde, _filtroHasta, _filtroActorId, _filtroTipoEvento);
+            if (_bitacora is null)
+                _errorMessage = "No se pudo obtener la bitácora.";
+        }
+        catch { _errorMessage = "Error al comunicarse con el servidor."; }
+        finally { _isLoading = false; }
+    }
+
+    private static Color GetTipoColor(string tipo) => tipo switch
+    {
+        "LoginExitoso"                         => Color.Success,
+        "AltaUsuario" or "ReactivacionUsuario" => Color.Info,
+        "BajaUsuario" or "EliminacionUsuario"  => Color.Error,
+        "CambioRol"                            => Color.Warning,
+        _                                      => Color.Default
+    };
+}

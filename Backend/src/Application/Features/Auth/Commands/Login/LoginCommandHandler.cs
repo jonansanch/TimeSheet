@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
+using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
 using MediatR;
 
@@ -13,17 +14,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IApplicationDbContext _context;
     private readonly JwtSettings _jwtSettings;
+    private readonly IBitacoraService _bitacora;
 
     public LoginCommandHandler(
         IIdentityService identityService,
         IJwtTokenService jwtTokenService,
         IApplicationDbContext context,
-        Microsoft.Extensions.Options.IOptions<JwtSettings> jwtSettings)
+        Microsoft.Extensions.Options.IOptions<JwtSettings> jwtSettings,
+        IBitacoraService bitacora)
     {
         _identityService = identityService;
         _jwtTokenService = jwtTokenService;
         _context = context;
         _jwtSettings = jwtSettings.Value;
+        _bitacora = bitacora;
     }
 
     public async Task<LoginResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -48,6 +52,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
 
         _context.RefreshTokens.Add(refreshToken);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _bitacora.RegistrarAsync(
+            TipoEventoBitacora.LoginExitoso,
+            credentials.UserId, credentials.Email,
+            "AspNetUsers", credentials.UserId,
+            new { credentials.Email },
+            cancellationToken);
 
         return new LoginResponseDto(
             AccessToken: accessToken,

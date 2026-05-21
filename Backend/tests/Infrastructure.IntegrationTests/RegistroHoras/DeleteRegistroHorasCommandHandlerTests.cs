@@ -4,6 +4,7 @@ using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHo
 using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using NotFoundException = KPG.Timesheet.Application.Common.Exceptions.NotFoundException;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 
@@ -20,7 +21,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
         var id = registro.Id;
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUser("user-1"));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUser("user-1"));
         await handler.Handle(new DeleteRegistroHorasCommand(id), CancellationToken.None);
 
         context.RegistrosHoras.Should().BeEmpty();
@@ -30,7 +31,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenRegistroNotFound_ShouldThrowNotFoundException()
     {
         await using var context = CreateContext();
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUser("user-1"));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUser("user-1"));
 
         var act = () => handler.Handle(new DeleteRegistroHorasCommand(999), CancellationToken.None);
 
@@ -45,7 +46,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUser("user-1"));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUser("user-1"));
 
         var act = () => handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
@@ -61,7 +62,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
         var id = registro.Id;
 
-        var deleteHandler = new DeleteRegistroHorasCommandHandler(context, new TestUser("user-1"));
+        var deleteHandler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUser("user-1"));
         await deleteHandler.Handle(new DeleteRegistroHorasCommand(id), CancellationToken.None);
 
         var remaining = await context.RegistrosHoras
@@ -93,7 +94,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Admin));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Admin));
         await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
         var deleted = await context.RegistrosHoras.FindAsync(registro.Id);
@@ -108,7 +109,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Supervisor));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Supervisor));
         await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
         var deleted = await context.RegistrosHoras.FindAsync(registro.Id);
@@ -123,7 +124,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Empleado));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUserWithRol("user-2", KPG.Timesheet.Domain.Constants.Roles.Empleado));
         var act = () => handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenAccessException>();

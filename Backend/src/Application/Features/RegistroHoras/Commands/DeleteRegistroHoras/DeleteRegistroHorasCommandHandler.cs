@@ -9,11 +9,13 @@ namespace KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegist
 public class DeleteRegistroHorasCommandHandler : IRequestHandler<DeleteRegistroHorasCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IBitacoraService _bitacora;
     private readonly IUser _user;
 
-    public DeleteRegistroHorasCommandHandler(IApplicationDbContext context, IUser user)
+    public DeleteRegistroHorasCommandHandler(IApplicationDbContext context, IBitacoraService bitacora, IUser user)
     {
         _context = context;
+        _bitacora = bitacora;
         _user = user;
     }
 
@@ -33,7 +35,17 @@ public class DeleteRegistroHorasCommandHandler : IRequestHandler<DeleteRegistroH
         if (!isSupervisorOrAdmin && registro.UserId != _user.Id)
             throw new ForbiddenAccessException();
 
+        var ownerUserId = registro.UserId;
+        var fecha = registro.FechaRegistro;
+
         _context.RegistrosHoras.Remove(registro);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _bitacora.RegistrarAsync(
+            TipoEventoBitacora.EliminacionRegistro,
+            _user.Id ?? "system", null,
+            "RegistrosHoras", request.RegistroId.ToString(),
+            new { OwnerUserId = ownerUserId, Fecha = fecha },
+            cancellationToken);
     }
 }

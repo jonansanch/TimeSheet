@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,6 +66,7 @@ public class NotificacionesPendientesJob(
             var db = scope.ServiceProvider.GetRequiredService<IDbConnection>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
             var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+            var bitacora = scope.ServiceProvider.GetRequiredService<IBitacoraService>();
 
             var umbral = await db.ExecuteScalarAsync<int>(SqlUmbral);
             if (umbral <= 0) umbral = 3;
@@ -119,7 +121,7 @@ public class NotificacionesPendientesJob(
                     logger.LogError(ex, "NotificacionesPendientesJob: fallo al enviar a {Email}.", p.Email);
                 }
 
-                context.NotificacionesEnviadas.Add(new NotificacionEnviada
+                var notificacion = new NotificacionEnviada
                 {
                     UserId = p.UserId,
                     Email = p.Email,
@@ -127,9 +129,20 @@ public class NotificacionesPendientesJob(
                     DiasAcumulados = Math.Min(diasSinRegistro, 999),
                     Exitoso = exitoso,
                     ErrorDetalle = errorDetalle
-                });
+                };
 
+                context.NotificacionesEnviadas.Add(notificacion);
                 await context.SaveChangesAsync(cancellationToken);
+
+                if (exitoso)
+                {
+                    await bitacora.RegistrarAsync(
+                        TipoEventoBitacora.NotificacionEnviada,
+                        "system", null,
+                        "NotificacionesEnviadas", notificacion.Id.ToString(),
+                        new { p.Email, notificacion.DiasAcumulados },
+                        cancellationToken);
+                }
             }
 
             logger.LogInformation("NotificacionesPendientesJob: proceso completado.");

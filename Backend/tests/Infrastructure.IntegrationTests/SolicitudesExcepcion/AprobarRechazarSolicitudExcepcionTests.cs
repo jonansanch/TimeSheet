@@ -1,5 +1,6 @@
 using FluentAssertions;
 using KPG.Timesheet.Application.Common.Exceptions;
+using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.SolicitudesExcepcion.Commands.AprobarSolicitudExcepcion;
 using KPG.Timesheet.Application.Features.SolicitudesExcepcion.Commands.RechazarSolicitudExcepcion;
 using KPG.Timesheet.Domain.Entities;
@@ -7,6 +8,7 @@ using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Domain.Exceptions;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.SolicitudesExcepcion;
@@ -21,7 +23,7 @@ public class AprobarRechazarSolicitudExcepcionTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new AprobarSolicitudExcepcionCommandHandler(context);
+        var handler = new AprobarSolicitudExcepcionCommandHandler(context, Substitute.For<IBitacoraService>(), Substitute.For<IUser>());
         await handler.Handle(new AprobarSolicitudExcepcionCommand(solicitud.Id), CancellationToken.None);
 
         var updated = await context.SolicitudesExcepcion.FindAsync(solicitud.Id);
@@ -36,7 +38,7 @@ public class AprobarRechazarSolicitudExcepcionTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new RechazarSolicitudExcepcionCommandHandler(context);
+        var handler = new RechazarSolicitudExcepcionCommandHandler(context, Substitute.For<IBitacoraService>(), Substitute.For<IUser>());
         await handler.Handle(new RechazarSolicitudExcepcionCommand(solicitud.Id), CancellationToken.None);
 
         var updated = await context.SolicitudesExcepcion.FindAsync(solicitud.Id);
@@ -47,7 +49,7 @@ public class AprobarRechazarSolicitudExcepcionTests
     public async Task Aprobar_WhenNoExiste_ThrowsNotFoundException()
     {
         await using var context = CreateContext();
-        var handler = new AprobarSolicitudExcepcionCommandHandler(context);
+        var handler = new AprobarSolicitudExcepcionCommandHandler(context, Substitute.For<IBitacoraService>(), Substitute.For<IUser>());
 
         var act = () => handler.Handle(new AprobarSolicitudExcepcionCommand(999), CancellationToken.None);
 
@@ -63,7 +65,7 @@ public class AprobarRechazarSolicitudExcepcionTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new AprobarSolicitudExcepcionCommandHandler(context);
+        var handler = new AprobarSolicitudExcepcionCommandHandler(context, Substitute.For<IBitacoraService>(), Substitute.For<IUser>());
         var act = () => handler.Handle(new AprobarSolicitudExcepcionCommand(solicitud.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainRuleException>();

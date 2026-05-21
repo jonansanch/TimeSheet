@@ -5,6 +5,7 @@ using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
 using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
@@ -63,7 +64,7 @@ public class SupervisorRegistroHorasTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUser("supervisor-1"));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUser("supervisor-1"));
         await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
         context.RegistrosHoras.Should().BeEmpty();
@@ -78,7 +79,7 @@ public class SupervisorRegistroHorasTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeleteRegistroHorasCommandHandler(context, new TestUser("supervisor-1"));
+        var handler = new DeleteRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), new TestUser("supervisor-1"));
         await handler.Handle(new DeleteRegistroHorasCommand(registro.Id), CancellationToken.None);
 
         context.RegistrosHoras.Should().BeEmpty();

@@ -1,9 +1,11 @@
 using FluentAssertions;
 using KPG.Timesheet.Application.Common.Exceptions;
+using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.UpdateDescripcionRegistroHoras;
 using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 using RegistroHoras = KPG.Timesheet.Domain.Entities.RegistroHoras;
 
@@ -19,7 +21,7 @@ public class UpdateDescripcionRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateDescripcionRegistroHorasCommandHandler(context);
+        var handler = new UpdateDescripcionRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), Substitute.For<IUser>());
         await handler.Handle(
             new UpdateDescripcionRegistroHorasCommand(registro.Id, "Descripción actualizada"),
             CancellationToken.None);
@@ -33,7 +35,7 @@ public class UpdateDescripcionRegistroHorasCommandHandlerTests
     {
         await using var context = CreateContext();
 
-        var handler = new UpdateDescripcionRegistroHorasCommandHandler(context);
+        var handler = new UpdateDescripcionRegistroHorasCommandHandler(context, Substitute.For<IBitacoraService>(), Substitute.For<IUser>());
         var act = () => handler.Handle(
             new UpdateDescripcionRegistroHorasCommand(999, "Nueva descripción"),
             CancellationToken.None);

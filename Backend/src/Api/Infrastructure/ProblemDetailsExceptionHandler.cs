@@ -13,7 +13,7 @@ namespace KPG.Timesheet.Api.Infrastructure;
 /// <see cref="UnauthorizedAccessException"/> → 401, and <see cref="ForbiddenAccessException"/> → 403.
 /// Unrecognised exceptions are not handled and fall through to the default middleware.
 /// </summary>
-public class ProblemDetailsExceptionHandler : IExceptionHandler
+public class ProblemDetailsExceptionHandler(ILogger<ProblemDetailsExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
@@ -35,13 +35,13 @@ public class ProblemDetailsExceptionHandler : IExceptionHandler
             {
                 Status = StatusCodes.Status404NotFound,
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-                Title = "The specified resource was not found.",
+                Title = "El recurso especificado no fue encontrado.",
                 Detail = ne.Message
             }),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, new ProblemDetails
             {
                 Status = StatusCodes.Status401Unauthorized,
-                Title = "Unauthorized",
+                Title = "No autorizado.",
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.2"
             }),
             BadHttpRequestException bhe => (StatusCodes.Status400BadRequest, new ProblemDetails
@@ -54,7 +54,7 @@ public class ProblemDetailsExceptionHandler : IExceptionHandler
             ForbiddenAccessException => (StatusCodes.Status403Forbidden, new ProblemDetails
             {
                 Status = StatusCodes.Status403Forbidden,
-                Title = "Forbidden",
+                Title = "Acceso prohibido.",
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.4"
             }),
             _ => (StatusCodes.Status500InternalServerError, new ProblemDetails
@@ -64,6 +64,9 @@ public class ProblemDetailsExceptionHandler : IExceptionHandler
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1"
             })
         };
+
+        if (statusCode == StatusCodes.Status500InternalServerError)
+            logger.LogError(exception, "Excepción no controlada: {Message}", exception.Message);
 
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);

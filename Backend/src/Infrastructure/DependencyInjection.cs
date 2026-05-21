@@ -2,6 +2,7 @@ using System.Text;
 using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
+using KPG.Timesheet.Infrastructure.Bitacora;
 using KPG.Timesheet.Infrastructure.Data;
 using KPG.Timesheet.Infrastructure.Data.Interceptors;
 using KPG.Timesheet.Infrastructure.Email;
@@ -89,6 +90,7 @@ public static class DependencyInjection
 
         builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
         builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+        builder.Services.AddScoped<IBitacoraService, BitacoraService>();
 
         // Registrar handlers de MediatR que viven en Infrastructure (Dapper handlers)
         builder.Services.AddMediatR(cfg =>

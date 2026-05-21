@@ -68,6 +68,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdVc2VyUm9sZURpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/BitacoraAdminPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcQml0YWNvcmFBZG1pblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ClientesAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcQ2xpZW50ZXNBZG1pblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -94,6 +98,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxQYWdlc1xMb2dpblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Bitacora/Pages/BitacoraPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQml0YWNvcmFcUGFnZXNcQml0YWNvcmFQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Dashboard/Components/KpgTeamStatusCard.razor]

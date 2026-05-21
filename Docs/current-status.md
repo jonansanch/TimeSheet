@@ -1,60 +1,51 @@
 # Current Status - KPG Timesheet
 
-Ultima actualizacion: 2026-05-14
+Ultima actualizacion: 2026-05-19 — fin sesion 11
 
 ## Estado actual
 
-Epic 2 esta cerrada:
+**Epicas 1-5 completamente implementadas y con QA funcional aprobado por Jonathan.**
 
-- Implementacion completada.
-- QA manual aprobado por Jonathan.
-- Stories 2.1 a 2.7 en `Status: done`.
-
-Epic 3 esta implementada y fue validada funcionalmente por Jonathan durante la sesion:
-
-- Stories 3.1 a 3.6 implementadas.
-- Los archivos de story siguen en `Status: review` porque no se ejecuto cierre documental individual a `done`.
-- Ultima story: `Docs/stories/3.6-reglas-inmutabilidad-dominio-api.md`.
-
-Epic 4 esta en progreso:
-
-- Story 4.1: Gestionar Cuentas de Usuario, implementada y validada funcionalmente por Jonathan.
-- Story 4.2: Asignar y Modificar Roles, implementada y lista para QA funcional.
-- Siguiente historia recomendada despues de QA 4.2: Story 4.3 Gestionar Empleados.
+- Epic 1 (Auth/Shell): stories 1.1-1.6 en `done`.
+- Epic 2 (Registro de Horas): stories 2.1-2.7 en `done`.
+- Epic 3 (Ventana Retroactiva / Excepciones / Inmutabilidad): stories 3.1-3.6 en `review`.
+- Epic 4 (Administracion de Catalogos): stories 4.1-4.6 en `review`.
+- Epic 5 (Dashboards / Reportes / Notificaciones): stories 5.1-5.11 en `review`. QA funcional aprobado 2026-05-19.
 
 ## Punto exacto para retomar
 
-Retomar desde:
+**Proxima tarea: Iniciar la Epic 6 — Auditoria, Trazabilidad y Preparacion de Go-Live.**
 
-- QA funcional de `Docs/stories/4.2-asignar-y-modificar-roles.md`.
-- Pantalla principal: `/admin/usuarios`.
-- Usuario inicial recomendado: `admin@kpg.com`.
+No existen story files para Epic 6 todavia. Crearlos a partir de:
+`_bmad-output/planning-artifacts/epics.md` (buscar "Epic 6", linea ~1191)
 
-Checklist rapido de QA 4.2:
+Historias a implementar:
 
-- Cambiar rol de un usuario no-admin, por ejemplo `empleado@kpg.com`, a `Supervisor`.
-- Confirmar que la fila actualiza el rol sin recargar.
-- Confirmar que el usuario refleja el nuevo rol despues de relogin/refresh.
-- Intentar cambiar el propio rol del Admin autenticado: debe ser rechazado.
-- Intentar quitar Admin al ultimo administrador activo: debe ser rechazado.
-- Cambiar rol a un usuario inactivo: debe cambiar rol sin activarlo.
+| Historia | Descripcion |
+|----------|-------------|
+| 6.1 | Registrar Eventos Sensibles en Bitacora |
+| 6.2 | Consultar Bitacora como Admin |
+| 6.3 | Consultar Bitacora por Supervisor y Gerente |
+| 6.4 | Exportar Bitacora para Auditoria |
+| 6.5 | Logging, Backups y Recuperacion Operativa |
+| 6.6 | Checklist de Go-Live, QA y UAT |
+| 6.7 | Politica de Idioma y Preparacion para Localizacion |
 
-## Documentos importantes
+## Lo ultimo implementado (sesion 11 — commit 8fb2c1a MODULO REPORTES)
 
-- Handoff actualizado: `Docs/handoff/handoff-2026-05-14.md`
-- Session log de cierre actual: `Docs/session-logs/2026-05-14-epic-4-story-4-2-handoff.md`
-- Story 4.1: `Docs/stories/4.1-gestionar-cuentas-de-usuario.md`
-- Story 4.2: `Docs/stories/4.2-asignar-y-modificar-roles.md`
-- QA Epic 2 aprobado: `Docs/session-logs/2026-05-14-epic-2-qa-approved.md`
-- Decision idioma/localizacion: `Docs/decisions/2026-05-14-politica-idioma-localizacion.md`
-- Epics: `_bmad-output/planning-artifacts/epics.md`
-- PRD: `_bmad-output/planning-artifacts/prd.md`
-- Arquitectura: `_bmad-output/planning-artifacts/architecture.md`
-- UX: `_bmad-output/planning-artifacts/ux-design-specification.md`
+**Nuevo endpoint:** `GET /api/reportes/timesheet/excel?userId=&mes=&anio=`
+- Genera Excel con formato oficial KPG para un empleado y mes
+- Usa ClosedXML (no MiniExcel — tiene formato avanzado con estilos)
+- Solo accesible para Supervisor/Gerente/Admin
+- Handler: `Backend/src/Infrastructure/Reportes/ExportarTimesheetQueryHandler.cs`
+- Query: `Application/Features/Reportes/Queries/ExportarTimesheet/ExportarTimesheetQuery.cs`
 
-## Validacion conocida
+**Frontend:** Seccion "Timesheet individual" en `/reportes` (`ReportesPage.razor`)
+- Selector empleado + mes + anio + boton "Descargar Timesheet" con spinner
 
-Ultima validacion ejecutada tras Story 4.2:
+**CSS fix (`wwwroot/css/app.css`):** DatePicker popover no se salia del viewport. Domingos deshabilitados con opacity 0.3.
+
+## Estado de compilacion y tests
 
 ```powershell
 dotnet test Backend\KPG.Timesheet.sln --no-restore
@@ -62,50 +53,44 @@ dotnet build Backend\KPG.Timesheet.sln --no-restore
 dotnet build Fronted\KPG.Timesheet.WebUI.sln --no-restore
 ```
 
-Resultado:
-
-- Backend tests: 88/88 pasan.
+Resultado al 2026-05-19:
+- Backend tests: **187/187 pasan** (62 domain + 21 application + 104 integration).
 - Backend build: 0 errores, 0 warnings.
 - Frontend build: 0 errores, 0 warnings.
+- Ultimo commit: `8fb2c1a MODULO REPORTES`
 
 ## Usuarios de prueba
 
-- Admin: `admin@kpg.com` / `Admin1234!`
-- Supervisor: `supervisor@kpg.com` / `Supervisor1234!`
-- Empleado: `empleado@kpg.com` / `Empleado1234!`
-- Empleado adicional: `ana.garcia@kpg.com` / `Empleado1234!`
-- Empleado adicional: `carlos.ruiz@kpg.com` / `Empleado1234!`
+| Email | Password | Rol |
+|-------|----------|-----|
+| admin@kpg.com | Admin1234! | Admin |
+| supervisor@kpg.com | Supervisor1234! | Supervisor |
+| empleado@kpg.com | Empleado1234! | Empleado |
+| ana.garcia@kpg.com | Empleado1234! | Empleado |
+| carlos.ruiz@kpg.com | Empleado1234! | Empleado |
 
-## Comandos para retomar
+## Puertos de desarrollo
 
-Verificar puertos:
+| App | URL |
+|-----|-----|
+| Frontend Blazor WASM | http://localhost:5200 / https://localhost:5201 |
+| Backend API | https://localhost:7035 |
+
+## Comandos para arrancar
 
 ```powershell
-Get-NetTCPConnection -LocalPort 5100,5101,5200,5201 -ErrorAction SilentlyContinue |
-    Select-Object LocalAddress,LocalPort,State,OwningProcess |
-    Sort-Object LocalPort
-```
-
-Arrancar backend:
-
-```powershell
+# Backend
 dotnet run --project Backend\src\Api\KPG.Timesheet.Api.csproj --launch-profile https
-```
 
-Arrancar frontend:
-
-```powershell
+# Frontend
 dotnet run --project Fronted\src\WebUI\KPG.Timesheet.WebUI.csproj --launch-profile https
 ```
 
-Abrir:
+## Documentos importantes
 
-```text
-https://localhost:5201
-```
-
-## Notas de trabajo
-
-- El repo tiene muchos archivos sin commitear y artefactos `bin/obj/.vs`; no revertir cambios no relacionados.
-- No existe `_bmad-output/implementation-artifacts/sprint-status.yaml`; el avance se esta siguiendo en `Docs/current-status.md`, handoff y story files.
-- Story 4.2 quedo en `Status: review`; no marcar `done` hasta que Jonathan valide en navegador.
+- Epics: `_bmad-output/planning-artifacts/epics.md`
+- PRD: `_bmad-output/planning-artifacts/prd.md`
+- Arquitectura: `_bmad-output/planning-artifacts/architecture.md`
+- UX: `_bmad-output/planning-artifacts/ux-design-specification.md`
+- Handoff anterior (mayo 14): `Docs/handoff/handoff-2026-05-14.md`
+- Handoff actual (mayo 19): `Docs/handoff/handoff-2026-05-19.md`

@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using KPG.Timesheet.Application.Common.Exceptions;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Domain.Constants;
 using ValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
 
 namespace KPG.Timesheet.Application.Features.Users.Commands.DeleteUser;
@@ -9,12 +10,14 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Delet
 {
     private readonly IApplicationDbContext _context;
     private readonly IIdentityService _identityService;
+    private readonly IBitacoraService _bitacora;
     private readonly IUser _user;
 
-    public DeleteUserCommandHandler(IApplicationDbContext context, IIdentityService identityService, IUser user)
+    public DeleteUserCommandHandler(IApplicationDbContext context, IIdentityService identityService, IBitacoraService bitacora, IUser user)
     {
         _context = context;
         _identityService = identityService;
+        _bitacora = bitacora;
         _user = user;
     }
 
@@ -34,6 +37,13 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Delet
                 throw new ValidationException(deactivateResult.Errors.Select(error => new ValidationFailure(nameof(request.Id), error)));
             }
 
+            await _bitacora.RegistrarAsync(
+                TipoEventoBitacora.EliminacionUsuario,
+                _user.Id ?? "system", null,
+                "AspNetUsers", request.Id,
+                new { HardDelete = false },
+                cancellationToken);
+
             return new DeleteUserDto(false);
         }
 
@@ -42,6 +52,13 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Delet
         {
             throw new ValidationException(result.Errors.Select(error => new ValidationFailure(nameof(request.Id), error)));
         }
+
+        await _bitacora.RegistrarAsync(
+            TipoEventoBitacora.EliminacionUsuario,
+            _user.Id ?? "system", null,
+            "AspNetUsers", request.Id,
+            new { HardDelete = true },
+            cancellationToken);
 
         return new DeleteUserDto(true);
     }
