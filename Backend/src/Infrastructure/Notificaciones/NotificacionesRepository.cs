@@ -1,12 +1,11 @@
 using System.Data;
 using Dapper;
+using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.Notificaciones.Queries.GetHistorialNotificaciones;
-using MediatR;
 
 namespace KPG.Timesheet.Infrastructure.Notificaciones;
 
-public class GetHistorialNotificacionesQueryHandler(IDbConnection db)
-    : IRequestHandler<GetHistorialNotificacionesQuery, HistorialNotificacionesResponse>
+public class NotificacionesRepository(IDbConnection db) : INotificacionesRepository
 {
     private const string Sql = """
         SELECT n.Id,
@@ -28,17 +27,15 @@ public class GetHistorialNotificacionesQueryHandler(IDbConnection db)
         OFFSET 0 ROWS FETCH NEXT 500 ROWS ONLY
         """;
 
-    public async Task<HistorialNotificacionesResponse> Handle(
-        GetHistorialNotificacionesQuery request,
-        CancellationToken cancellationToken)
+    public async Task<HistorialNotificacionesResponse> GetHistorialAsync(DateOnly? desde, DateOnly? hasta, string? userId, bool? soloErrores, CancellationToken cancellationToken = default)
     {
-        bool? exitoso = request.SoloErrores == true ? false : null;
+        bool? exitoso = soloErrores == true ? false : null;
 
         var rows = (await db.QueryAsync<NotificacionItemDto>(Sql, new
         {
-            Desde   = request.Desde,
-            Hasta   = request.Hasta,
-            UserId  = request.UserId,
+            Desde   = desde,
+            Hasta   = hasta,
+            UserId  = userId,
             Exitoso = exitoso
         })).ToList();
 

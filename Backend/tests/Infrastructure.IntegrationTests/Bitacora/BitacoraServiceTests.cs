@@ -22,6 +22,7 @@ public class BitacoraServiceTests
             "user-123", "user@kpg.com",
             "AspNetUsers", "user-123",
             new { Email = "user@kpg.com" });
+        await context.SaveChangesAsync();
 
         var entradas = await context.BitacoraAuditoria.ToListAsync();
         entradas.Should().HaveCount(1);
@@ -42,6 +43,7 @@ public class BitacoraServiceTests
             "admin-id", null,
             "AspNetUsers", "target-id",
             new { NuevoRol = "Supervisor" });
+        await context.SaveChangesAsync();
 
         var entrada = await context.BitacoraAuditoria.FirstAsync();
         entrada.MetadataJson.Should().NotBeNull();
@@ -58,6 +60,7 @@ public class BitacoraServiceTests
             TipoEventoBitacora.BajaUsuario,
             "admin-id", null,
             "AspNetUsers", "target-id");
+        await context.SaveChangesAsync();
 
         var entrada = await context.BitacoraAuditoria.FirstAsync();
         entrada.MetadataJson.Should().BeNull();
@@ -73,6 +76,7 @@ public class BitacoraServiceTests
             TipoEventoBitacora.AltaUsuario,
             "admin-id", null,
             "AspNetUsers", "new-user");
+        await context.SaveChangesAsync();
 
         var despues = DateTimeOffset.UtcNow.AddSeconds(1);
         var entrada = await context.BitacoraAuditoria.FirstAsync();
@@ -80,13 +84,14 @@ public class BitacoraServiceTests
     }
 
     [Fact]
-    public async Task RegistrarAsync_VariosEventos_TodosPersistedIndependientemente()
+    public async Task RegistrarAsync_VariosEventos_TodosPersistidosEnUnSaveChanges()
     {
         var (context, service) = CreateService();
 
         await service.RegistrarAsync(TipoEventoBitacora.LoginExitoso, "u1", "u1@kpg.com", "AspNetUsers", "u1");
         await service.RegistrarAsync(TipoEventoBitacora.CambioRol, "admin", null, "AspNetUsers", "u1");
         await service.RegistrarAsync(TipoEventoBitacora.BajaUsuario, "admin", null, "AspNetUsers", "u2");
+        await context.SaveChangesAsync();
 
         var entradas = await context.BitacoraAuditoria.ToListAsync();
         entradas.Should().HaveCount(3);

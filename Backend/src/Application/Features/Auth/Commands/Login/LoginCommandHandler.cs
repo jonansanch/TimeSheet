@@ -51,14 +51,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
         };
 
         _context.RefreshTokens.Add(refreshToken);
-        await _context.SaveChangesAsync(cancellationToken);
-
         await _bitacora.RegistrarAsync(
             TipoEventoBitacora.LoginExitoso,
             credentials.UserId, credentials.Email,
             "AspNetUsers", credentials.UserId,
             new { credentials.Email },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponseDto(
             AccessToken: accessToken,

@@ -8,12 +8,14 @@ namespace KPG.Timesheet.Application.Features.Users.Commands.CreateUser;
 
 public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserAdminDto>
 {
+    private readonly IApplicationDbContext _context;
     private readonly IIdentityService _identityService;
     private readonly IBitacoraService _bitacora;
     private readonly IUser _user;
 
-    public CreateUserCommandHandler(IIdentityService identityService, IBitacoraService bitacora, IUser user)
+    public CreateUserCommandHandler(IApplicationDbContext context, IIdentityService identityService, IBitacoraService bitacora, IUser user)
     {
+        _context = context;
         _identityService = identityService;
         _bitacora = bitacora;
         _user = user;
@@ -33,6 +35,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserA
             "AspNetUsers", user.Id,
             new { user.Email, user.Role },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return user;
     }

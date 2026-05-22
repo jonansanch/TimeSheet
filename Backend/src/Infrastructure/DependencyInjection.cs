@@ -3,7 +3,10 @@ using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Infrastructure.Bitacora;
+using KPG.Timesheet.Infrastructure.Dashboard;
 using KPG.Timesheet.Infrastructure.Data;
+using KPG.Timesheet.Infrastructure.Notificaciones;
+using KPG.Timesheet.Infrastructure.Reportes;
 using KPG.Timesheet.Infrastructure.Data.Interceptors;
 using KPG.Timesheet.Infrastructure.Email;
 using KPG.Timesheet.Infrastructure.Identity;
@@ -92,7 +95,12 @@ public static class DependencyInjection
         builder.Services.AddTransient<IEmailService, SmtpEmailService>();
         builder.Services.AddScoped<IBitacoraService, BitacoraService>();
 
-        // Registrar handlers de MediatR que viven en Infrastructure (Dapper handlers)
+        builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+        builder.Services.AddScoped<IBitacoraQueryRepository, BitacoraQueryRepository>();
+        builder.Services.AddScoped<INotificacionesRepository, NotificacionesRepository>();
+        builder.Services.AddScoped<IReportesRepository, ReportesRepository>();
+
+        // Registrar handlers de MediatR que viven en Infrastructure (export handlers: Excel/PDF)
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(SmtpEmailService).Assembly));
     }

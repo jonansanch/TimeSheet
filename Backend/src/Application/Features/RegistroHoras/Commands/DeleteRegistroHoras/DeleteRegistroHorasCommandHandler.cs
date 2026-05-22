@@ -39,13 +39,12 @@ public class DeleteRegistroHorasCommandHandler : IRequestHandler<DeleteRegistroH
         var fecha = registro.FechaRegistro;
 
         _context.RegistrosHoras.Remove(registro);
-        await _context.SaveChangesAsync(cancellationToken);
-
         await _bitacora.RegistrarAsync(
             TipoEventoBitacora.EliminacionRegistro,
             _user.Id ?? "system", null,
             "RegistrosHoras", request.RegistroId.ToString(),
             new { OwnerUserId = ownerUserId, Fecha = fecha },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

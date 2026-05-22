@@ -9,7 +9,7 @@ public class BitacoraService(
     TimeProvider timeProvider,
     ILogger<BitacoraService> logger) : IBitacoraService
 {
-    public async Task RegistrarAsync(
+    public Task RegistrarAsync(
         string tipoEvento,
         string actorId,
         string? actorEmail,
@@ -26,12 +26,13 @@ public class BitacoraService(
                 timeProvider.GetUtcNow());
 
             context.BitacoraAuditoria.Add(entrada);
-            await context.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error al registrar en bitácora: TipoEvento={TipoEvento}, ActorId={ActorId}",
                 tipoEvento, actorId);
         }
+
+        return Task.CompletedTask;
     }
 }

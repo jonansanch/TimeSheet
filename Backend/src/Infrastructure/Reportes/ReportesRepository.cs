@@ -1,12 +1,11 @@
 using System.Data;
 using Dapper;
+using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.Reportes.Queries.GetReporteHoras;
-using MediatR;
 
 namespace KPG.Timesheet.Infrastructure.Reportes;
 
-public class GetReporteHorasQueryHandler(IDbConnection db)
-    : IRequestHandler<GetReporteHorasQuery, ReporteHorasResponse>
+public class ReportesRepository(IDbConnection db) : IReportesRepository
 {
     private const string Sql = """
         SELECT r.UserId,
@@ -32,17 +31,15 @@ public class GetReporteHorasQueryHandler(IDbConnection db)
         OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY
         """;
 
-    public async Task<ReporteHorasResponse> Handle(
-        GetReporteHorasQuery request,
-        CancellationToken cancellationToken)
+    public async Task<ReporteHorasResponse> GetReporteHorasAsync(DateOnly desde, DateOnly hasta, string? userId, string? cliente, string? proyecto, CancellationToken cancellationToken = default)
     {
         var rows = (await db.QueryAsync<RawRow>(Sql, new
         {
-            Desde    = request.Desde,
-            Hasta    = request.Hasta,
-            UserId   = string.IsNullOrWhiteSpace(request.UserId)   ? null : request.UserId,
-            Cliente  = string.IsNullOrWhiteSpace(request.Cliente)  ? null : request.Cliente.Trim(),
-            Proyecto = string.IsNullOrWhiteSpace(request.Proyecto) ? null : request.Proyecto.Trim()
+            Desde    = desde,
+            Hasta    = hasta,
+            UserId   = string.IsNullOrWhiteSpace(userId)   ? null : userId,
+            Cliente  = string.IsNullOrWhiteSpace(cliente)  ? null : cliente.Trim(),
+            Proyecto = string.IsNullOrWhiteSpace(proyecto) ? null : proyecto.Trim()
         })).ToList();
 
         var items = rows.Select(r => new ReporteHorasItemDto(
@@ -62,8 +59,8 @@ public class GetReporteHorasQueryHandler(IDbConnection db)
         )).ToList();
 
         return new ReporteHorasResponse(
-            Desde:          request.Desde,
-            Hasta:          request.Hasta,
+            Desde:          desde,
+            Hasta:          hasta,
             TotalRegistros: items.Count,
             TotalHoras:     Math.Round(items.Sum(i => i.Horas), 1),
             Items:          items);

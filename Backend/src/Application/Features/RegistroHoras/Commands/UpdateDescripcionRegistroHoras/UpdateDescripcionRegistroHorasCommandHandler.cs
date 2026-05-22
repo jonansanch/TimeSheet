@@ -27,14 +27,12 @@ public class UpdateDescripcionRegistroHorasCommandHandler : IRequestHandler<Upda
             throw new NotFoundException($"RegistroHoras con id '{request.RegistroId}' no fue encontrado.");
 
         registro.UpdateDescripcion(request.Descripcion);
-
-        await _context.SaveChangesAsync(cancellationToken);
-
         await _bitacora.RegistrarAsync(
             TipoEventoBitacora.ModificacionDescripcion,
             _user.Id ?? "system", null,
             "RegistrosHoras", request.RegistroId.ToString(),
             new { OwnerUserId = registro.UserId },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

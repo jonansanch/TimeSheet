@@ -9,12 +9,14 @@ namespace KPG.Timesheet.Application.Features.Users.Commands.ChangeUserRole;
 
 public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleCommand, UserAdminDto>
 {
+    private readonly IApplicationDbContext _context;
     private readonly IIdentityService _identityService;
     private readonly IBitacoraService _bitacora;
     private readonly IUser _user;
 
-    public ChangeUserRoleCommandHandler(IIdentityService identityService, IBitacoraService bitacora, IUser user)
+    public ChangeUserRoleCommandHandler(IApplicationDbContext context, IIdentityService identityService, IBitacoraService bitacora, IUser user)
     {
+        _context = context;
         _identityService = identityService;
         _bitacora = bitacora;
         _user = user;
@@ -41,6 +43,7 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
             "AspNetUsers", request.UserId,
             new { NuevoRol = user.Role },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return user;
     }

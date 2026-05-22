@@ -142,6 +142,7 @@ public class NotificacionesPendientesJob(
                         "NotificacionesEnviadas", notificacion.Id.ToString(),
                         new { p.Email, notificacion.DiasAcumulados },
                         cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
                 }
             }
 

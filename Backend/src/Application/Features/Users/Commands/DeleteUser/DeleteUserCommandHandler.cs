@@ -43,6 +43,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Delet
                 "AspNetUsers", request.Id,
                 new { HardDelete = false },
                 cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
             return new DeleteUserDto(false);
         }
@@ -59,6 +60,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Delet
             "AspNetUsers", request.Id,
             new { HardDelete = true },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new DeleteUserDto(true);
     }

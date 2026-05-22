@@ -2,14 +2,10 @@ using System.Data;
 using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.Bitacora.Queries.GetBitacora;
-using KPG.Timesheet.Application.Features.Bitacora.Queries.GetBitacoraAlcance;
-using KPG.Timesheet.Domain.Constants;
-using MediatR;
 
 namespace KPG.Timesheet.Infrastructure.Bitacora;
 
-public class GetBitacoraAlcanceQueryHandler(IDbConnection db, IUser user)
-    : IRequestHandler<GetBitacoraAlcanceQuery, BitacoraResponse>
+public class BitacoraQueryRepository(IDbConnection db) : IBitacoraQueryRepository
 {
     private const string SqlCompleto = """
         SELECT b.Id,
@@ -57,23 +53,16 @@ public class GetBitacoraAlcanceQueryHandler(IDbConnection db, IUser user)
         OFFSET 0 ROWS FETCH NEXT 500 ROWS ONLY
         """;
 
-    public async Task<BitacoraResponse> Handle(
-        GetBitacoraAlcanceQuery request,
-        CancellationToken cancellationToken)
+    public async Task<BitacoraResponse> GetAsync(DateOnly? desde, DateOnly? hasta, string? actorId, string? tipoEvento, CancellationToken cancellationToken = default)
     {
-        bool isSupervisor = user.Roles?.Contains(Roles.Supervisor) == true
-                            && user.Roles?.Contains(Roles.Gerente) != true;
+        var rows = (await db.QueryAsync<BitacoraItemDto>(SqlCompleto, new { Desde = desde, Hasta = hasta, ActorId = actorId, TipoEvento = tipoEvento })).ToList();
+        return new BitacoraResponse(rows.Count, rows);
+    }
 
-        var sql = isSupervisor ? SqlEquipo : SqlCompleto;
-
-        var rows = (await db.QueryAsync<BitacoraItemDto>(sql, new
-        {
-            Desde      = request.Desde,
-            Hasta      = request.Hasta,
-            ActorId    = request.ActorId,
-            TipoEvento = request.TipoEvento
-        })).ToList();
-
+    public async Task<BitacoraResponse> GetAlcanceAsync(DateOnly? desde, DateOnly? hasta, string? actorId, string? tipoEvento, bool soloEquipo, CancellationToken cancellationToken = default)
+    {
+        var sql = soloEquipo ? SqlEquipo : SqlCompleto;
+        var rows = (await db.QueryAsync<BitacoraItemDto>(sql, new { Desde = desde, Hasta = hasta, ActorId = actorId, TipoEvento = tipoEvento })).ToList();
         return new BitacoraResponse(rows.Count, rows);
     }
 }

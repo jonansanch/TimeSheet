@@ -27,13 +27,12 @@ public class AprobarSolicitudExcepcionCommandHandler : IRequestHandler<AprobarSo
             throw new NotFoundException($"SolicitudExcepcion con Id {request.Id} no encontrada.");
 
         solicitud.Aprobar();
-        await _context.SaveChangesAsync(cancellationToken);
-
         await _bitacora.RegistrarAsync(
             TipoEventoBitacora.AprobacionExcepcion,
             _user.Id ?? "system", null,
             "SolicitudesExcepcion", request.Id.ToString(),
             new { solicitud.UserId, Fecha = solicitud.FechaRegistro },
             cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
