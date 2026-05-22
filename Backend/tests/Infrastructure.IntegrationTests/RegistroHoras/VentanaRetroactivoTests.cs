@@ -1,7 +1,6 @@
 using FluentValidation.Results;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using ApplicationValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
@@ -84,8 +83,9 @@ public class VentanaRetroactivoTests
         new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora());
 
     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
-        new(fecha, TurnoRegistro.AM,
+        new(fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

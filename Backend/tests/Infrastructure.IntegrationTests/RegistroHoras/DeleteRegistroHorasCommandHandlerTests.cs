@@ -1,7 +1,6 @@
 using KPG.Timesheet.Application.Common.Exceptions;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -71,21 +70,6 @@ public class DeleteRegistroHorasCommandHandlerTests
         remaining.Should().BeEmpty();
     }
 
-    private static ApplicationDbContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-        return new ApplicationDbContext(options);
-    }
-
-    private static RegistroHorasEntity MakeRegistro(
-        string userId, string cliente, string proyecto, DateOnly fecha,
-        TurnoRegistro turno = TurnoRegistro.AM) =>
-        new(userId, fecha, turno,
-            new TimeOnly(8, 0), new TimeOnly(13, 0),
-            cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
-
     [Fact]
     public async Task Handle_WhenAdminEliminaRegistroAjeno_Succeeds()
     {
@@ -129,6 +113,21 @@ public class DeleteRegistroHorasCommandHandlerTests
 
         await act.Should().ThrowAsync<ForbiddenAccessException>();
     }
+
+    private static ApplicationDbContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new ApplicationDbContext(options);
+    }
+
+    private static RegistroHorasEntity MakeRegistro(
+        string userId, string cliente, string proyecto, DateOnly fecha) =>
+        new(userId, fecha,
+            new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
+            cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser
     {

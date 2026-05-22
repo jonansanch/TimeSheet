@@ -12,7 +12,7 @@ else if (_sugerencias.Count > 0)
         {
             <MudChip T="string"
                      Value="@($"{s.Cliente} — {s.Proyecto}")"
-                     OnClick="@(() => OnSuggestionSelected.InvokeAsync((s.Cliente, s.Proyecto)))"
+                     OnClick="@(() => OnSuggestionSelected.InvokeAsync(s))"
                      aria-label="@($"Aplicar: {s.Cliente} - {s.Proyecto}")"
                      Color="Color.Default"
                      Variant="Variant.Outlined"
@@ -25,7 +25,7 @@ else if (_sugerencias.Count > 0)
 
 @code {
     [Parameter]
-    public EventCallback<(string Cliente, string Proyecto)> OnSuggestionSelected { get; set; }
+    public EventCallback<RegistroRecienteResponse> OnSuggestionSelected { get; set; }
 
     private List<RegistroRecienteResponse> _sugerencias = [];
     private bool _isLoading = true;

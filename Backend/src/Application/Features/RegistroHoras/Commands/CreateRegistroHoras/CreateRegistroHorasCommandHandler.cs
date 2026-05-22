@@ -18,9 +18,9 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
 
     public CreateRegistroHorasCommandHandler(IApplicationDbContext context, IUser user, IClock clock, IBitacoraService bitacora)
     {
-        _context = context;
-        _user = user;
-        _clock = clock;
+        _context  = context;
+        _user     = user;
+        _clock    = clock;
         _bitacora = bitacora;
     }
 
@@ -30,11 +30,12 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         if (string.IsNullOrWhiteSpace(userId))
             throw new UnauthorizedAccessException("No existe usuario autenticado para asociar el registro.");
 
+        // Validar ventana de retroactividad
         var ventanaParam = await _context.ParametrosSistema
             .FirstOrDefaultAsync(p => p.Clave == Domain.Constants.ParametrosSistema.VentanaRetroactividad, cancellationToken);
         var windowDays = ventanaParam != null && int.TryParse(ventanaParam.Valor, out var d) ? d : 3;
 
-        var today = _clock.Today;
+        var today          = _clock.Today;
         var earliestAllowed = BusinessDayCalculator.GetEarliestAllowedDate(today, windowDays);
 
         if (request.FechaRegistro < earliestAllowed)
@@ -47,53 +48,73 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
                     cancellationToken);
 
             if (!tieneExcepcionAprobada)
-            {
                 throw new ApplicationValidationException([
                     new ValidationFailure(
                         nameof(request.FechaRegistro),
                         $"La fecha seleccionada está fuera de la ventana de registro permitida ({windowDays} días hábiles).")
                 ]);
-            }
         }
 
         var esRetroactivo = request.FechaRegistro < today;
 
-        var registro = new RegistroHorasEntity(
-            userId,
-            request.FechaRegistro,
-            request.Turno,
-            request.HoraEntrada,
-            request.HoraSalida,
-            request.Cliente,
-            request.Proyecto,
-            request.Modalidad,
-            request.Recurso,
-            request.Descripcion,
-            request.Lugar,
-            esRetroactivo);
+        // Intentar encontrar registro existente del día
+        var existente = await _context.RegistrosHoras
+            .FirstOrDefaultAsync(r => r.UserId == userId && r.FechaRegistro == request.FechaRegistro, cancellationToken);
 
-        _context.RegistrosHoras.Add(registro);
+        RegistroHorasEntity registro;
+
+        if (existente is null)
+        {
+            // Crear nuevo registro diario
+            registro = new RegistroHorasEntity(
+                userId,
+                request.FechaRegistro,
+                request.HoraEntradaAM,
+                request.HoraSalidaAM,
+                request.HoraEntradaPM,
+                request.HoraSalidaPM,
+                request.Cliente,
+                request.Proyecto,
+                request.Modalidad,
+                request.Recurso,
+                request.Descripcion,
+                request.Lugar,
+                esRetroactivo);
+
+            _context.RegistrosHoras.Add(registro);
+        }
+        else
+        {
+            // Upsert: agregar el bloque que faltaba
+            if (request.HoraEntradaAM.HasValue && request.HoraSalidaAM.HasValue)
+            {
+                existente.SetBloqueAM(request.HoraEntradaAM.Value, request.HoraSalidaAM.Value);
+            }
+            if (request.HoraEntradaPM.HasValue && request.HoraSalidaPM.HasValue)
+            {
+                existente.SetBloquePM(request.HoraEntradaPM.Value, request.HoraSalidaPM.Value);
+            }
+            existente.UpdateMetadata(request.Cliente, request.Proyecto, request.Modalidad, request.Recurso, request.Lugar);
+            existente.UpdateDescripcion(request.Descripcion);
+            registro = existente;
+        }
+
         await _bitacora.RegistrarAsync(
             TipoEventoBitacora.RegistroHorasCreado,
             userId, null,
             "RegistrosHoras", null,
-            new { registro.FechaRegistro, Turno = registro.Turno.ToString(), registro.Cliente, registro.Proyecto },
+            new { registro.FechaRegistro, TieneAM = registro.TieneAM, TienePM = registro.TienePM, registro.Cliente, registro.Proyecto },
             cancellationToken);
+
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new RegistroHorasDto(
-            registro.Id,
-            registro.UserId,
-            registro.FechaRegistro,
-            registro.Turno,
-            registro.HoraEntrada,
-            registro.HoraSalida,
-            registro.Cliente,
-            registro.Proyecto,
-            registro.Modalidad,
-            registro.Recurso,
-            registro.Descripcion,
-            registro.Lugar,
-            registro.EsRetroactivo);
+        return ToDto(registro);
     }
+
+    private static RegistroHorasDto ToDto(RegistroHorasEntity r) => new(
+        r.Id, r.UserId, r.FechaRegistro,
+        r.HoraEntradaAM, r.HoraSalidaAM,
+        r.HoraEntradaPM, r.HoraSalidaPM,
+        r.Cliente, r.Proyecto, r.Modalidad, r.Recurso, r.Descripcion, r.Lugar,
+        r.EsRetroactivo);
 }

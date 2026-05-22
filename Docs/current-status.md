@@ -1,6 +1,6 @@
 # Current Status - KPG Timesheet
 
-Ultima actualizacion: 2026-05-19 — fin sesion 11
+Ultima actualizacion: 2026-05-21 — fin sesion 12
 
 ## Estado actual
 
@@ -31,19 +31,27 @@ Historias a implementar:
 | 6.6 | Checklist de Go-Live, QA y UAT |
 | 6.7 | Politica de Idioma y Preparacion para Localizacion |
 
-## Lo ultimo implementado (sesion 11 — commit 8fb2c1a MODULO REPORTES)
+## Lo ultimo implementado (sesion 12 — refactor registro unico diario)
 
-**Nuevo endpoint:** `GET /api/reportes/timesheet/excel?userId=&mes=&anio=`
-- Genera Excel con formato oficial KPG para un empleado y mes
-- Usa ClosedXML (no MiniExcel — tiene formato avanzado con estilos)
-- Solo accesible para Supervisor/Gerente/Admin
-- Handler: `Backend/src/Infrastructure/Reportes/ExportarTimesheetQueryHandler.cs`
-- Query: `Application/Features/Reportes/Queries/ExportarTimesheet/ExportarTimesheetQuery.cs`
+**Refactor mayor: modelo de registro de horas cambiado a registro unico diario con bloques AM/PM opcionales.**
 
-**Frontend:** Seccion "Timesheet individual" en `/reportes` (`ReportesPage.razor`)
-- Selector empleado + mes + anio + boton "Descargar Timesheet" con spinner
+- Antes: dos filas por dia por usuario (una AM y una PM), con campo `Turno` y enum `TurnoRegistro`.
+- Ahora: un registro por dia por usuario con `HoraEntradaAM?/HoraSalidaAM?/HoraEntradaPM?/HoraSalidaPM?`; se requiere al menos un bloque.
+- Eliminado `Backend/src/Domain/Enums/TurnoRegistro.cs` (enum ya no existe).
+- `CreateRegistroHorasCommandHandler` ahora hace upsert: si ya existe registro del dia, agrega el bloque faltante via `SetBloqueAM`/`SetBloquePM`.
+- Indice unico cambiado de `(UserId, FechaRegistro, Turno)` → `(UserId, FechaRegistro)`.
+- `RegistroHorasImmutabilityInterceptor` actualizado: `SiemprePermitidos` incluye ahora los campos de metadata (Cliente, Proyecto, Modalidad, Recurso, Lugar) necesarios para el upsert; `SoloAgregables` cubre los 4 campos de tiempo AM/PM (null→value permitido, value→value prohibido).
+- Frontend `KpgShiftForm.razor` reescrito: formulario unificado con secciones AM y PM opcionales, un solo boton "Guardar jornada".
+- `KpgSaveConfirmationBanner` actualizado: parametros Turno/HoraEntrada/HoraSalida reemplazados por HoraEntradaAM?/HoraSalidaAM?/HoraEntradaPM?/HoraSalidaPM?.
+- `HistorialPage` y `ReportesPage` actualizados con columnas AM/PM separadas.
+- Seeder (`ApplicationDbContextInitialiser`) actualizado con nuevo esquema.
+- 204/204 tests pasan.
 
-**CSS fix (`wwwroot/css/app.css`):** DatePicker popover no se salia del viewport. Domingos deshabilitados con opacity 0.3.
+**Sesion 11 — commit 8fb2c1a MODULO REPORTES (referencia anterior):**
+
+- `GET /api/reportes/timesheet/excel?userId=&mes=&anio=` — Excel con ClosedXML para Supervisor/Gerente/Admin.
+- Frontend: seccion "Timesheet individual" en `/reportes` con selector empleado + mes + anio.
+- CSS fix: DatePicker popover y domingos deshabilitados.
 
 ## Estado de compilacion y tests
 
@@ -53,11 +61,11 @@ dotnet build Backend\KPG.Timesheet.sln --no-restore
 dotnet build Fronted\KPG.Timesheet.WebUI.sln --no-restore
 ```
 
-Resultado al 2026-05-19:
-- Backend tests: **187/187 pasan** (62 domain + 21 application + 104 integration).
+Resultado al 2026-05-21:
+- Backend tests: **204/204 pasan** (68 domain + 24 application + 112 integration).
 - Backend build: 0 errores, 0 warnings.
 - Frontend build: 0 errores, 0 warnings.
-- Ultimo commit: `8fb2c1a MODULO REPORTES`
+- Ultimo commit: `54ef173 epic 6 implementation` + refactor sesion 12 (pendiente commit)
 
 ## Usuarios de prueba
 

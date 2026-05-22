@@ -8,11 +8,26 @@ namespace KPG.Timesheet.Infrastructure.Data.Interceptors;
 
 public class RegistroHorasImmutabilityInterceptor : SaveChangesInterceptor
 {
-    private static readonly HashSet<string> AllowedModifiedProperties =
+    // Siempre modificables (metadata compartida del día)
+    private static readonly HashSet<string> SiemprePermitidos =
     [
         nameof(RegistroHoras.Descripcion),
+        nameof(RegistroHoras.Cliente),
+        nameof(RegistroHoras.Proyecto),
+        nameof(RegistroHoras.Modalidad),
+        nameof(RegistroHoras.Recurso),
+        nameof(RegistroHoras.Lugar),
         nameof(BaseAuditableEntity.LastModified),
         nameof(BaseAuditableEntity.LastModifiedBy)
+    ];
+
+    // Permitidos solo si el valor ANTERIOR era null (agregar un turno que no existía)
+    private static readonly HashSet<string> SoloAgregables =
+    [
+        nameof(RegistroHoras.HoraEntradaAM),
+        nameof(RegistroHoras.HoraSalidaAM),
+        nameof(RegistroHoras.HoraEntradaPM),
+        nameof(RegistroHoras.HoraSalidaPM)
     ];
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
@@ -32,21 +47,28 @@ public class RegistroHorasImmutabilityInterceptor : SaveChangesInterceptor
 
     private static void Validate(DbContext? context)
     {
-        if (context is null)
-            return;
+        if (context is null) return;
 
         foreach (var entry in context.ChangeTracker.Entries<RegistroHoras>())
         {
-            if (entry.State != EntityState.Modified)
-                continue;
+            if (entry.State != EntityState.Modified) continue;
 
-            var hasForbiddenChange = entry.Properties
-                .Any(property => property.IsModified && !AllowedModifiedProperties.Contains(property.Metadata.Name));
-
-            if (hasForbiddenChange)
+            foreach (var property in entry.Properties.Where(p => p.IsModified))
             {
+                var name = property.Metadata.Name;
+
+                if (SiemprePermitidos.Contains(name)) continue;
+
+                if (SoloAgregables.Contains(name))
+                {
+                    // Permitido si el valor original era null (se está agregando, no modificando)
+                    var valorOriginal = entry.OriginalValues[name];
+                    if (valorOriginal is null) continue;
+                }
+
                 throw new DomainRuleException(
-                    "Los registros de horas guardados son inmutables. Solo se permite actualizar la descripcion.");
+                    "Los registros de horas guardados son inmutables. " +
+                    "Solo se permite agregar un turno faltante o actualizar la descripcion y metadatos.");
             }
         }
     }

@@ -11,7 +11,7 @@ public class GetMisRegistrosQueryHandler : IRequestHandler<GetMisRegistrosQuery,
     public GetMisRegistrosQueryHandler(IApplicationDbContext context, IUser user)
     {
         _context = context;
-        _user = user;
+        _user    = user;
     }
 
     public async Task<IEnumerable<MisRegistrosItemDto>> Handle(
@@ -27,13 +27,13 @@ public class GetMisRegistrosQueryHandler : IRequestHandler<GetMisRegistrosQuery,
                 && (request.Desde == null || r.FechaRegistro >= request.Desde)
                 && (request.Hasta == null || r.FechaRegistro <= request.Hasta))
             .OrderByDescending(r => r.FechaRegistro)
-            .ThenBy(r => r.Turno)
             .Select(r => new MisRegistrosItemDto(
                 r.Id,
                 r.FechaRegistro,
-                r.Turno,
-                r.HoraEntrada,
-                r.HoraSalida,
+                r.HoraEntradaAM,
+                r.HoraSalidaAM,
+                r.HoraEntradaPM,
+                r.HoraSalidaPM,
                 r.Cliente,
                 r.Proyecto,
                 r.Modalidad,

@@ -15,7 +15,10 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
 {
     private const string SqlGerencial = """
         SELECT r.Cliente,
-               ROUND(SUM(DATEDIFF(MINUTE, r.HoraEntrada, r.HoraSalida)) / 60.0, 1) AS TotalHoras
+               ROUND((
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM), 0)
+               ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
           AND  r.Cliente <> ''
@@ -24,7 +27,10 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
 
         SELECT r.Proyecto,
                r.Cliente,
-               ROUND(SUM(DATEDIFF(MINUTE, r.HoraEntrada, r.HoraSalida)) / 60.0, 1) AS TotalHoras
+               ROUND((
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM), 0)
+               ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
           AND  r.Proyecto <> ''
@@ -35,9 +41,10 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
     private const string SqlDistribucion = """
         SELECT u.Id                                                        AS UserId,
                ISNULL(u.NombreCompleto, u.Email)                          AS Nombre,
-               ROUND(
-                   SUM(DATEDIFF(MINUTE, r.HoraEntrada, r.HoraSalida))
-                   / 60.0, 1)                                             AS TotalHoras
+               ROUND((
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+               ) / 60.0, 1)                                               AS TotalHoras
         FROM   RegistrosHoras r
         JOIN   AspNetUsers u ON r.UserId = u.Id
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
@@ -49,8 +56,8 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         SELECT u.Id                               AS UserId,
                ISNULL(u.NombreCompleto, u.Email) AS Nombre,
                u.Email,
-               MAX(CASE WHEN r.Turno = 1 THEN 1 ELSE 0 END) AS TieneAM,
-               MAX(CASE WHEN r.Turno = 2 THEN 1 ELSE 0 END) AS TienePM
+               CASE WHEN r.HoraEntradaAM IS NOT NULL THEN 1 ELSE 0 END AS TieneAM,
+               CASE WHEN r.HoraEntradaPM IS NOT NULL THEN 1 ELSE 0 END AS TienePM
         FROM   AspNetUsers u
         JOIN   AspNetUserRoles ur ON u.Id = ur.UserId
         JOIN   AspNetRoles ro     ON ur.RoleId = ro.Id
@@ -58,7 +65,6 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
                ON r.UserId = u.Id AND r.FechaRegistro = @Fecha
         WHERE  u.IsActive = 1
           AND  ro.Name IN ('Empleado', 'Supervisor')
-        GROUP  BY u.Id, u.NombreCompleto, u.Email
         ORDER  BY ISNULL(u.NombreCompleto, u.Email)
         """;
 
@@ -68,7 +74,10 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
              FROM   RegistrosHoras
              WHERE  FechaRegistro BETWEEN @Desde AND @Hasta)                       AS TotalRegistros,
             ISNULL(
-              (SELECT ROUND(SUM(DATEDIFF(MINUTE, HoraEntrada, HoraSalida)) / 60.0, 1)
+              (SELECT ROUND((
+                   ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaAM, HoraSalidaAM)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaPM, HoraSalidaPM)), 0)
+               ) / 60.0, 1)
                FROM   RegistrosHoras
                WHERE  FechaRegistro BETWEEN @Desde AND @Hasta), 0)                 AS TotalHoras,
             (SELECT COUNT(*)
@@ -91,7 +100,10 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
 
         SELECT r.FechaRegistro                                                      AS Fecha,
                COUNT(*)                                                             AS TotalRegistros,
-               ROUND(SUM(DATEDIFF(MINUTE, r.HoraEntrada, r.HoraSalida)) / 60.0, 1) AS TotalHoras
+               ROUND((
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+               ) / 60.0, 1)                                                         AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
         GROUP  BY r.FechaRegistro

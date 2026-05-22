@@ -1,6 +1,5 @@
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetRegistrosRecientes;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
@@ -24,8 +23,9 @@ public class GetRegistrosRecientesQueryHandlerTests
     public async Task Handle_WhenUserHasRegistros_ShouldReturnDistinctClienteProyecto()
     {
         await using var context = CreateContext();
+        // Same cliente/proyecto on two different dates → should be de-duplicated to one entry
         context.RegistrosHoras.Add(MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 10)));
-        context.RegistrosHoras.Add(MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 11), TurnoRegistro.PM));
+        context.RegistrosHoras.Add(MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 11)));
         context.RegistrosHoras.Add(MakeRegistro("user-1", "Cliente B", "Proyecto X", new DateOnly(2026, 5, 12)));
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -33,8 +33,8 @@ public class GetRegistrosRecientesQueryHandlerTests
         var result = (await handler.Handle(new GetRegistrosRecientesQuery(5), CancellationToken.None)).ToList();
 
         result.Should().HaveCount(2);
-        result[0].Should().Be(new RegistroRecienteDto("Cliente B", "Proyecto X"));
-        result[1].Should().Be(new RegistroRecienteDto("KPG", "Timesheet"));
+        result[0].Should().Be(new RegistroRecienteDto("Cliente B", "Proyecto X", "Remoto", "Consultor", "Desarrollo", "Bogota"));
+        result[1].Should().Be(new RegistroRecienteDto("KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota"));
     }
 
     [Fact]
@@ -92,10 +92,10 @@ public class GetRegistrosRecientesQueryHandlerTests
         string userId,
         string cliente,
         string proyecto,
-        DateOnly fecha,
-        TurnoRegistro turno = TurnoRegistro.AM) =>
-        new(userId, fecha, turno,
+        DateOnly fecha) =>
+        new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

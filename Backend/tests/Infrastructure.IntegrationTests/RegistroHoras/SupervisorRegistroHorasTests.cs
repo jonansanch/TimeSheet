@@ -2,7 +2,6 @@ using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -26,19 +25,7 @@ public class SupervisorRegistroHorasTests
         result.UserId.Should().Be("supervisor-1");
         context.RegistrosHoras.Should().ContainSingle(r =>
             r.UserId == "supervisor-1" &&
-            r.Turno == TurnoRegistro.AM);
-    }
-
-    [Fact]
-    public async Task Handle_WhenSupervisorCreatesMultipleRegistrosSameTurno_ShouldAllowAll()
-    {
-        await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>());
-
-        await handler.Handle(ValidCommand(), CancellationToken.None);
-        await handler.Handle(ValidCommand(), CancellationToken.None);
-
-        context.RegistrosHoras.Count(r => r.UserId == "supervisor-1" && r.Turno == TurnoRegistro.AM).Should().Be(2);
+            r.HoraEntradaAM == new TimeOnly(8, 0));
     }
 
     [Fact]
@@ -73,7 +60,6 @@ public class SupervisorRegistroHorasTests
     [Fact]
     public async Task Handle_WhenSupervisorDeletesOtherUserRegistro_ShouldSucceed()
     {
-        // Story 3.5: Supervisor tiene permiso para eliminar registros ajenos
         await using var context = CreateContextWithVentana(3);
         var registro = MakeRegistro("empleado-1", new DateOnly(2026, 5, 10));
         context.RegistrosHoras.Add(registro);
@@ -100,15 +86,16 @@ public class SupervisorRegistroHorasTests
         return context;
     }
 
-    private static RegistroHorasEntity MakeRegistro(string userId, DateOnly fecha,
-        TurnoRegistro turno = TurnoRegistro.AM) =>
-        new(userId, fecha, turno,
+    private static RegistroHorasEntity MakeRegistro(string userId, DateOnly fecha) =>
+        new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private static CreateRegistroHorasCommand ValidCommand() =>
-        new(new DateOnly(2026, 5, 14), TurnoRegistro.AM,
+        new(new DateOnly(2026, 5, 14),
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

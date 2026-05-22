@@ -1,6 +1,5 @@
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -75,12 +74,12 @@ public class ApplicationDbContextInitialiser
         }
 
         // ── Usuarios ─────────────────────────────────────────────────────────
-        var admin = await EnsureUserAsync("admin@kpg.com", "Admin1234!", "Administrador KPG", Roles.Admin);
-        var gerente = await EnsureUserAsync("gerente@kpg.com", "Gerente1234!", "Laura Martínez", Roles.Gerente);
-        var supervisor = await EnsureUserAsync("supervisor@kpg.com", "Supervisor1234!", "Miguel Torres", Roles.Supervisor);
-        var emp1 = await EnsureUserAsync("empleado@kpg.com", "Empleado1234!", "Juan Pérez", Roles.Empleado);
-        var emp2 = await EnsureUserAsync("ana.garcia@kpg.com", "Empleado1234!", "Ana García", Roles.Empleado);
-        var emp3 = await EnsureUserAsync("carlos.ruiz@kpg.com", "Empleado1234!", "Carlos Ruiz", Roles.Empleado);
+        var admin      = await EnsureUserAsync("admin@kpg.com",          "Admin1234!",      "Administrador KPG",  Roles.Admin);
+        var gerente    = await EnsureUserAsync("gerente@kpg.com",         "Gerente1234!",    "Laura Martínez",     Roles.Gerente);
+        var supervisor = await EnsureUserAsync("supervisor@kpg.com",      "Supervisor1234!", "Miguel Torres",      Roles.Supervisor);
+        var emp1       = await EnsureUserAsync("empleado@kpg.com",        "Empleado1234!",   "Juan Pérez",         Roles.Empleado);
+        var emp2       = await EnsureUserAsync("ana.garcia@kpg.com",      "Empleado1234!",   "Ana García",         Roles.Empleado);
+        var emp3       = await EnsureUserAsync("carlos.ruiz@kpg.com",     "Empleado1234!",   "Carlos Ruiz",        Roles.Empleado);
 
         // ── Parámetros del sistema ────────────────────────────────────────────
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.VentanaRetroactividad, "3");
@@ -108,11 +107,11 @@ public class ApplicationDbContextInitialiser
         {
             user = new ApplicationUser
             {
-                UserName = email,
-                Email = email,
+                UserName       = email,
+                Email          = email,
                 NombreCompleto = nombreCompleto,
-                IsActive = true,
-                Created = DateTimeOffset.UtcNow
+                IsActive       = true,
+                Created        = DateTimeOffset.UtcNow
             };
             await _userManager.CreateAsync(user, password);
             await _userManager.AddToRoleAsync(user, role);
@@ -194,83 +193,68 @@ public class ApplicationDbContextInitialiser
             .Where(d => d.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday)
             .ToList();
 
-        // ── Juan Pérez: registros completos los últimos 2 meses ─────────────
+        // ── Juan Pérez: jornada completa AM+PM ──────────────────────────────
         foreach (var dia in diasHabiles.Take(43))
         {
-            registros.Add(Reg(emp1Id, dia, TurnoRegistro.AM,
-                new(8, 0), new(12, 0),
+            registros.Add(Reg(emp1Id, dia,
+                new(8, 0), new(12, 0), new(13, 0), new(17, 0),
                 "Banco Nacional", "Core Bancario", "Presencial", "Desarrollador",
-                "Análisis y desarrollo de módulo de pagos.", "Presencial Oficina"));
-            registros.Add(Reg(emp1Id, dia, TurnoRegistro.PM,
-                new(13, 0), new(17, 0),
-                "Retail SA", "E-Commerce", "Remoto", "Consultor",
-                "Implementación de API de catálogo de productos.", "Remoto",
+                "Análisis y desarrollo de módulo de pagos.", "Presencial Oficina",
                 esRetroactivo: dia < hoy));
         }
-        // Esta semana
-        registros.Add(Reg(emp1Id, hoy, TurnoRegistro.AM,
-            new(8, 0), new(12, 0),
+        registros.Add(Reg(emp1Id, hoy,
+            new(8, 0), new(12, 0), null, null,
             "Banco Nacional", "Banca Digital", "Presencial", "Desarrollador",
             "Diseño de flujo de autenticación biométrica.", "Presencial Oficina"));
 
-        // ── Ana García: registros con algunos días sin PM ────────────────────
+        // ── Ana García: AM siempre, PM en 3 de cada 4 semanas ───────────────
         int anaIdx = 0;
         foreach (var dia in diasHabiles.Take(43))
         {
-            registros.Add(Reg(emp2Id, dia, TurnoRegistro.AM,
+            var tienePM = anaIdx % 4 != 2;
+            registros.Add(Reg(emp2Id, dia,
                 new(8, 30), new(12, 30),
+                tienePM ? new TimeOnly(14, 0) : null,
+                tienePM ? new TimeOnly(18, 0) : null,
                 "Ministerio de Salud", "Sistema RIPS", "Presencial", "Analista",
                 "Validación de reglas de facturación electrónica.", "Presencial Cliente",
                 esRetroactivo: dia < hoy));
-
-            // PM solo 3 de cada 4 semanas
-            if (anaIdx % 4 != 2)
-                registros.Add(Reg(emp2Id, dia, TurnoRegistro.PM,
-                    new(14, 0), new(18, 0),
-                    "Constructora XYZ", "Portal Clientes", "Remoto", "Analista",
-                    "Levantamiento de requerimientos módulo de cotizaciones.", "Remoto",
-                    esRetroactivo: dia < hoy));
             anaIdx++;
         }
-        registros.Add(Reg(emp2Id, hoy, TurnoRegistro.AM,
-            new(8, 30), new(12, 30),
+        registros.Add(Reg(emp2Id, hoy,
+            new(8, 30), new(12, 30), null, null,
             "Ministerio de Salud", "Portal Ciudadano", "Presencial", "Analista",
             "Capacitación usuarios clave módulo de citas.", "Presencial Cliente"));
 
-        // ── Carlos Ruiz: último registro hace 2 semanas (para probar notificación) ──
+        // ── Carlos Ruiz: último registro hace 2 semanas (para notificación) ──
         foreach (var dia in diasHabiles.Where(d => d <= hoy.AddDays(-14)).Take(30))
         {
-            registros.Add(Reg(emp3Id, dia, TurnoRegistro.AM,
-                new(7, 0), new(11, 0),
+            registros.Add(Reg(emp3Id, dia,
+                new(7, 0), new(11, 0), new(13, 0), new(17, 0),
                 "Petrocol", "SAP FI", "Presencial", "Consultor SAP",
-                "Configuración de centros de costo para proyecto offshore.", "Presencial Cliente",
-                esRetroactivo: true));
-            registros.Add(Reg(emp3Id, dia, TurnoRegistro.PM,
-                new(13, 0), new(17, 0),
-                "Petrocol", "SAP CO", "Presencial", "Consultor SAP",
-                "Ajuste de variantes de selección en reportes CO.", "Presencial Cliente",
+                "Configuración de centros de costo proyecto offshore.", "Presencial Cliente",
                 esRetroactivo: true));
         }
 
         // ── Supervisor: esta semana y la anterior ────────────────────────────
         foreach (var dia in diasHabiles.Take(10))
         {
-            registros.Add(Reg(supervisorId, dia, TurnoRegistro.AM,
-                new(8, 0), new(12, 0),
+            registros.Add(Reg(supervisorId, dia,
+                new(8, 0), new(12, 0), null, null,
                 "KPG Interno", "Gestión de Equipo", "Remoto", "Lider tecnico",
                 "Revisión de avances y seguimiento del equipo.", "Remoto",
                 esRetroactivo: dia < hoy));
         }
-        registros.Add(Reg(supervisorId, hoy, TurnoRegistro.AM,
-            new(8, 0), new(12, 0),
+        registros.Add(Reg(supervisorId, hoy,
+            new(8, 0), new(12, 0), null, null,
             "KPG Interno", "Gestión de Equipo", "Remoto", "Lider tecnico",
             "Reunión de planificación semanal.", "Remoto"));
 
         // ── Admin: esta semana ────────────────────────────────────────────────
         foreach (var dia in diasHabiles.Take(5))
         {
-            registros.Add(Reg(adminId, dia, TurnoRegistro.AM,
-                new(9, 0), new(13, 0),
+            registros.Add(Reg(adminId, dia,
+                new(9, 0), new(13, 0), null, null,
                 "KPG Interno", "Administración", "Remoto", "Consultor",
                 "Configuración y administración del sistema.", "Remoto",
                 esRetroactivo: dia < hoy));
@@ -284,20 +268,16 @@ public class ApplicationDbContextInitialiser
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
 
-        // Aprobada — emp1 puede registrar en esa fecha retroactiva
         var s1 = new SolicitudExcepcion(emp1Id, hoy.AddDays(-20), "Incapacidad médica certificada.");
         s1.Aprobar();
         _context.SolicitudesExcepcion.Add(s1);
 
-        // Pendiente — esperando revisión del admin
         var s2 = new SolicitudExcepcion(emp2Id, hoy.AddDays(-10), "Viaje de negocios imprevisto al cliente.");
         _context.SolicitudesExcepcion.Add(s2);
 
-        // Pendiente — segunda solicitud
         var s3 = new SolicitudExcepcion(emp1Id, hoy.AddDays(-15), "Falla de conectividad en zona remota.");
         _context.SolicitudesExcepcion.Add(s3);
 
-        // Rechazada
         var s4 = new SolicitudExcepcion(emp3Id, hoy.AddDays(-30), "Olvido de registro.");
         s4.Rechazar();
         _context.SolicitudesExcepcion.Add(s4);
@@ -306,12 +286,14 @@ public class ApplicationDbContextInitialiser
     }
 
     private static RegistroHoras Reg(
-        string userId, DateOnly fecha, TurnoRegistro turno,
-        TimeOnly entrada, TimeOnly salida,
+        string userId, DateOnly fecha,
+        TimeOnly? entradaAM, TimeOnly? salidaAM,
+        TimeOnly? entradaPM, TimeOnly? salidaPM,
         string cliente, string proyecto, string modalidad, string recurso,
         string descripcion, string lugar,
         bool esRetroactivo = false) =>
-        new(userId, fecha, turno, entrada, salida,
+        new(userId, fecha,
+            entradaAM, salidaAM, entradaPM, salidaPM,
             cliente, proyecto, modalidad, recurso, descripcion, lugar, esRetroactivo);
 
     // ── EnsureTimesheetTablesAsync (DDL idempotente) ──────────────────────────
@@ -362,27 +344,29 @@ public class ApplicationDbContextInitialiser
             IF OBJECT_ID(N'[dbo].[RegistrosHoras]', N'U') IS NULL
             BEGIN
                 CREATE TABLE [dbo].[RegistrosHoras] (
-                    [Id] int NOT NULL IDENTITY,
-                    [UserId] nvarchar(450) NOT NULL,
+                    [Id]           int NOT NULL IDENTITY,
+                    [UserId]       nvarchar(450) NOT NULL,
                     [FechaRegistro] date NOT NULL,
-                    [Turno] nvarchar(2) NOT NULL,
-                    [HoraEntrada] time NOT NULL,
-                    [HoraSalida] time NOT NULL,
-                    [Cliente] nvarchar(200) NOT NULL,
-                    [Proyecto] nvarchar(200) NOT NULL,
-                    [Modalidad] nvarchar(100) NOT NULL,
-                    [Recurso] nvarchar(100) NOT NULL,
-                    [Descripcion] nvarchar(1000) NOT NULL,
-                    [Lugar] nvarchar(200) NOT NULL,
+                    [HoraEntradaAM] time NULL,
+                    [HoraSalidaAM]  time NULL,
+                    [HoraEntradaPM] time NULL,
+                    [HoraSalidaPM]  time NULL,
+                    [Cliente]      nvarchar(200) NOT NULL,
+                    [Proyecto]     nvarchar(200) NOT NULL,
+                    [Modalidad]    nvarchar(100) NOT NULL,
+                    [Recurso]      nvarchar(100) NOT NULL,
+                    [Descripcion]  nvarchar(1000) NOT NULL,
+                    [Lugar]        nvarchar(200) NOT NULL,
                     [EsRetroactivo] bit NOT NULL DEFAULT 0,
-                    [Created] datetimeoffset NOT NULL,
-                    [CreatedBy] nvarchar(max) NULL,
-                    [LastModified] datetimeoffset NOT NULL,
+                    [Created]      datetimeoffset NOT NULL,
+                    [CreatedBy]    nvarchar(max) NULL,
+                    [LastModified]  datetimeoffset NOT NULL,
                     [LastModifiedBy] nvarchar(max) NULL,
                     CONSTRAINT [PK_RegistrosHoras] PRIMARY KEY ([Id])
                 );
 
-                CREATE INDEX [IX_RegistrosHoras_FechaRegistro] ON [dbo].[RegistrosHoras] ([FechaRegistro]);
+                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro]
+                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro]);
             END
             ELSE
             BEGIN
@@ -394,15 +378,6 @@ public class ApplicationDbContextInitialiser
                 BEGIN
                     ALTER TABLE [dbo].[RegistrosHoras]
                         ADD [EsRetroactivo] bit NOT NULL DEFAULT 0;
-                END
-
-                IF EXISTS (
-                    SELECT 1 FROM sys.indexes
-                    WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
-                      AND name = N'IX_RegistrosHoras_UserId_FechaRegistro_Turno'
-                )
-                BEGIN
-                    DROP INDEX [IX_RegistrosHoras_UserId_FechaRegistro_Turno] ON [dbo].[RegistrosHoras];
                 END
             END
             """);

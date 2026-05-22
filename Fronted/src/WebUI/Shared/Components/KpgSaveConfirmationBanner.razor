@@ -8,10 +8,17 @@
                 <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
                 <div>
                     <MudText Typo="Typo.body1">
-                        Turno @Turno guardado — @Fecha.ToString("dd/MM/yyyy")
+                        Jornada guardada — @Fecha.ToString("dd/MM/yyyy")
                     </MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        @HoraEntrada.ToString(@"HH\:mm") – @HoraSalida.ToString(@"HH\:mm")
+                        @if (HoraEntradaAM.HasValue && HoraSalidaAM.HasValue)
+                        {
+                            <span>AM: @HoraEntradaAM.Value.ToString(@"HH\:mm")–@HoraSalidaAM.Value.ToString(@"HH\:mm")</span>
+                        }
+                        @if (HoraEntradaPM.HasValue && HoraSalidaPM.HasValue)
+                        {
+                            <span class="ml-2">PM: @HoraEntradaPM.Value.ToString(@"HH\:mm")–@HoraSalidaPM.Value.ToString(@"HH\:mm")</span>
+                        }
                         | @Cliente | @Proyecto
                     </MudText>
                 </div>
@@ -27,11 +34,12 @@
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback OnDismiss { get; set; }
-    [Parameter] public string Turno { get; set; } = string.Empty;
     [Parameter] public DateOnly Fecha { get; set; }
-    [Parameter] public TimeOnly HoraEntrada { get; set; }
-    [Parameter] public TimeOnly HoraSalida { get; set; }
-    [Parameter] public string Cliente { get; set; } = string.Empty;
+    [Parameter] public TimeOnly? HoraEntradaAM { get; set; }
+    [Parameter] public TimeOnly? HoraSalidaAM  { get; set; }
+    [Parameter] public TimeOnly? HoraEntradaPM { get; set; }
+    [Parameter] public TimeOnly? HoraSalidaPM  { get; set; }
+    [Parameter] public string Cliente  { get; set; } = string.Empty;
     [Parameter] public string Proyecto { get; set; } = string.Empty;
 
     private CancellationTokenSource? _cts;

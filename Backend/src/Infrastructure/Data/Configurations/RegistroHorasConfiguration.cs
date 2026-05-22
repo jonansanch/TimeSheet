@@ -14,9 +14,12 @@ public class RegistroHorasConfiguration : IEntityTypeConfiguration<RegistroHoras
 
         builder.Property(r => r.UserId).HasMaxLength(450).IsRequired();
         builder.Property(r => r.FechaRegistro).IsRequired();
-        builder.Property(r => r.Turno).HasConversion<string>().HasMaxLength(2).IsRequired();
-        builder.Property(r => r.HoraEntrada).IsRequired();
-        builder.Property(r => r.HoraSalida).IsRequired();
+
+        builder.Property(r => r.HoraEntradaAM).IsRequired(false);
+        builder.Property(r => r.HoraSalidaAM).IsRequired(false);
+        builder.Property(r => r.HoraEntradaPM).IsRequired(false);
+        builder.Property(r => r.HoraSalidaPM).IsRequired(false);
+
         builder.Property(r => r.Cliente).HasMaxLength(200).IsRequired();
         builder.Property(r => r.Proyecto).HasMaxLength(200).IsRequired();
         builder.Property(r => r.Modalidad).HasMaxLength(100).IsRequired();
@@ -25,6 +28,10 @@ public class RegistroHorasConfiguration : IEntityTypeConfiguration<RegistroHoras
         builder.Property(r => r.Lugar).HasMaxLength(200).IsRequired();
         builder.Property(r => r.EsRetroactivo).IsRequired().HasDefaultValue(false);
 
-        builder.HasIndex(r => r.FechaRegistro);
+        builder.Ignore(r => r.TieneAM);
+        builder.Ignore(r => r.TienePM);
+
+        // Un solo registro por usuario por día
+        builder.HasIndex(r => new { r.UserId, r.FechaRegistro }).IsUnique();
     }
 }

@@ -16,20 +16,19 @@ public class ExportarTimesheetQueryHandler(IDbConnection db)
 
     private const string Sql = """
         SELECT r.FechaRegistro,
-               MAX(CASE WHEN r.Turno = 'AM' THEN r.HoraEntrada ELSE NULL END) AS EntradaAM,
-               MAX(CASE WHEN r.Turno = 'AM' THEN r.HoraSalida  ELSE NULL END) AS SalidaAM,
-               MAX(CASE WHEN r.Turno = 'PM' THEN r.HoraEntrada ELSE NULL END) AS EntradaPM,
-               MAX(CASE WHEN r.Turno = 'PM' THEN r.HoraSalida  ELSE NULL END) AS SalidaPM,
-               MAX(r.Cliente)   AS Cliente,
-               MAX(r.Proyecto)  AS Proyecto,
-               MAX(r.Modalidad) AS Modalidad,
-               MAX(r.Recurso)   AS Recurso,
-               STRING_AGG(r.Descripcion, CHAR(10)) WITHIN GROUP (ORDER BY r.Turno) AS Descripcion
+               r.HoraEntradaAM AS EntradaAM,
+               r.HoraSalidaAM  AS SalidaAM,
+               r.HoraEntradaPM AS EntradaPM,
+               r.HoraSalidaPM  AS SalidaPM,
+               r.Cliente,
+               r.Proyecto,
+               r.Modalidad,
+               r.Recurso,
+               r.Descripcion
         FROM   RegistrosHoras r
         WHERE  r.UserId = @UserId
           AND  MONTH(r.FechaRegistro) = @Mes
           AND  YEAR(r.FechaRegistro)  = @Anio
-        GROUP  BY r.FechaRegistro
         ORDER  BY r.FechaRegistro
         """;
 

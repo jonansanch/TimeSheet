@@ -234,19 +234,25 @@
                                     CellStyle="white-space:nowrap;"
                                     Format="dd/MM/yyyy" />
                     <PropertyColumn Property="x => x.NombreEmpleado" Title="Empleado" />
-                    <TemplateColumn Title="Turno" Sortable="true">
+                    <TemplateColumn Title="Ent. AM" Sortable="false" CellStyle="white-space:nowrap;">
                         <CellTemplate>
-                            <MudChip T="string" Size="Size.Small"
-                                     Color="@(context.Item.Turno == 1 ? Color.Info : Color.Warning)">
-                                @(context.Item.Turno == 1 ? "AM" : "PM")
-                            </MudChip>
+                            @(context.Item.HoraEntradaAM.HasValue ? context.Item.HoraEntradaAM.Value.ToString("HH:mm") : "—")
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Entrada" Sortable="false">
-                        <CellTemplate>@context.Item.HoraEntrada.ToString("HH:mm")</CellTemplate>
+                    <TemplateColumn Title="Sal. AM" Sortable="false" CellStyle="white-space:nowrap;">
+                        <CellTemplate>
+                            @(context.Item.HoraSalidaAM.HasValue ? context.Item.HoraSalidaAM.Value.ToString("HH:mm") : "—")
+                        </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Salida" Sortable="false">
-                        <CellTemplate>@context.Item.HoraSalida.ToString("HH:mm")</CellTemplate>
+                    <TemplateColumn Title="Ent. PM" Sortable="false" CellStyle="white-space:nowrap;">
+                        <CellTemplate>
+                            @(context.Item.HoraEntradaPM.HasValue ? context.Item.HoraEntradaPM.Value.ToString("HH:mm") : "—")
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Sal. PM" Sortable="false" CellStyle="white-space:nowrap;">
+                        <CellTemplate>
+                            @(context.Item.HoraSalidaPM.HasValue ? context.Item.HoraSalidaPM.Value.ToString("HH:mm") : "—")
+                        </CellTemplate>
                     </TemplateColumn>
                     <TemplateColumn Title="Horas" Sortable="true">
                         <CellTemplate>

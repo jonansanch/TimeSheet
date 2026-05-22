@@ -25,18 +25,23 @@ public class GetRegistrosRecientesQueryHandler
 
         var top = Math.Clamp(request.Top, 1, 10);
 
-        return await _context.RegistrosHoras
+        // Load ordered by date desc; GroupBy in-memory preserves first-occurrence order,
+        // so the first element of each group is the most recent record for that (Cliente, Proyecto).
+        var records = await _context.RegistrosHoras
             .Where(r => r.UserId == userId)
-            .GroupBy(r => new { r.Cliente, r.Proyecto })
-            .Select(g => new
-            {
-                g.Key.Cliente,
-                g.Key.Proyecto,
-                UltimaFecha = g.Max(r => r.FechaRegistro)
-            })
-            .OrderByDescending(x => x.UltimaFecha)
-            .Take(top)
-            .Select(x => new RegistroRecienteDto(x.Cliente, x.Proyecto))
+            .OrderByDescending(r => r.FechaRegistro)
             .ToListAsync(cancellationToken);
+
+        return records
+            .GroupBy(r => new { r.Cliente, r.Proyecto })
+            .Take(top)
+            .Select(g =>
+            {
+                var latest = g.First();
+                return new RegistroRecienteDto(
+                    latest.Cliente, latest.Proyecto,
+                    latest.Modalidad, latest.Recurso,
+                    latest.Descripcion, latest.Lugar);
+            });
     }
 }

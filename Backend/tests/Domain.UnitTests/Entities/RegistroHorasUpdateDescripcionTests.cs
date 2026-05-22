@@ -1,6 +1,5 @@
 using FluentAssertions;
 using KPG.Timesheet.Domain.Entities;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Domain.Exceptions;
 using Xunit;
 
@@ -12,9 +11,10 @@ public class RegistroHorasUpdateDescripcionTests
         new(
             "user-1",
             new DateOnly(2026, 5, 14),
-            TurnoRegistro.AM,
             new TimeOnly(8, 0),
             new TimeOnly(13, 0),
+            null,
+            null,
             "KPG",
             "Timesheet",
             "Remoto",

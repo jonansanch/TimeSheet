@@ -1,6 +1,5 @@
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
@@ -65,9 +64,10 @@ public class GetMisRegistrosQueryHandlerTests
 
         var item = result[0];
         item.FechaRegistro.Should().Be(new DateOnly(2026, 5, 10));
-        item.Turno.Should().Be(TurnoRegistro.AM);
-        item.HoraEntrada.Should().Be(new TimeOnly(8, 0));
-        item.HoraSalida.Should().Be(new TimeOnly(13, 0));
+        item.HoraEntradaAM.Should().Be(new TimeOnly(8, 0));
+        item.HoraSalidaAM.Should().Be(new TimeOnly(13, 0));
+        item.HoraEntradaPM.Should().BeNull();
+        item.HoraSalidaPM.Should().BeNull();
         item.Cliente.Should().Be("KPG");
         item.Proyecto.Should().Be("Timesheet");
         item.Modalidad.Should().Be("Remoto");
@@ -86,10 +86,10 @@ public class GetMisRegistrosQueryHandlerTests
         string userId,
         string cliente,
         string proyecto,
-        DateOnly fecha,
-        TurnoRegistro turno = TurnoRegistro.AM) =>
-        new(userId, fecha, turno,
+        DateOnly fecha) =>
+        new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

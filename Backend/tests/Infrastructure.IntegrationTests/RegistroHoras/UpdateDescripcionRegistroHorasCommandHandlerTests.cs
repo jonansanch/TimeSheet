@@ -2,12 +2,11 @@ using FluentAssertions;
 using KPG.Timesheet.Application.Common.Exceptions;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.UpdateDescripcionRegistroHoras;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Xunit;
-using RegistroHoras = KPG.Timesheet.Domain.Entities.RegistroHoras;
+using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
 
@@ -43,13 +42,14 @@ public class UpdateDescripcionRegistroHorasCommandHandlerTests
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    private static KPG.Timesheet.Domain.Entities.RegistroHoras CreateRegistro() =>
+    private static RegistroHorasEntity CreateRegistro() =>
         new(
             "user-1",
             new DateOnly(2026, 5, 14),
-            TurnoRegistro.AM,
             new TimeOnly(8, 0),
             new TimeOnly(13, 0),
+            null,
+            null,
             "KPG",
             "Timesheet",
             "Remoto",

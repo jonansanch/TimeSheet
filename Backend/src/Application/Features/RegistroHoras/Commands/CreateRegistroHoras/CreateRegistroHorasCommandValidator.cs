@@ -1,5 +1,3 @@
-using KPG.Timesheet.Domain.Enums;
-
 namespace KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 
 public class CreateRegistroHorasCommandValidator : AbstractValidator<CreateRegistroHorasCommand>
@@ -9,16 +7,31 @@ public class CreateRegistroHorasCommandValidator : AbstractValidator<CreateRegis
         RuleFor(x => x.FechaRegistro)
             .NotEmpty().WithMessage("La fecha del registro es requerida.");
 
-        RuleFor(x => x.Turno)
-            .IsInEnum().WithMessage("El turno debe ser AM o PM.");
+        RuleFor(x => x)
+            .Must(x => x.HoraEntradaAM.HasValue || x.HoraEntradaPM.HasValue)
+            .WithMessage("Debe registrar al menos un turno (AM o PM).");
 
-        RuleFor(x => x.HoraEntrada)
-            .NotEmpty().WithMessage("La hora de entrada es requerida.");
+        // Bloque AM: si se provee uno, ambos son obligatorios y salida > entrada
+        When(x => x.HoraEntradaAM.HasValue || x.HoraSalidaAM.HasValue, () =>
+        {
+            RuleFor(x => x.HoraEntradaAM)
+                .NotNull().WithMessage("La hora de entrada AM es requerida cuando se registra el turno AM.");
+            RuleFor(x => x.HoraSalidaAM)
+                .NotNull().WithMessage("La hora de salida AM es requerida cuando se registra el turno AM.")
+                .Must((cmd, salida) => !cmd.HoraEntradaAM.HasValue || salida > cmd.HoraEntradaAM)
+                .WithMessage("La hora de salida AM debe ser mayor que la hora de entrada.");
+        });
 
-        RuleFor(x => x.HoraSalida)
-            .NotEmpty().WithMessage("La hora de salida es requerida.")
-            .GreaterThan(x => x.HoraEntrada)
-            .WithMessage("La hora de salida debe ser mayor que la hora de entrada.");
+        // Bloque PM: si se provee uno, ambos son obligatorios y salida > entrada
+        When(x => x.HoraEntradaPM.HasValue || x.HoraSalidaPM.HasValue, () =>
+        {
+            RuleFor(x => x.HoraEntradaPM)
+                .NotNull().WithMessage("La hora de entrada PM es requerida cuando se registra el turno PM.");
+            RuleFor(x => x.HoraSalidaPM)
+                .NotNull().WithMessage("La hora de salida PM es requerida cuando se registra el turno PM.")
+                .Must((cmd, salida) => !cmd.HoraEntradaPM.HasValue || salida > cmd.HoraEntradaPM)
+                .WithMessage("La hora de salida PM debe ser mayor que la hora de entrada.");
+        });
 
         RuleFor(x => x.Cliente)
             .NotEmpty().WithMessage("El cliente es requerido.")

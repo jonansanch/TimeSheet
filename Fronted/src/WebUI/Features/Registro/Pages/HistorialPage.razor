@@ -60,14 +60,28 @@
                         @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
                     </CellTemplate>
                 </PropertyColumn>
-                <TemplateColumn Title="Turno" Sortable="false">
+                <TemplateColumn Title="AM" Sortable="false" CellStyle="white-space:nowrap;">
                     <CellTemplate>
-                        @context.Item.Turno
+                        @if (context.Item.HoraEntradaAM.HasValue && context.Item.HoraSalidaAM.HasValue)
+                        {
+                            @($"{context.Item.HoraEntradaAM.Value:HH\\:mm} – {context.Item.HoraSalidaAM.Value:HH\\:mm}")
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary">—</MudText>
+                        }
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Horario" Sortable="false">
+                <TemplateColumn Title="PM" Sortable="false" CellStyle="white-space:nowrap;">
                     <CellTemplate>
-                        @context.Item.HoraEntrada.ToString(@"HH\:mm") – @context.Item.HoraSalida.ToString(@"HH\:mm")
+                        @if (context.Item.HoraEntradaPM.HasValue && context.Item.HoraSalidaPM.HasValue)
+                        {
+                            @($"{context.Item.HoraEntradaPM.Value:HH\\:mm} – {context.Item.HoraSalidaPM.Value:HH\\:mm}")
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary">—</MudText>
+                        }
                     </CellTemplate>
                 </TemplateColumn>
                 <PropertyColumn Property="x => x.Cliente" Title="Cliente" />
@@ -102,8 +116,7 @@
                    CancelText="Cancelar">
         <MessageContent>
             ¿Eliminar el registro del
-            <b>@_pendiente?.FechaRegistro.ToString("dd/MM/yyyy")</b>
-            · Turno <b>@_pendiente?.Turno</b>?
+            <b>@_pendiente?.FechaRegistro.ToString("dd/MM/yyyy")</b>?
             Esta acción no se puede deshacer.
         </MessageContent>
         <YesButton>
@@ -212,7 +225,7 @@
             if (success)
             {
                 _registros.Remove(item);
-                _successMessage = $"Registro del {item.FechaRegistro:dd/MM/yyyy} · Turno {item.Turno} eliminado.";
+                _successMessage = $"Registro del {item.FechaRegistro:dd/MM/yyyy} eliminado.";
             }
             else
             {

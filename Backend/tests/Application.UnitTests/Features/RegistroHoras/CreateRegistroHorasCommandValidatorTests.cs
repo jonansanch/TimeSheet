@@ -1,6 +1,5 @@
 using FluentAssertions;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
-using KPG.Timesheet.Domain.Enums;
 using Xunit;
 
 namespace KPG.Timesheet.Application.UnitTests.Features.RegistroHoras;
@@ -14,12 +13,12 @@ public class CreateRegistroHorasCommandValidatorTests
     {
         var command = ValidCommand() with
         {
-            Cliente = string.Empty,
-            Proyecto = string.Empty,
-            Modalidad = string.Empty,
-            Recurso = string.Empty,
+            Cliente     = string.Empty,
+            Proyecto    = string.Empty,
+            Modalidad   = string.Empty,
+            Recurso     = string.Empty,
             Descripcion = string.Empty,
-            Lugar = string.Empty
+            Lugar       = string.Empty
         };
 
         var result = await _validator.ValidateAsync(command);
@@ -34,18 +33,49 @@ public class CreateRegistroHorasCommandValidatorTests
     }
 
     [Fact]
-    public async Task Validate_WhenHoraSalidaIsNotAfterEntrada_ShouldFail()
+    public async Task Validate_WhenNoTurnoProvided_ShouldFail()
     {
         var command = ValidCommand() with
         {
-            HoraEntrada = new TimeOnly(13, 0),
-            HoraSalida = new TimeOnly(13, 0)
+            HoraEntradaAM = null,
+            HoraSalidaAM  = null,
+            HoraEntradaPM = null,
+            HoraSalidaPM  = null
         };
 
         var result = await _validator.ValidateAsync(command);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.HoraSalida));
+    }
+
+    [Fact]
+    public async Task Validate_WhenHoraSalidaAMIsNotAfterEntrada_ShouldFail()
+    {
+        var command = ValidCommand() with
+        {
+            HoraEntradaAM = new TimeOnly(13, 0),
+            HoraSalidaAM  = new TimeOnly(13, 0)
+        };
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.HoraSalidaAM));
+    }
+
+    [Fact]
+    public async Task Validate_WhenHoraSalidaPMIsNotAfterEntrada_ShouldFail()
+    {
+        var command = new CreateRegistroHorasCommand(
+            new DateOnly(2026, 5, 14),
+            null, null,
+            new TimeOnly(14, 0), new TimeOnly(13, 0),
+            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.HoraSalidaPM));
     }
 
     [Fact]
@@ -56,12 +86,27 @@ public class CreateRegistroHorasCommandValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Validate_WhenBothTurnosValid_ShouldPass()
+    {
+        var command = new CreateRegistroHorasCommand(
+            new DateOnly(2026, 5, 14),
+            new TimeOnly(8, 0), new TimeOnly(12, 0),
+            new TimeOnly(13, 0), new TimeOnly(17, 0),
+            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+
+        var result = await _validator.ValidateAsync(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
     private static CreateRegistroHorasCommand ValidCommand() =>
         new(
             new DateOnly(2026, 5, 14),
-            TurnoRegistro.AM,
             new TimeOnly(8, 0),
             new TimeOnly(13, 0),
+            null,
+            null,
             "KPG",
             "Timesheet",
             "Remoto",

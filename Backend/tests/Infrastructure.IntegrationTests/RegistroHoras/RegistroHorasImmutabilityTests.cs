@@ -1,7 +1,6 @@
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Domain.Entities;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Domain.Exceptions;
 using KPG.Timesheet.Infrastructure.Data;
 using KPG.Timesheet.Infrastructure.Data.Interceptors;
@@ -28,17 +27,35 @@ public class RegistroHorasImmutabilityTests
     }
 
     [Fact]
-    public async Task SaveChanges_WhenClienteChanges_ThrowsDomainRuleException()
+    public async Task SaveChanges_WhenClienteChanges_Succeeds()
     {
+        // Metadata fields (Cliente, Proyecto, etc.) are mutable to support UpdateMetadata on upsert
         await using var context = CreateContext();
         var registro = await SeedRegistroAsync(context);
 
         context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.Cliente)).CurrentValue = "Otro cliente";
         context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.Cliente)).IsModified = true;
 
-        var act = () => context.SaveChangesAsync(CancellationToken.None);
-        await act.Should().ThrowAsync<DomainRuleException>()
-            .WithMessage("*inmutables*descripcion*");
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var updated = await context.RegistrosHoras.FindAsync(registro.Id);
+        updated!.Cliente.Should().Be("Otro cliente");
+    }
+
+    [Fact]
+    public async Task SaveChanges_WhenHoraEntradaAMChangedFromNull_Succeeds()
+    {
+        // SoloAgregable: null → value is allowed (adding a missing turno)
+        await using var context = CreateContext();
+        var registro = await SeedRegistroAsync(context); // AM-only registro, PM is null
+
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaPM)).CurrentValue = new TimeOnly(13, 0);
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaPM)).IsModified = true;
+
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var updated = await context.RegistrosHoras.FindAsync(registro.Id);
+        updated!.HoraEntradaPM.Should().Be(new TimeOnly(13, 0));
     }
 
     [Fact]
@@ -55,13 +72,14 @@ public class RegistroHorasImmutabilityTests
     }
 
     [Fact]
-    public async Task SaveChanges_WhenHoraEntradaChanges_ThrowsDomainRuleException()
+    public async Task SaveChanges_WhenHoraEntradaAMChangedFromValue_ThrowsDomainRuleException()
     {
         await using var context = CreateContext();
         var registro = await SeedRegistroAsync(context);
 
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntrada)).CurrentValue = new TimeOnly(7, 30);
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntrada)).IsModified = true;
+        // Trying to change an already-set AM time is forbidden (value → value)
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaAM)).CurrentValue = new TimeOnly(7, 30);
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaAM)).IsModified = true;
 
         var act = () => context.SaveChangesAsync(CancellationToken.None);
         await act.Should().ThrowAsync<DomainRuleException>();
@@ -109,9 +127,10 @@ public class RegistroHorasImmutabilityTests
         new(
             "user-1",
             Today,
-            TurnoRegistro.AM,
             new TimeOnly(8, 0),
             new TimeOnly(13, 0),
+            null,
+            null,
             "KPG",
             "Timesheet",
             "Remoto",
@@ -141,8 +160,9 @@ public class RegistroHorasImmutabilityTests
     }
 
     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
-        new(fecha, TurnoRegistro.AM,
+        new(fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

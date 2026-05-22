@@ -195,3 +195,14 @@ code {
     background-color: rgba(158, 158, 158, 0.2);
     color: #9E9E9E !important;
 }
+
+/* Neutralizar el fondo azul/amarillo del autofill del browser en campos MudTextField */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 9999px #ffffff inset !important;
+    box-shadow: 0 0 0px 9999px #ffffff inset !important;
+    -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
+    transition: background-color 9999s ease-in-out 0s;
+}

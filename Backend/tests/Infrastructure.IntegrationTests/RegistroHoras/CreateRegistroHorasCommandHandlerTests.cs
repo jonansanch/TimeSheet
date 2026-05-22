@@ -1,11 +1,8 @@
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Domain.Entities;
-using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-
-// TestClock fija la fecha para que los tests no dependan de DateTime.Today
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
 
@@ -26,26 +23,38 @@ public class CreateRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Should().ContainSingle(r =>
             r.UserId == "user-1" &&
             r.FechaRegistro == new DateOnly(2026, 5, 14) &&
-            r.Turno == TurnoRegistro.AM);
+            r.HoraEntradaAM == new TimeOnly(8, 0));
     }
 
     [Fact]
-    public async Task Handle_WhenSameDateAndTurno_ShouldAllowMultipleRegistros()
+    public async Task Handle_WhenSameDateSecondCall_ShouldUpsertAddingPMBlock()
     {
         await using var context = CreateContextWithVentana(3);
         var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
 
-        await handler.Handle(ValidCommand(), CancellationToken.None);
+        // First call: AM block only
         await handler.Handle(ValidCommand(), CancellationToken.None);
 
-        context.RegistrosHoras.Count(r => r.UserId == "user-1" && r.Turno == TurnoRegistro.AM).Should().Be(2);
+        // Second call: PM block for the same date
+        var pmCommand = new CreateRegistroHorasCommand(
+            new DateOnly(2026, 5, 14),
+            null, null,
+            new TimeOnly(13, 0), new TimeOnly(17, 0),
+            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+        await handler.Handle(pmCommand, CancellationToken.None);
+
+        // Must remain a single record with both blocks
+        context.RegistrosHoras.Count(r => r.UserId == "user-1").Should().Be(1);
+        var registro = await context.RegistrosHoras.SingleAsync(r => r.UserId == "user-1");
+        registro.TieneAM.Should().BeTrue();
+        registro.TienePM.Should().BeTrue();
     }
 
     [Fact]
     public async Task Handle_WhenFechaFueraVentanaConExcepcionAprobada_ShouldCreateRegistro()
     {
         await using var context = CreateContextWithVentana(3);
-        var fechaFuera = TestToday.AddDays(-10); // muy fuera de la ventana de 3 días
+        var fechaFuera = TestToday.AddDays(-10);
         var solicitud = new SolicitudExcepcion("user-1", fechaFuera, "Enfermedad grave");
         solicitud.Aprobar();
         context.SolicitudesExcepcion.Add(solicitud);
@@ -53,8 +62,9 @@ public class CreateRegistroHorasCommandHandlerTests
 
         var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
         var command = new CreateRegistroHorasCommand(
-            fechaFuera, TurnoRegistro.AM,
+            fechaFuera,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -81,9 +91,10 @@ public class CreateRegistroHorasCommandHandlerTests
     private static CreateRegistroHorasCommand ValidCommand() =>
         new(
             new DateOnly(2026, 5, 14),
-            TurnoRegistro.AM,
             new TimeOnly(8, 0),
             new TimeOnly(13, 0),
+            null,
+            null,
             "KPG",
             "Timesheet",
             "Remoto",
@@ -93,11 +104,7 @@ public class CreateRegistroHorasCommandHandlerTests
 
     private sealed class TestUser : IUser
     {
-        public TestUser(string id)
-        {
-            Id = id;
-        }
-
+        public TestUser(string id) => Id = id;
         public string? Id { get; }
         public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];

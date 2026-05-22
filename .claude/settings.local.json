@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "PowerShell(git -C \"C:\\\\ProyectosIA\\\\Timesheet\" log --oneline -5)"
     ]
   }
 }
