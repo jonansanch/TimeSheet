@@ -530,5 +530,47 @@ public class ApplicationDbContextInitialiser
                     ON [dbo].[SolicitudesExcepcion] ([UserId], [FechaRegistro]);
             END
             """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[NotificacionesEnviadas]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[NotificacionesEnviadas] (
+                    [Id] int NOT NULL IDENTITY,
+                    [UserId] nvarchar(450) NOT NULL,
+                    [Email] nvarchar(256) NOT NULL,
+                    [FechaReferencia] date NOT NULL,
+                    [DiasAcumulados] int NOT NULL,
+                    [Exitoso] bit NOT NULL,
+                    [ErrorDetalle] nvarchar(2000) NULL,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_NotificacionesEnviadas] PRIMARY KEY ([Id])
+                );
+                CREATE INDEX [IX_NotificacionesEnviadas_UserId_Created]
+                    ON [dbo].[NotificacionesEnviadas] ([UserId], [Created]);
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[BitacoraAuditoria]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[BitacoraAuditoria] (
+                    [Id] int NOT NULL IDENTITY,
+                    [TipoEvento] nvarchar(100) NOT NULL,
+                    [ActorId] nvarchar(450) NOT NULL,
+                    [ActorEmail] nvarchar(256) NULL,
+                    [EntidadAfectada] nvarchar(100) NOT NULL,
+                    [EntidadId] nvarchar(450) NULL,
+                    [Timestamp] datetimeoffset NOT NULL,
+                    [MetadataJson] nvarchar(4000) NULL,
+                    CONSTRAINT [PK_BitacoraAuditoria] PRIMARY KEY ([Id])
+                );
+                CREATE INDEX [IX_BitacoraAuditoria_ActorId]   ON [dbo].[BitacoraAuditoria] ([ActorId]);
+                CREATE INDEX [IX_BitacoraAuditoria_Timestamp]  ON [dbo].[BitacoraAuditoria] ([Timestamp]);
+                CREATE INDEX [IX_BitacoraAuditoria_TipoEvento] ON [dbo].[BitacoraAuditoria] ([TipoEvento]);
+            END
+            """);
     }
 }
