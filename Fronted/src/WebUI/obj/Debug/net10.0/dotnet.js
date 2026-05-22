@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "KPG.Timesheet.WebUI",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-6KvpiIHQpNOuBHYXkNOSLI1s5U8/heFr8NFG/2A1wHU=",
+    "hash": "sha256-mQkCXGb92jp0teiuZUXnHgGn6h9f/1m7qH5+Xa8ytbI=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.rjbmzc4jpg.js"
@@ -1278,16 +1278,16 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "KPG.Timesheet.WebUI.wasm",
-        "name": "KPG.Timesheet.WebUI.x19eph2yjv.wasm",
-        "hash": "sha256-q51uirp43IqilbYKQWCS6QxSCY7/gT1tyehfmAfdYkI=",
+        "name": "KPG.Timesheet.WebUI.x4o4bfr4h6.wasm",
+        "hash": "sha256-z3VKqgRmXwfO/uggkjP+qT/ybBfT046dgcrmGiuqtOM=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "KPG.Timesheet.WebUI.pdb",
-        "name": "KPG.Timesheet.WebUI.j1k20estxe.pdb",
-        "hash": "sha256-98nC/lY11wkgWJcUf5ZW6TYmffUQ5fodB7f39iGNL+o=",
+        "name": "KPG.Timesheet.WebUI.n0xq1opubj.pdb",
+        "hash": "sha256-pzqXoPQEXKV61tZXZ+PNC6RaKWSCP+MQfiPnxkHaUuo=",
         "cache": "force-cache"
       }
     ],

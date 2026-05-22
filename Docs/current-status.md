@@ -8,7 +8,7 @@ Ultima actualizacion: 2026-05-19 — fin sesion 11
 
 - Epic 1 (Auth/Shell): stories 1.1-1.6 en `done`.
 - Epic 2 (Registro de Horas): stories 2.1-2.7 en `done`.
-- Epic 3 (Ventana Retroactiva / Excepciones / Inmutabilidad): stories 3.1-3.6 en `review`.
+- Epic 3 (Ventana Retroactiva / Excepciones / Inmutabilidad): stories 3.1-3.6 en `done`. QA funcional revisado y aprobado.
 - Epic 4 (Administracion de Catalogos): stories 4.1-4.6 en `review`.
 - Epic 5 (Dashboards / Reportes / Notificaciones): stories 5.1-5.11 en `review`. QA funcional aprobado 2026-05-19.
 
