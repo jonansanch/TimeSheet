@@ -90,7 +90,7 @@ public class RegistroHorasImmutabilityTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora());
         var result = await handler.Handle(CommandForDate(fechaFueraVentana), CancellationToken.None);
 
         result.FechaRegistro.Should().Be(fechaFueraVentana);
@@ -149,6 +149,7 @@ public class RegistroHorasImmutabilityTests
     {
         public TestUser(string id) => Id = id;
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
     }
 
@@ -156,5 +157,13 @@ public class RegistroHorasImmutabilityTests
     {
         public TestClock(DateOnly today) => Today = today;
         public DateOnly Today { get; }
+        public DateTimeOffset UtcNow => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+    }
+
+    private sealed class NullBitacora : IBitacoraService
+    {
+        public Task RegistrarAsync(string tipoEvento, string actorId, string? actorEmail,
+            string entidadAfectada, string? entidadId, object? metadata = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

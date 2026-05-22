@@ -11,10 +11,12 @@ namespace KPG.Timesheet.Infrastructure.Identity;
 public class JwtTokenService : IJwtTokenService
 {
     private readonly JwtSettings _settings;
+    private readonly TimeProvider _timeProvider;
 
-    public JwtTokenService(IOptions<JwtSettings> settings)
+    public JwtTokenService(IOptions<JwtSettings> settings, TimeProvider timeProvider)
     {
         _settings = settings.Value;
+        _timeProvider = timeProvider;
     }
 
     public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles)
@@ -36,7 +38,7 @@ public class JwtTokenService : IJwtTokenService
             issuer: _settings.Issuer,
             audience: _settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_settings.ExpirationMinutes),
+            expires: _timeProvider.GetUtcNow().AddMinutes(_settings.ExpirationMinutes).UtcDateTime,
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

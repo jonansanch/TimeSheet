@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Domain.Common;
+using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
@@ -13,12 +14,14 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
     private readonly IApplicationDbContext _context;
     private readonly IUser _user;
     private readonly IClock _clock;
+    private readonly IBitacoraService _bitacora;
 
-    public CreateRegistroHorasCommandHandler(IApplicationDbContext context, IUser user, IClock clock)
+    public CreateRegistroHorasCommandHandler(IApplicationDbContext context, IUser user, IClock clock, IBitacoraService bitacora)
     {
         _context = context;
         _user = user;
         _clock = clock;
+        _bitacora = bitacora;
     }
 
     public async Task<RegistroHorasDto> Handle(CreateRegistroHorasCommand request, CancellationToken cancellationToken)
@@ -70,6 +73,12 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
             esRetroactivo);
 
         _context.RegistrosHoras.Add(registro);
+        await _bitacora.RegistrarAsync(
+            TipoEventoBitacora.RegistroHorasCreado,
+            userId, null,
+            "RegistrosHoras", null,
+            new { registro.FechaRegistro, Turno = registro.Turno.ToString(), registro.Cliente, registro.Proyecto },
+            cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new RegistroHorasDto(

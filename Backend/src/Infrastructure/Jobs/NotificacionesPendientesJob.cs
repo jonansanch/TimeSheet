@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Domain.Common;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ public class NotificacionesPendientesJob(
     private const string SqlUmbral = """
         SELECT ISNULL(TRY_CAST(Valor AS int), 3)
         FROM   ParametrosSistema
-        WHERE  Clave = 'DiasUmbralNotificacion'
+        WHERE  Clave = @Clave
         """;
 
     private const string SqlPendientes = """
@@ -68,10 +69,10 @@ public class NotificacionesPendientesJob(
             var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             var bitacora = scope.ServiceProvider.GetRequiredService<IBitacoraService>();
 
-            var umbral = await db.ExecuteScalarAsync<int>(SqlUmbral);
+            var umbral = await db.ExecuteScalarAsync<int>(SqlUmbral, new { Clave = ParametrosSistema.DiasUmbralNotificacion });
             if (umbral <= 0) umbral = 3;
 
-            var fechaCorte = RestarDiasHabiles(DateOnly.FromDateTime(DateTime.Today), umbral);
+            var fechaCorte = BusinessDayCalculator.GetEarliestAllowedDate(DateOnly.FromDateTime(DateTime.Today), umbral);
             var pendientes = (await db.QueryAsync<PendienteRow>(SqlPendientes, new { FechaCorte = fechaCorte })).ToList();
 
             logger.LogInformation("NotificacionesPendientesJob: {Count} usuarios pendientes con umbral {Umbral} días.", pendientes.Count, umbral);
@@ -94,7 +95,7 @@ public class NotificacionesPendientesJob(
                 }
 
                 var diasSinRegistro = p.UltimoRegistro.HasValue
-                    ? ContarDiasHabiles(p.UltimoRegistro.Value, hoy)
+                    ? BusinessDayCalculator.CountBusinessDays(p.UltimoRegistro.Value, hoy)
                     : 999;
 
                 var subject = "Recordatorio: horas pendientes de registro en KPG Timesheet";
@@ -126,7 +127,7 @@ public class NotificacionesPendientesJob(
                     UserId = p.UserId,
                     Email = p.Email,
                     FechaReferencia = p.UltimoRegistro ?? hoy,
-                    DiasAcumulados = Math.Min(diasSinRegistro, 999),
+                    DiasAcumulados = diasSinRegistro,
                     Exitoso = exitoso,
                     ErrorDetalle = errorDetalle
                 };
@@ -152,31 +153,6 @@ public class NotificacionesPendientesJob(
         {
             logger.LogError(ex, "NotificacionesPendientesJob: error inesperado.");
         }
-    }
-
-    private static DateOnly RestarDiasHabiles(DateOnly fecha, int dias)
-    {
-        int restados = 0;
-        while (restados < dias)
-        {
-            fecha = fecha.AddDays(-1);
-            if (fecha.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday)
-                restados++;
-        }
-        return fecha;
-    }
-
-    private static int ContarDiasHabiles(DateOnly desde, DateOnly hasta)
-    {
-        int count = 0;
-        var d = desde.AddDays(1);
-        while (d <= hasta)
-        {
-            if (d.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday)
-                count++;
-            d = d.AddDays(1);
-        }
-        return count;
     }
 
     private sealed record PendienteRow(string UserId, string Nombre, string Email, DateOnly? UltimoRegistro);

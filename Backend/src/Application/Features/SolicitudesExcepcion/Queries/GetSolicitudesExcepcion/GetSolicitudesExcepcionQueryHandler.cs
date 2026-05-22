@@ -23,15 +23,13 @@ public class GetSolicitudesExcepcionQueryHandler
             .OrderByDescending(s => s.Created)
             .ToListAsync(cancellationToken);
 
-        var result = new List<SolicitudExcepcionAdminDto>(solicitudes.Count);
-        foreach (var s in solicitudes)
-        {
-            var email = await _identityService.GetUserNameAsync(s.UserId) ?? s.UserId;
-            result.Add(new SolicitudExcepcionAdminDto(
-                s.Id, s.UserId, email,
-                s.FechaRegistro, s.Justificacion,
-                s.Estado.ToString(), s.Created));
-        }
-        return result;
+        var userIds = solicitudes.Select(s => s.UserId).Distinct();
+        var emails = await _identityService.GetUserEmailsAsync(userIds, cancellationToken);
+
+        return solicitudes.Select(s => new SolicitudExcepcionAdminDto(
+            s.Id, s.UserId,
+            emails.GetValueOrDefault(s.UserId, s.UserId),
+            s.FechaRegistro, s.Justificacion,
+            s.Estado.ToString(), s.Created));
     }
 }

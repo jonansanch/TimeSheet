@@ -70,6 +70,6 @@ public class RegistroHoras : BaseAuditableEntity
     private static void ThrowIfBlank(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new DomainRuleException("El valor es requerido.");
+            throw new DomainRuleException($"'{parameterName}' es requerido.");
     }
 }

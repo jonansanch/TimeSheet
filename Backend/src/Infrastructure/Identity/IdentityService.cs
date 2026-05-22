@@ -2,7 +2,6 @@ using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Application.Features.Users.Queries.GetUsers;
 using KPG.Timesheet.Domain.Constants;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,17 +10,10 @@ namespace KPG.Timesheet.Infrastructure.Identity;
 public class IdentityService : IIdentityService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IUserClaimsPrincipalFactory<ApplicationUser> _userClaimsPrincipalFactory;
-    private readonly IAuthorizationService _authorizationService;
 
-    public IdentityService(
-        UserManager<ApplicationUser> userManager,
-        IUserClaimsPrincipalFactory<ApplicationUser> userClaimsPrincipalFactory,
-        IAuthorizationService authorizationService)
+    public IdentityService(UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
-        _userClaimsPrincipalFactory = userClaimsPrincipalFactory;
-        _authorizationService = authorizationService;
     }
 
     public async Task<string?> GetUserNameAsync(string userId)
@@ -31,17 +23,12 @@ public class IdentityService : IIdentityService
         return user?.UserName;
     }
 
-    public async Task<(Result Result, string UserId)> CreateUserAsync(string userName, string password)
+    public async Task<Dictionary<string, string>> GetUserEmailsAsync(IEnumerable<string> userIds, CancellationToken cancellationToken = default)
     {
-        var user = new ApplicationUser
-        {
-            UserName = userName,
-            Email = userName,
-        };
-
-        var result = await _userManager.CreateAsync(user, password);
-
-        return (result.ToApplicationResult(), user.Id);
+        var ids = userIds.ToList();
+        return await _userManager.Users
+            .Where(u => ids.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Email ?? u.Id, cancellationToken);
     }
 
     public async Task<UsersPageDto> GetUsersAsync(
@@ -54,32 +41,27 @@ public class IdentityService : IIdentityService
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var users = await _userManager.Users
-            .Select(u => new
-            {
-                u.Id,
-                u.Email,
-                u.NombreCompleto,
-                u.IsActive,
-                u.Created,
-                u.DeactivatedAt
-            })
-            .ToListAsync(cancellationToken);
+        // 1 query: all users
+        var users = await _userManager.Users.ToListAsync(cancellationToken);
 
-        var items = new List<UserAdminDto>(users.Count);
-        foreach (var user in users)
+        // 4 queries (one per role) — O(roles) instead of O(2N+1)
+        var allRoles = new[] { Roles.Admin, Roles.Gerente, Roles.Supervisor, Roles.Empleado };
+        var userRoleMap = new Dictionary<string, string>(users.Count);
+        foreach (var roleName in allRoles)
         {
-            var appUser = await _userManager.FindByIdAsync(user.Id);
-            var roles = appUser is null ? [] : await _userManager.GetRolesAsync(appUser);
-            items.Add(new UserAdminDto(
-                user.Id,
-                user.Email ?? string.Empty,
-                user.NombreCompleto,
-                user.IsActive,
-                roles.FirstOrDefault() ?? string.Empty,
-                user.Created,
-                user.DeactivatedAt));
+            var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+            foreach (var u in usersInRole)
+                userRoleMap.TryAdd(u.Id, roleName);
         }
+
+        var items = users.Select(u => new UserAdminDto(
+            u.Id,
+            u.Email ?? string.Empty,
+            u.NombreCompleto,
+            u.IsActive,
+            userRoleMap.GetValueOrDefault(u.Id, string.Empty),
+            u.Created,
+            u.DeactivatedAt)).ToList();
 
         var ordered = (sortBy?.ToLowerInvariant()) switch
         {
@@ -187,37 +169,12 @@ public class IdentityService : IIdentityService
         return (Result.Success(), ToUserAdminDto(user, role));
     }
 
-    public async Task<bool> IsInRoleAsync(string userId, string role)
-    {
-        var user = await _userManager.FindByIdAsync(userId);
-
-        return user != null && await _userManager.IsInRoleAsync(user, role);
-    }
-
-    public async Task<bool> AuthorizeAsync(string userId, string policyName)
-    {
-        var user = await _userManager.FindByIdAsync(userId);
-
-        if (user == null)
-        {
-            return false;
-        }
-
-        var principal = await _userClaimsPrincipalFactory.CreateAsync(user);
-
-        var result = await _authorizationService.AuthorizeAsync(principal, policyName);
-
-        return result.Succeeded;
-    }
-
     public async Task<Result> DeleteUserAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
 
         return user != null ? await DeleteUserAsync(user) : Result.Success();
     }
-
-    public Task<Result> DeleteUserHardAsync(string userId) => DeleteUserAsync(userId);
 
     public async Task<Result> DeleteUserAsync(ApplicationUser user)
     {
@@ -254,16 +211,7 @@ public class IdentityService : IIdentityService
 
     private async Task<bool> HasAnotherActiveAdminAsync(string userId, CancellationToken cancellationToken)
     {
-        var activeUsers = await _userManager.Users
-            .Where(user => user.IsActive && user.Id != userId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var activeUser in activeUsers)
-        {
-            if (await _userManager.IsInRoleAsync(activeUser, Roles.Admin))
-                return true;
-        }
-
-        return false;
+        var admins = await _userManager.GetUsersInRoleAsync(Roles.Admin);
+        return admins.Any(u => u.IsActive && u.Id != userId);
     }
 }

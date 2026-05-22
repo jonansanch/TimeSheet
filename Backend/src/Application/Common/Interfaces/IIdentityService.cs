@@ -7,11 +7,7 @@ public interface IIdentityService
 {
     Task<string?> GetUserNameAsync(string userId);
 
-    Task<bool> IsInRoleAsync(string userId, string role);
-
-    Task<bool> AuthorizeAsync(string userId, string policyName);
-
-    Task<(Result Result, string UserId)> CreateUserAsync(string userName, string password);
+    Task<Dictionary<string, string>> GetUserEmailsAsync(IEnumerable<string> userIds, CancellationToken cancellationToken = default);
 
     Task<UsersPageDto> GetUsersAsync(
         int pageNumber,
@@ -32,8 +28,6 @@ public interface IIdentityService
         CancellationToken cancellationToken = default);
 
     Task<Result> DeleteUserAsync(string userId);
-
-    Task<Result> DeleteUserHardAsync(string userId);
 
     Task<UserCredentialsResult?> ValidateCredentialsAsync(string email, string password);
 

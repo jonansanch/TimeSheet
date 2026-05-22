@@ -102,6 +102,7 @@ public class GetRegistrosRecientesQueryHandlerTests
     {
         public TestUser(string id) => Id = id;
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
     }
 }

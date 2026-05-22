@@ -18,7 +18,7 @@ public class SupervisorRegistroHorasTests
     public async Task Handle_WhenSupervisorCreatesRegistro_ShouldPersistWithSupervisorUserId()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>());
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 
@@ -33,7 +33,7 @@ public class SupervisorRegistroHorasTests
     public async Task Handle_WhenSupervisorCreatesMultipleRegistrosSameTurno_ShouldAllowAll()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>());
 
         await handler.Handle(ValidCommand(), CancellationToken.None);
         await handler.Handle(ValidCommand(), CancellationToken.None);
@@ -50,7 +50,7 @@ public class SupervisorRegistroHorasTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("supervisor-1"));
-        var result = await handler.Handle(new GetMisRegistrosQuery(), CancellationToken.None);
+        var result = await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None);
 
         result.Should().HaveCount(1);
         result.Single().Cliente.Should().Be("KPG");
@@ -115,6 +115,7 @@ public class SupervisorRegistroHorasTests
     {
         public TestUser(string id) => Id = id;
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Supervisor];
     }
 
@@ -122,5 +123,6 @@ public class SupervisorRegistroHorasTests
     {
         public TestClock(DateOnly today) => Today = today;
         public DateOnly Today { get; }
+        public DateTimeOffset UtcNow => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
     }
 }

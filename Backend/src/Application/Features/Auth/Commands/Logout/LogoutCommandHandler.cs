@@ -9,10 +9,12 @@ namespace KPG.Timesheet.Application.Features.Auth.Commands.Logout;
 public class LogoutCommandHandler : IRequestHandler<LogoutCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IClock _clock;
 
-    public LogoutCommandHandler(IApplicationDbContext context)
+    public LogoutCommandHandler(IApplicationDbContext context, IClock clock)
     {
         _context = context;
+        _clock = clock;
     }
 
     public async Task Handle(LogoutCommand request, CancellationToken cancellationToken)
@@ -29,7 +31,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand>
         if (token is null || token.IsRevoked)
             return;
 
-        token.Revoke();
+        token.Revoke(_clock.UtcNow.UtcDateTime);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

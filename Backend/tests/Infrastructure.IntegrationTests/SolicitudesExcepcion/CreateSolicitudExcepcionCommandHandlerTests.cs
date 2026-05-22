@@ -13,7 +13,7 @@ public class CreateSolicitudExcepcionCommandHandlerTests
     public async Task Handle_WhenValidRequest_ShouldCreateWithEstadoPendiente()
     {
         await using var context = CreateContext();
-        var handler = new CreateSolicitudExcepcionCommandHandler(context, new TestUser("user-1"));
+        var handler = new CreateSolicitudExcepcionCommandHandler(context, new TestUser("user-1"), new NullBitacora());
         var command = new CreateSolicitudExcepcionCommand(new DateOnly(2026, 4, 1), "Viaje de negocios imprevisto");
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -31,7 +31,7 @@ public class CreateSolicitudExcepcionCommandHandlerTests
     public async Task Handle_WhenJustificacionHasTrailingWhitespace_ShouldTrimAndSave()
     {
         await using var context = CreateContext();
-        var handler = new CreateSolicitudExcepcionCommandHandler(context, new TestUser("user-1"));
+        var handler = new CreateSolicitudExcepcionCommandHandler(context, new TestUser("user-1"), new NullBitacora());
         var command = new CreateSolicitudExcepcionCommand(new DateOnly(2026, 4, 1), "  Emergencia familiar  ");
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -43,7 +43,7 @@ public class CreateSolicitudExcepcionCommandHandlerTests
     public async Task Handle_WhenUserNotAuthenticated_ShouldThrowUnauthorizedAccessException()
     {
         await using var context = CreateContext();
-        var handler = new CreateSolicitudExcepcionCommandHandler(context, new TestUser(null));
+        var handler = new CreateSolicitudExcepcionCommandHandler(context, new TestUser(null), new NullBitacora());
         var command = new CreateSolicitudExcepcionCommand(new DateOnly(2026, 4, 1), "Justificacion valida");
 
         var act = () => handler.Handle(command, CancellationToken.None);
@@ -63,6 +63,14 @@ public class CreateSolicitudExcepcionCommandHandlerTests
     {
         public TestUser(string? id) => Id = id;
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
+    }
+
+    private sealed class NullBitacora : IBitacoraService
+    {
+        public Task RegistrarAsync(string tipoEvento, string actorId, string? actorEmail,
+            string entidadAfectada, string? entidadId, object? metadata = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

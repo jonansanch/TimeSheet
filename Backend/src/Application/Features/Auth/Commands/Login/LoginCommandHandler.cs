@@ -15,19 +15,22 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
     private readonly IApplicationDbContext _context;
     private readonly JwtSettings _jwtSettings;
     private readonly IBitacoraService _bitacora;
+    private readonly IClock _clock;
 
     public LoginCommandHandler(
         IIdentityService identityService,
         IJwtTokenService jwtTokenService,
         IApplicationDbContext context,
         Microsoft.Extensions.Options.IOptions<JwtSettings> jwtSettings,
-        IBitacoraService bitacora)
+        IBitacoraService bitacora,
+        IClock clock)
     {
         _identityService = identityService;
         _jwtTokenService = jwtTokenService;
         _context = context;
         _jwtSettings = jwtSettings.Value;
         _bitacora = bitacora;
+        _clock = clock;
     }
 
     public async Task<LoginResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -37,8 +40,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
         if (credentials is null)
             throw new UnauthorizedAccessException("Credenciales inválidas.");
 
+        var now = _clock.UtcNow;
         var accessToken = _jwtTokenService.GenerateAccessToken(credentials.UserId, credentials.Email, credentials.Roles);
-        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
+        var expiresAt = now.AddMinutes(_jwtSettings.ExpirationMinutes).UtcDateTime;
+
+        await _context.RefreshTokens
+            .Where(t => t.UserId == credentials.UserId
+                     && (t.RevokedAt != null || t.ExpiresAt <= now))
+            .ExecuteDeleteAsync(cancellationToken);
 
         var rawRefreshToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
         var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawRefreshToken)));
@@ -47,7 +56,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
         {
             UserId = credentials.UserId,
             TokenHash = tokenHash,
-            ExpiresAt = DateTime.UtcNow.AddHours(_jwtSettings.RefreshExpirationHours)
+            ExpiresAt = now.AddHours(_jwtSettings.RefreshExpirationHours).UtcDateTime
         };
 
         _context.RefreshTokens.Add(refreshToken);

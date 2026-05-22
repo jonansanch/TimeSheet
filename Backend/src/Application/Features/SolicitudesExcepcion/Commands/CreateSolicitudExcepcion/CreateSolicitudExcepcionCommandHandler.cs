@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
 
 namespace KPG.Timesheet.Application.Features.SolicitudesExcepcion.Commands.CreateSolicitudExcepcion;
@@ -7,11 +8,13 @@ public class CreateSolicitudExcepcionCommandHandler : IRequestHandler<CreateSoli
 {
     private readonly IApplicationDbContext _context;
     private readonly IUser _user;
+    private readonly IBitacoraService _bitacora;
 
-    public CreateSolicitudExcepcionCommandHandler(IApplicationDbContext context, IUser user)
+    public CreateSolicitudExcepcionCommandHandler(IApplicationDbContext context, IUser user, IBitacoraService bitacora)
     {
         _context = context;
         _user = user;
+        _bitacora = bitacora;
     }
 
     public async Task<SolicitudExcepcionDto> Handle(CreateSolicitudExcepcionCommand request, CancellationToken cancellationToken)
@@ -22,6 +25,12 @@ public class CreateSolicitudExcepcionCommandHandler : IRequestHandler<CreateSoli
 
         var solicitud = new SolicitudExcepcion(userId, request.FechaRegistro, request.Justificacion);
         _context.SolicitudesExcepcion.Add(solicitud);
+        await _bitacora.RegistrarAsync(
+            TipoEventoBitacora.SolicitudExcepcionCreada,
+            userId, null,
+            "SolicitudesExcepcion", null,
+            new { solicitud.FechaRegistro },
+            cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new SolicitudExcepcionDto(

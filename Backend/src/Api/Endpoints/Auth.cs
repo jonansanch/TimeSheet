@@ -3,7 +3,6 @@ using System.Security.Claims;
 using KPG.Timesheet.Application.Features.Auth.Commands.Login;
 using KPG.Timesheet.Application.Features.Auth.Commands.Logout;
 using KPG.Timesheet.Application.Features.Auth.Commands.Refresh;
-using KPG.Timesheet.Application.Features.Auth.Queries.Me;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

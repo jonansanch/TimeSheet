@@ -10,9 +10,7 @@ public class CreateRegistroHorasCommandValidator : AbstractValidator<CreateRegis
             .NotEmpty().WithMessage("La fecha del registro es requerida.");
 
         RuleFor(x => x.Turno)
-            .IsInEnum().WithMessage("El turno debe ser AM o PM.")
-            .Must(turno => turno is TurnoRegistro.AM or TurnoRegistro.PM)
-            .WithMessage("El turno debe ser AM o PM.");
+            .IsInEnum().WithMessage("El turno debe ser AM o PM.");
 
         RuleFor(x => x.HoraEntrada)
             .NotEmpty().WithMessage("La hora de entrada es requerida.");

@@ -5,9 +5,9 @@ using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Infrastructure.Bitacora;
 using KPG.Timesheet.Infrastructure.Dashboard;
 using KPG.Timesheet.Infrastructure.Data;
+using KPG.Timesheet.Infrastructure.Data.Interceptors;
 using KPG.Timesheet.Infrastructure.Notificaciones;
 using KPG.Timesheet.Infrastructure.Reportes;
-using KPG.Timesheet.Infrastructure.Data.Interceptors;
 using KPG.Timesheet.Infrastructure.Email;
 using KPG.Timesheet.Infrastructure.Identity;
 using KPG.Timesheet.Infrastructure.Services;
@@ -44,7 +44,6 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
         builder.Services.AddScoped<ISaveChangesInterceptor, RegistroHorasImmutabilityInterceptor>();
-        builder.Services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
 
         builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {

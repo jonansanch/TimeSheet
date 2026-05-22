@@ -6,6 +6,7 @@ using KPG.Timesheet.Application.Features.Dashboard.Queries.GetDistribucionHoras;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetEstadoEquipo;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetMetricasGlobales;
 using KPG.Timesheet.Application.Features.Dashboard.Queries.GetPendientesCriticos;
+using KPG.Timesheet.Domain.Common;
 using KPG.Timesheet.Domain.Constants;
 
 namespace KPG.Timesheet.Infrastructure.Dashboard;
@@ -197,40 +198,15 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
             new { Clave = ParametrosSistema.DiasUmbralNotificacion });
         if (umbral <= 0) umbral = 3;
 
-        var fechaCorte = RestarDiasHabiles(DateOnly.FromDateTime(DateTime.Today), umbral);
+        var fechaCorte = BusinessDayCalculator.GetEarliestAllowedDate(DateOnly.FromDateTime(DateTime.Today), umbral);
         var rows = await db.QueryAsync<PendientesRawRow>(SqlPendientes, new { FechaCorte = fechaCorte });
 
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var pendientes = rows.Select(r => new PendienteCriticoDto(
             r.UserId, r.Nombre, r.Email,
-            r.UltimoRegistro.HasValue ? ContarDiasHabiles(r.UltimoRegistro.Value, hoy) : 999)).ToList();
+            r.UltimoRegistro.HasValue ? BusinessDayCalculator.CountBusinessDays(r.UltimoRegistro.Value, hoy) : 999)).ToList();
 
         return new PendientesCriticosResponse(umbral, pendientes);
-    }
-
-    private static DateOnly RestarDiasHabiles(DateOnly fecha, int dias)
-    {
-        int restados = 0;
-        while (restados < dias)
-        {
-            fecha = fecha.AddDays(-1);
-            if (fecha.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday)
-                restados++;
-        }
-        return fecha;
-    }
-
-    private static int ContarDiasHabiles(DateOnly desde, DateOnly hasta)
-    {
-        int count = 0;
-        var d = desde.AddDays(1);
-        while (d <= hasta)
-        {
-            if (d.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday)
-                count++;
-            d = d.AddDays(1);
-        }
-        return Math.Min(count, 999);
     }
 
     private sealed record EstadoRawRow(string UserId, string Nombre, string Email, int TieneAM, int TienePM);

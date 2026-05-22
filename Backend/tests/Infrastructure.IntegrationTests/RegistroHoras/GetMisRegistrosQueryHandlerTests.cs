@@ -15,7 +15,7 @@ public class GetMisRegistrosQueryHandlerTests
         await using var context = CreateContext();
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-sin-registros"));
 
-        var result = await handler.Handle(new GetMisRegistrosQuery(), CancellationToken.None);
+        var result = await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None);
 
         result.Should().BeEmpty();
     }
@@ -29,7 +29,7 @@ public class GetMisRegistrosQueryHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
-        var result = (await handler.Handle(new GetMisRegistrosQuery(), CancellationToken.None)).ToList();
+        var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).ToList();
 
         result.Should().HaveCount(1);
         result[0].Cliente.Should().Be("KPG");
@@ -45,7 +45,7 @@ public class GetMisRegistrosQueryHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
-        var result = (await handler.Handle(new GetMisRegistrosQuery(), CancellationToken.None)).ToList();
+        var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).ToList();
 
         result.Should().HaveCount(3);
         result[0].FechaRegistro.Should().Be(new DateOnly(2026, 5, 12));
@@ -61,7 +61,7 @@ public class GetMisRegistrosQueryHandlerTests
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
-        var result = (await handler.Handle(new GetMisRegistrosQuery(), CancellationToken.None)).ToList();
+        var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).ToList();
 
         var item = result[0];
         item.FechaRegistro.Should().Be(new DateOnly(2026, 5, 10));
@@ -96,6 +96,7 @@ public class GetMisRegistrosQueryHandlerTests
     {
         public TestUser(string id) => Id = id;
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
     }
 }

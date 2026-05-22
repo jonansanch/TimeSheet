@@ -81,7 +81,7 @@ public class VentanaRetroactivoTests
     }
 
     private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context, DateOnly today) =>
-        new(context, new TestUser("user-1"), new TestClock(today));
+        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora());
 
     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
         new(fecha, TurnoRegistro.AM,
@@ -92,6 +92,7 @@ public class VentanaRetroactivoTests
     {
         public TestUser(string id) => Id = id;
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
     }
 
@@ -99,5 +100,13 @@ public class VentanaRetroactivoTests
     {
         public TestClock(DateOnly today) => Today = today;
         public DateOnly Today { get; }
+        public DateTimeOffset UtcNow => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+    }
+
+    private sealed class NullBitacora : IBitacoraService
+    {
+        public Task RegistrarAsync(string tipoEvento, string actorId, string? actorEmail,
+            string entidadAfectada, string? entidadId, object? metadata = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

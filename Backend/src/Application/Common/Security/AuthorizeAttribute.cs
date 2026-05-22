@@ -16,8 +16,4 @@ public class AuthorizeAttribute : Attribute
     /// </summary>
     public string Roles { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the policy name that determines access to the resource.
-    /// </summary>
-    public string Policy { get; set; } = string.Empty;
 }

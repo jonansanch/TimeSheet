@@ -23,7 +23,9 @@ public class GetMisRegistrosQueryHandler : IRequestHandler<GetMisRegistrosQuery,
             return [];
 
         return await _context.RegistrosHoras
-            .Where(r => r.UserId == userId)
+            .Where(r => r.UserId == userId
+                && (request.Desde == null || r.FechaRegistro >= request.Desde)
+                && (request.Hasta == null || r.FechaRegistro <= request.Hasta))
             .OrderByDescending(r => r.FechaRegistro)
             .ThenBy(r => r.Turno)
             .Select(r => new MisRegistrosItemDto(

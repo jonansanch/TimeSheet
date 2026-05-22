@@ -15,17 +15,20 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     private readonly IIdentityService _identityService;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly JwtSettings _jwtSettings;
+    private readonly IClock _clock;
 
     public RefreshTokenCommandHandler(
         IApplicationDbContext context,
         IIdentityService identityService,
         IJwtTokenService jwtTokenService,
-        IOptions<JwtSettings> jwtSettings)
+        IOptions<JwtSettings> jwtSettings,
+        IClock clock)
     {
         _context = context;
         _identityService = identityService;
         _jwtTokenService = jwtTokenService;
         _jwtSettings = jwtSettings.Value;
+        _clock = clock;
     }
 
     public async Task<RefreshTokenResponseDto> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -43,12 +46,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         if (credentials is null)
             throw new UnauthorizedAccessException("Usuario inactivo.");
 
+        var now = _clock.UtcNow;
         var accessToken = _jwtTokenService.GenerateAccessToken(
             credentials.UserId, credentials.Email, credentials.Roles);
-        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
+        var expiresAt = now.AddMinutes(_jwtSettings.ExpirationMinutes).UtcDateTime;
 
         // Rotación: revocar el token anterior y emitir uno nuevo
-        existingToken.Revoke();
+        existingToken.Revoke(now.UtcDateTime);
 
         var rawNewToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
         var newTokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawNewToken)));
@@ -57,7 +61,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         {
             UserId = existingToken.UserId,
             TokenHash = newTokenHash,
-            ExpiresAt = DateTime.UtcNow.AddHours(_jwtSettings.RefreshExpirationHours)
+            ExpiresAt = now.AddHours(_jwtSettings.RefreshExpirationHours).UtcDateTime
         });
 
         await _context.SaveChangesAsync(cancellationToken);

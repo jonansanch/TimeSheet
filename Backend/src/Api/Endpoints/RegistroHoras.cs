@@ -34,14 +34,20 @@ public class RegistroHoras : IEndpointGroup
     }
 
     [EndpointSummary("Obtener historial de registros del usuario autenticado")]
-    [EndpointDescription("Retorna todos los registros del usuario autenticado, ordenados por fecha descendente.")]
+    [EndpointDescription("Retorna registros del usuario autenticado en el rango indicado, ordenados por fecha descendente. Por defecto retorna el mes en curso.")]
     [ProducesResponseType<IEnumerable<MisRegistrosItemDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public static async Task<IResult> GetMisRegistros(
         ISender sender,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] DateOnly? desde = null,
+        [FromQuery] DateOnly? hasta = null)
     {
-        var result = await sender.Send(new GetMisRegistrosQuery(), cancellationToken);
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var desdeEfectivo = desde ?? new DateOnly(hoy.Year, hoy.Month, 1);
+        var hastaEfectivo = hasta ?? hoy;
+
+        var result = await sender.Send(new GetMisRegistrosQuery(desdeEfectivo, hastaEfectivo), cancellationToken);
         return Results.Ok(result);
     }
 

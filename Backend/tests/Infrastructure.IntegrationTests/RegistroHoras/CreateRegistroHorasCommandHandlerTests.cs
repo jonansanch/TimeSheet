@@ -17,7 +17,7 @@ public class CreateRegistroHorasCommandHandlerTests
     public async Task Handle_WhenValid_ShouldPersistRegistroForAuthenticatedUser()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 
@@ -33,7 +33,7 @@ public class CreateRegistroHorasCommandHandlerTests
     public async Task Handle_WhenSameDateAndTurno_ShouldAllowMultipleRegistros()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
 
         await handler.Handle(ValidCommand(), CancellationToken.None);
         await handler.Handle(ValidCommand(), CancellationToken.None);
@@ -51,7 +51,7 @@ public class CreateRegistroHorasCommandHandlerTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
         var command = new CreateRegistroHorasCommand(
             fechaFuera, TurnoRegistro.AM,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
@@ -99,6 +99,7 @@ public class CreateRegistroHorasCommandHandlerTests
         }
 
         public string? Id { get; }
+        public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
     }
 
@@ -106,5 +107,13 @@ public class CreateRegistroHorasCommandHandlerTests
     {
         public TestClock(DateOnly today) => Today = today;
         public DateOnly Today { get; }
+        public DateTimeOffset UtcNow => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+    }
+
+    private sealed class NullBitacora : IBitacoraService
+    {
+        public Task RegistrarAsync(string tipoEvento, string actorId, string? actorEmail,
+            string entidadAfectada, string? entidadId, object? metadata = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

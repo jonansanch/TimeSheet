@@ -48,7 +48,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Delet
             return new DeleteUserDto(false);
         }
 
-        var result = await _identityService.DeleteUserHardAsync(request.Id);
+        var result = await _identityService.DeleteUserAsync(request.Id);
         if (!result.Succeeded)
         {
             throw new ValidationException(result.Errors.Select(error => new ValidationFailure(nameof(request.Id), error)));
