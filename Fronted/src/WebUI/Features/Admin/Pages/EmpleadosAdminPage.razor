@@ -3,16 +3,16 @@
 @inject IEmpleadoRepository Repo
 @inject IDialogService DialogService
 
-<PageTitle>Empleados - KPG Timesheet</PageTitle>
+<PageTitle>Recursos - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
         <div>
             <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-                Empleados
+                Recursos
             </MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Catalogo de recursos disponibles para el registro de horas.
+                Catálogo de recursos disponibles para el registro de horas.
             </MudText>
         </div>
         <MudButton Variant="Variant.Filled"
@@ -20,7 +20,7 @@
                    StartIcon="@Icons.Material.Filled.PersonAdd"
                    Disabled="_isProcesando"
                    OnClick="AbrirCrearAsync">
-            Nuevo Empleado
+            Nuevo Recurso
         </MudButton>
     </MudStack>
 
@@ -42,7 +42,7 @@
         @if (_empleados.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.People">
-                No hay empleados registrados.
+                No hay recursos registrados.
             </MudAlert>
         }
         else
@@ -53,7 +53,7 @@
                          Filterable="false"
                          SortMode="SortMode.Single"
                          QuickFilter="_quickFilter"
-                         RowsPerPage="25">
+                         RowsPerPage="5">
                 <ToolBarContent>
                     <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
@@ -80,7 +80,7 @@
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary"
                                            Size="Size.Small"
-                                           aria-label="Editar empleado"
+                                           aria-label="Editar recurso"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => AbrirEditarAsync(context.Item))" />
                             @if (context.Item.Activo)
@@ -88,7 +88,7 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
                                                Color="Color.Warning"
                                                Size="Size.Small"
-                                               aria-label="Desactivar empleado"
+                                               aria-label="Desactivar recurso"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -97,13 +97,16 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
                                                Color="Color.Success"
                                                Size="Size.Small"
-                                               aria-label="Activar empleado"
+                                               aria-label="Activar recurso"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="EmpleadoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                </PagerContent>
             </MudDataGrid>
         }
     }
@@ -163,7 +166,7 @@
             FullWidth = true,
             CloseOnEscapeKey = true
         };
-        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Nuevo Empleado", options);
+        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Nuevo Recurso", options);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not CreateEmpleadoRequest request)
             return;
@@ -179,11 +182,11 @@
             {
                 _empleados.Add(empleado);
                 _empleados = [.. _empleados.OrderBy(e => e.Nombre)];
-                _successMessage = $"Empleado \"{empleado.Nombre}\" creado.";
+                _successMessage = $"Recurso \"{empleado.Nombre}\" creado.";
             }
             else
             {
-                _errorMessage = error ?? "No fue posible crear el empleado.";
+                _errorMessage = error ?? "No fue posible crear el recurso.";
             }
         }
         finally
@@ -204,7 +207,7 @@
             FullWidth = true,
             CloseOnEscapeKey = true
         };
-        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Editar Empleado", parameters, options);
+        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Editar Recurso", parameters, options);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not UpdateEmpleadoRequest request)
             return;
@@ -220,11 +223,11 @@
             {
                 ReemplazarEmpleado(item, empleado);
                 _empleados = [.. _empleados.OrderBy(e => e.Nombre)];
-                _successMessage = $"Empleado actualizado a \"{empleado.Nombre}\".";
+                _successMessage = $"Recurso actualizado a \"{empleado.Nombre}\".";
             }
             else
             {
-                _errorMessage = error ?? "No fue posible actualizar el empleado.";
+                _errorMessage = error ?? "No fue posible actualizar el recurso.";
             }
         }
         finally
@@ -236,8 +239,8 @@
     private async Task ConfirmarToggleAsync(EmpleadoResponse item)
     {
         _msgBoxContent = item.Activo
-            ? $"Desactivar a \"{item.Nombre}\"? No aparecera en nuevos registros."
-            : $"Activar a \"{item.Nombre}\"?";
+            ? $"¿Desactivar \"{item.Nombre}\"? No aparecerá en nuevos registros."
+            : $"¿Activar \"{item.Nombre}\"?";
         _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
         StateHasChanged();
 
@@ -260,7 +263,7 @@
             }
             else
             {
-                _errorMessage = error ?? "No fue posible cambiar el estado del empleado.";
+                _errorMessage = error ?? "No fue posible cambiar el estado del recurso.";
             }
         }
         finally

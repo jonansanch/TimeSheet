@@ -16,8 +16,8 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
     private const string SqlGerencial = """
         SELECT r.Cliente,
                ROUND((
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM), 0) +
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
                ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
@@ -28,8 +28,8 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         SELECT r.Proyecto,
                r.Cliente,
                ROUND((
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM), 0) +
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
                ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta

@@ -55,20 +55,24 @@
             <MudText Typo="Typo.subtitle2" Class="mb-1 mt-2" Color="Color.Primary">Turno AM</MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
-                    <MudTimePicker Label="Hora entrada AM"
-                                   Variant="Variant.Outlined"
-                                   @bind-Time="_model.HoraEntradaAM"
-                                   Clearable="true"
-                                   aria-label="Hora entrada turno AM" />
+                    <MudTextField T="string"
+                                  Label="Entrada"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Time"
+                                  Value="@TsToStr(_model.HoraEntradaAM)"
+                                  ValueChanged="@(v => _model.HoraEntradaAM = ParseTs(v))"
+                                  aria-label="Hora entrada turno AM" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTimePicker Label="Hora salida AM"
-                                   Variant="Variant.Outlined"
-                                   @bind-Time="_model.HoraSalidaAM"
-                                   Clearable="true"
-                                   Error="@IsInvalidAM()"
-                                   ErrorText="La salida AM debe ser mayor que la entrada."
-                                   aria-label="Hora salida turno AM" />
+                    <MudTextField T="string"
+                                  Label="Salida"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Time"
+                                  Value="@TsToStr(_model.HoraSalidaAM)"
+                                  ValueChanged="@(v => _model.HoraSalidaAM = ParseTs(v))"
+                                  Error="@IsInvalidAM()"
+                                  ErrorText="La salida debe ser mayor que la entrada."
+                                  aria-label="Hora salida turno AM" />
                 </MudItem>
             </MudGrid>
 
@@ -76,27 +80,31 @@
             <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">Turno PM</MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
-                    <MudTimePicker Label="Hora entrada PM"
-                                   Variant="Variant.Outlined"
-                                   @bind-Time="_model.HoraEntradaPM"
-                                   Clearable="true"
-                                   aria-label="Hora entrada turno PM" />
+                    <MudTextField T="string"
+                                  Label="Entrada"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Time"
+                                  Value="@TsToStr(_model.HoraEntradaPM)"
+                                  ValueChanged="@(v => _model.HoraEntradaPM = ParseTs(v))"
+                                  aria-label="Hora entrada turno PM" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTimePicker Label="Hora salida PM"
-                                   Variant="Variant.Outlined"
-                                   @bind-Time="_model.HoraSalidaPM"
-                                   Clearable="true"
-                                   Error="@IsInvalidPM()"
-                                   ErrorText="La salida PM debe ser mayor que la entrada."
-                                   aria-label="Hora salida turno PM" />
+                    <MudTextField T="string"
+                                  Label="Salida"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Time"
+                                  Value="@TsToStr(_model.HoraSalidaPM)"
+                                  ValueChanged="@(v => _model.HoraSalidaPM = ParseTs(v))"
+                                  Error="@IsInvalidPM()"
+                                  ErrorText="La salida debe ser mayor que la entrada."
+                                  aria-label="Hora salida turno PM" />
                 </MudItem>
             </MudGrid>
 
             @if (_sinTurno)
             {
                 <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
-                    Debe completar al menos un turno (AM o PM).
+                    Debe ingresar al menos una hora de entrada en el turno AM o PM.
                 </MudAlert>
             }
 
@@ -334,6 +342,12 @@
         _model.Proyecto = null;
         StateHasChanged();
     }
+
+    private static string TsToStr(TimeSpan? t) =>
+        t.HasValue ? t.Value.ToString(@"hh\:mm") : string.Empty;
+
+    private static TimeSpan? ParseTs(string? s) =>
+        TimeSpan.TryParse(s, out var t) ? t : null;
 
     private bool IsInvalidAM() =>
         _model.HoraEntradaAM.HasValue && _model.HoraSalidaAM.HasValue &&

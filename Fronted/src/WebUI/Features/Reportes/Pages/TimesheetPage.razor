@@ -1,0 +1,126 @@
+@page "/reportes/timesheet"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject IReportesRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+@inject IJSRuntime JS
+
+<PageTitle>Timesheet Individual - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Timesheet Individual</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Genera el Excel de timesheet mensual con el formato oficial KPG para un empleado.
+        </MudText>
+    </div>
+
+    <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;border-left:4px solid #0D3B5E;">
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.TableChart" Color="Color.Primary" />
+                <MudText Typo="Typo.h6" Style="font-weight:600;">Generar Timesheet</MudText>
+            </MudStack>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudSelect T="string"
+                               Label="Empleado"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_tsUserId"
+                               Required="true"
+                               aria-label="Seleccionar empleado para timesheet">
+                        @foreach (var u in _usuarios)
+                        {
+                            <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="3" md="2">
+                    <MudSelect T="int"
+                               Label="Mes"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_tsMes"
+                               aria-label="Seleccionar mes">
+                        @foreach (var (num, nombre) in _meses)
+                        {
+                            <MudSelectItem Value="@num">@nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="3" md="2">
+                    <MudNumericField T="int"
+                                     Label="Año"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     @bind-Value="_tsAnio"
+                                     Min="2020"
+                                     Max="2099"
+                                     aria-label="Año del timesheet" />
+                </MudItem>
+                <MudItem xs="12" sm="12" md="4" Class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Download"
+                               OnClick="DescargarTimesheetAsync"
+                               Disabled="@(_isExporting || string.IsNullOrWhiteSpace(_tsUserId))">
+                        @if (_isExporting)
+                        { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                        Descargar Timesheet
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_error</MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+
+</MudStack>
+
+@code {
+    private List<UserAdminResponse> _usuarios = [];
+    private string? _tsUserId;
+    private int     _tsMes    = DateTime.Today.Month;
+    private int     _tsAnio   = DateTime.Today.Year;
+    private bool    _isExporting;
+    private string  _error = string.Empty;
+
+    private static readonly (int Num, string Nombre)[] _meses =
+    [
+        (1,"Enero"),(2,"Febrero"),(3,"Marzo"),(4,"Abril"),
+        (5,"Mayo"),(6,"Junio"),(7,"Julio"),(8,"Agosto"),
+        (9,"Septiembre"),(10,"Octubre"),(11,"Noviembre"),(12,"Diciembre")
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var paged = await UsuariosRepo.GetUsersAsync(pageNumber: 1, pageSize: 200, sortBy: "email", sortDescending: false);
+            _usuarios = paged?.Items ?? [];
+        }
+        catch { }
+    }
+
+    private async Task DescargarTimesheetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_tsUserId)) return;
+        _isExporting = true;
+        _error = string.Empty;
+        StateHasChanged();
+        try
+        {
+            var result = await Repo.ExportarTimesheetAsync(_tsUserId, _tsMes, _tsAnio);
+            if (result is null) { _error = "No se pudo generar el timesheet."; return; }
+            var (bytes, contentType, fileName) = result.Value;
+            await JS.InvokeVoidAsync("downloadFile", fileName, contentType, Convert.ToBase64String(bytes));
+        }
+        catch { _error = "Error al generar el timesheet."; }
+        finally { _isExporting = false; }
+    }
+}

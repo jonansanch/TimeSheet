@@ -80,6 +80,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcRW1wbGVhZG9zQWRtaW5QYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/LugaresTrabajoAdminPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcTHVnYXJlc1RyYWJham9BZG1pblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ModalidadesAdminPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcTW9kYWxpZGFkZXNBZG1pblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcUGFyYW1ldHJvc0FkbWluUGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -146,6 +154,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Reportes/Pages/ReportesPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVwb3J0ZXNcUGFnZXNcUmVwb3J0ZXNQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Reportes/Pages/TimesheetPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVwb3J0ZXNcUGFnZXNcVGltZXNoZWV0UGFnZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Counter.razor]

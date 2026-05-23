@@ -113,7 +113,7 @@
                          Dense="true"
                          Filterable="false"
                          SortMode="SortMode.Single"
-                         RowsPerPage="25"
+                         RowsPerPage="5"
                          Style="border-radius:12px;overflow:hidden;">
                 <Columns>
                     <TemplateColumn Title="Fecha envío" Sortable="true">
@@ -153,7 +153,7 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="NotificacionItemDto" PageSizeOptions="new[] { 25, 50, 100 }" />
+                    <MudDataGridPager T="NotificacionItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
                 </PagerContent>
             </MudDataGrid>
         }

@@ -135,7 +135,7 @@
                          Striped="true"
                          Filterable="false"
                          SortMode="SortMode.Single"
-                         RowsPerPage="25"
+                         RowsPerPage="5"
                          Style="border-radius:12px;overflow:hidden;">
                 <Columns>
                     <TemplateColumn Title="Fecha y hora" Sortable="true" CellStyle="white-space:nowrap;">
@@ -196,7 +196,7 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="BitacoraItemDto" PageSizeOptions="new[] { 25, 50, 100 }" />
+                    <MudDataGridPager T="BitacoraItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
                 </PagerContent>
             </MudDataGrid>
         }

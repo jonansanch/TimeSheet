@@ -42,7 +42,7 @@
                          Dense="true"
                          Filterable="false"
                          SortMode="SortMode.Single"
-                         RowsPerPage="25">
+                         RowsPerPage="5">
                 <Columns>
                     <PropertyColumn Property="x => x.SolicitanteEmail" Title="Solicitante" />
                     <TemplateColumn Title="Fecha solicitada" Sortable="true">
@@ -83,6 +83,9 @@
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="SolicitudExcepcionAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                </PagerContent>
             </MudDataGrid>
         }
     }

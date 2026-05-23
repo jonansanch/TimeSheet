@@ -11,8 +11,17 @@
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
                     @{
-                        var returnUrl = Uri.EscapeDataString(Navigation.Uri);
-                        Navigation.NavigateTo($"/login?returnUrl={returnUrl}", replace: true);
+                        if (context.User.Identity?.IsAuthenticated == true)
+                        {
+                            // Autenticado pero sin el rol requerido → inicio
+                            Navigation.NavigateTo("/", replace: true);
+                        }
+                        else
+                        {
+                            // No autenticado → login con returnUrl para volver después
+                            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+                            Navigation.NavigateTo($"/login?returnUrl={returnUrl}", replace: true);
+                        }
                     }
                 </NotAuthorized>
                 <Authorizing>

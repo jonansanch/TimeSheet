@@ -40,6 +40,59 @@ h1:focus {
     color: white !important;
 }
 
+/* Nav grupos padre — título de sección */
+.mud-drawer .mud-nav-group > .mud-nav-group-header {
+    color: #5BB8D4 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em;
+    padding: 12px 20px 8px !important;
+    opacity: 1 !important;
+    background: transparent !important;
+}
+
+.mud-drawer .mud-nav-group > .mud-nav-group-header:hover {
+    background-color: rgba(255,255,255,0.06) !important;
+}
+
+.mud-drawer .mud-nav-group > .mud-nav-group-header .mud-icon-root {
+    color: #5BB8D4 !important;
+    font-size: 1.1rem !important;
+}
+
+/* Nav hijos — indent, sin icono, prefijo "–" via pseudo-elemento */
+.mud-drawer .kpg-nav-child {
+    padding-left: 36px !important;
+    font-size: 0.85rem !important;
+    opacity: 0.88;
+}
+
+.mud-drawer .kpg-nav-child:hover {
+    opacity: 1;
+}
+
+.mud-drawer .kpg-nav-child.active {
+    opacity: 1;
+    border-left: 3px solid #5BB8D4 !important;
+}
+
+/* Ocultar el espacio reservado para el icono en hijos */
+.mud-drawer .kpg-nav-child .mud-nav-link-icon-wrapper {
+    display: none !important;
+}
+
+
+/* Flecha de expansión del grupo — color claro para que se vea sobre el fondo oscuro */
+.mud-drawer .mud-nav-group > .mud-nav-group-header .mud-nav-group-expand-icon {
+    color: #5BB8D4 !important;
+}
+
+/* Separador visual sutil sobre cada grupo */
+.mud-drawer .mud-nav-group {
+    margin-top: 4px;
+}
+
 .content {
     padding-top: 1.1rem;
 }

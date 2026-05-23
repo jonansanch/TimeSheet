@@ -53,7 +53,7 @@
                          Filterable="false"
                          SortMode="SortMode.Single"
                          QuickFilter="_quickFilter"
-                         RowsPerPage="25">
+                         RowsPerPage="5">
                 <ToolBarContent>
                     <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
@@ -110,6 +110,9 @@
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="ClienteResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                </PagerContent>
             </MudDataGrid>
         }
     }

@@ -36,11 +36,18 @@
                         IconColor="Color.Secondary">
                 Dashboard
             </MudNavLink>
-            <MudNavLink Href="/reportes"
-                        Icon="@Icons.Material.Filled.BarChart"
-                        IconColor="Color.Secondary">
-                Reportes
-            </MudNavLink>
+
+            <MudNavGroup Title="Reportes"
+                         Icon="@Icons.Material.Filled.BarChart"
+                         @bind-Expanded="_reportesExpanded">
+                <MudNavLink Href="/reportes/horas" Class="kpg-nav-child">
+                    Reporte de Horas
+                </MudNavLink>
+                <MudNavLink Href="/reportes/timesheet" Class="kpg-nav-child">
+                    Timesheet Individual
+                </MudNavLink>
+            </MudNavGroup>
+
             <MudNavLink Href="/notificaciones"
                         Icon="@Icons.Material.Filled.Notifications"
                         IconColor="Color.Secondary">
@@ -61,37 +68,46 @@
 
     <AuthorizeView Roles="@Roles.Admin">
         <Authorized>
-            <MudNavLink Href="/admin/usuarios"
-                        Icon="@Icons.Material.Filled.AdminPanelSettings"
-                        IconColor="Color.Secondary">
-                Administración
-            </MudNavLink>
-            <MudNavLink Href="/admin/empleados"
-                        Icon="@Icons.Material.Filled.People"
-                        IconColor="Color.Secondary">
-                Empleados
-            </MudNavLink>
-            <MudNavLink Href="/admin/clientes"
-                        Icon="@Icons.Material.Filled.Business"
-                        IconColor="Color.Secondary">
-                Clientes
-            </MudNavLink>
-            <MudNavLink Href="/solicitudes-excepcion"
-                        Icon="@Icons.Material.Filled.PendingActions"
-                        IconColor="Color.Secondary">
-                Solicitudes
-            </MudNavLink>
-            <MudNavLink Href="/admin/bitacora"
-                        Icon="@Icons.Material.Filled.ManageSearch"
-                        IconColor="Color.Secondary">
-                Bitácora
-            </MudNavLink>
-            <MudNavLink Href="/admin/parametros"
-                        Icon="@Icons.Material.Filled.Settings"
-                        IconColor="Color.Secondary">
-                Parámetros
-            </MudNavLink>
+            <MudNavGroup Title="Administración"
+                         Icon="@Icons.Material.Filled.AdminPanelSettings"
+                         @bind-Expanded="_adminExpanded">
+                <MudNavLink Href="/admin/usuarios" Class="kpg-nav-child">
+                    Usuarios
+                </MudNavLink>
+                <MudNavLink Href="/admin/empleados" Class="kpg-nav-child">
+                    Recursos
+                </MudNavLink>
+                <MudNavLink Href="/admin/clientes" Class="kpg-nav-child">
+                    Clientes y Proyectos
+                </MudNavLink>
+                <MudNavLink Href="/solicitudes-excepcion" Class="kpg-nav-child">
+                    Solicitudes de Excepción
+                </MudNavLink>
+                <MudNavLink Href="/admin/bitacora" Class="kpg-nav-child">
+                    Bitácora
+                </MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Parámetros"
+                         Icon="@Icons.Material.Filled.Settings"
+                         @bind-Expanded="_parametrosExpanded">
+                <MudNavLink Href="/admin/parametros/configuracion" Class="kpg-nav-child">
+                    Configuración General
+                </MudNavLink>
+                <MudNavLink Href="/admin/parametros/modalidades" Class="kpg-nav-child">
+                    Modalidades
+                </MudNavLink>
+                <MudNavLink Href="/admin/parametros/lugares" Class="kpg-nav-child">
+                    Lugares de Trabajo
+                </MudNavLink>
+            </MudNavGroup>
         </Authorized>
     </AuthorizeView>
 
 </MudNavMenu>
+
+@code {
+    private bool _reportesExpanded   = false;
+    private bool _adminExpanded      = false;
+    private bool _parametrosExpanded = false;
+}

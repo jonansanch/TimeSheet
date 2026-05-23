@@ -57,9 +57,14 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
 
         var esRetroactivo = request.FechaRegistro < today;
 
-        // Intentar encontrar registro existente del día
+        // Intentar encontrar registro existente del mismo día y proyecto
         var existente = await _context.RegistrosHoras
-            .FirstOrDefaultAsync(r => r.UserId == userId && r.FechaRegistro == request.FechaRegistro, cancellationToken);
+            .FirstOrDefaultAsync(r =>
+                r.UserId == userId &&
+                r.FechaRegistro == request.FechaRegistro &&
+                r.Cliente == request.Cliente &&
+                r.Proyecto == request.Proyecto,
+                cancellationToken);
 
         RegistroHorasEntity registro;
 

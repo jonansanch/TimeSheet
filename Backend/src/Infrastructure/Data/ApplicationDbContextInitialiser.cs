@@ -340,6 +340,7 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
+        // Crear tabla si no existe (esquema nuevo con columnas AM/PM)
         await _context.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'[dbo].[RegistrosHoras]', N'U') IS NULL
             BEGIN
@@ -365,20 +366,150 @@ public class ApplicationDbContextInitialiser
                     CONSTRAINT [PK_RegistrosHoras] PRIMARY KEY ([Id])
                 );
 
-                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro]
-                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro]);
+                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto]
+                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [Cliente], [Proyecto]);
             END
-            ELSE
+            """);
+
+        // Migracion anterior: EsRetroactivo
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+                  AND name = N'EsRetroactivo'
+            )
             BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM sys.columns
-                    WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
-                      AND name = N'EsRetroactivo'
-                )
-                BEGIN
-                    ALTER TABLE [dbo].[RegistrosHoras]
-                        ADD [EsRetroactivo] bit NOT NULL DEFAULT 0;
-                END
+                ALTER TABLE [dbo].[RegistrosHoras]
+                    ADD [EsRetroactivo] bit NOT NULL DEFAULT 0;
+            END
+            """);
+
+        // Migracion registro unico diario — paso 1: agregar columnas AM/PM
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+                  AND name = N'HoraEntradaAM'
+            )
+            BEGIN
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraEntradaAM] time NULL;
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraSalidaAM]  time NULL;
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraEntradaPM] time NULL;
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraSalidaPM]  time NULL;
+            END
+            """);
+
+        // Migracion registro unico diario — paso 2: copiar datos de Turno viejo a columnas AM/PM
+        // Cada UPDATE es un batch separado para evitar error de columna inexistente en compile-time
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+                  AND name = N'Turno'
+            )
+            BEGIN
+                EXEC('UPDATE [dbo].[RegistrosHoras] SET HoraEntradaAM = HoraEntrada, HoraSalidaAM = HoraSalida WHERE Turno = ''AM''');
+                EXEC('UPDATE [dbo].[RegistrosHoras] SET HoraEntradaPM = HoraEntrada, HoraSalidaPM = HoraSalida WHERE Turno = ''PM''');
+            END
+            """);
+
+        // Migracion registro unico diario — paso 3: fusionar PM en AM y borrar duplicados
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+                  AND name = N'Turno'
+            )
+            BEGIN
+                EXEC('
+                    UPDATE am_rec
+                    SET am_rec.HoraEntradaPM = pm_rec.HoraEntradaPM,
+                        am_rec.HoraSalidaPM  = pm_rec.HoraSalidaPM
+                    FROM [dbo].[RegistrosHoras] am_rec
+                    INNER JOIN [dbo].[RegistrosHoras] pm_rec
+                        ON am_rec.UserId = pm_rec.UserId
+                       AND am_rec.FechaRegistro = pm_rec.FechaRegistro
+                       AND am_rec.Turno = ''AM''
+                       AND pm_rec.Turno = ''PM''
+                ');
+                EXEC('
+                    DELETE FROM [dbo].[RegistrosHoras]
+                    WHERE Turno = ''PM''
+                      AND EXISTS (
+                          SELECT 1 FROM [dbo].[RegistrosHoras] am
+                          WHERE am.UserId = [dbo].[RegistrosHoras].UserId
+                            AND am.FechaRegistro = [dbo].[RegistrosHoras].FechaRegistro
+                            AND am.Turno = ''AM''
+                      )
+                ');
+            END
+            """);
+
+        // Migracion registro unico diario — paso 4: eliminar columnas e indice viejos
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+                  AND name = N'Turno'
+            )
+            BEGIN
+                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RegistrosHoras_FechaRegistro' AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]'))
+                    DROP INDEX [IX_RegistrosHoras_FechaRegistro] ON [dbo].[RegistrosHoras];
+
+                ALTER TABLE [dbo].[RegistrosHoras] DROP COLUMN [Turno];
+                ALTER TABLE [dbo].[RegistrosHoras] DROP COLUMN [HoraEntrada];
+                ALTER TABLE [dbo].[RegistrosHoras] DROP COLUMN [HoraSalida];
+            END
+            """);
+
+        // Migracion registro unico diario — paso 5: fusionar y limpiar duplicados restantes
+        // Para cada par (UserId, FechaRegistro) duplicado: copia AM/PM del segundo al primero y lo borra
+        await _context.Database.ExecuteSqlRawAsync("""
+            UPDATE r1
+            SET r1.HoraEntradaAM = COALESCE(r1.HoraEntradaAM, r2.HoraEntradaAM),
+                r1.HoraSalidaAM  = COALESCE(r1.HoraSalidaAM,  r2.HoraSalidaAM),
+                r1.HoraEntradaPM = COALESCE(r1.HoraEntradaPM, r2.HoraEntradaPM),
+                r1.HoraSalidaPM  = COALESCE(r1.HoraSalidaPM,  r2.HoraSalidaPM)
+            FROM [dbo].[RegistrosHoras] r1
+            INNER JOIN [dbo].[RegistrosHoras] r2
+                ON r1.UserId = r2.UserId
+               AND r1.FechaRegistro = r2.FechaRegistro
+               AND r1.Id < r2.Id
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            DELETE r
+            FROM [dbo].[RegistrosHoras] r
+            WHERE EXISTS (
+                SELECT 1 FROM [dbo].[RegistrosHoras] r2
+                WHERE r2.UserId = r.UserId
+                  AND r2.FechaRegistro = r.FechaRegistro
+                  AND r2.Id < r.Id
+            )
+            """);
+
+        // Migracion registro unico diario — paso 6: crear indice unico por usuario/dia/proyecto
+        // Si existe el indice viejo (solo UserId+FechaRegistro), lo reemplaza por el correcto
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE name = N'IX_RegistrosHoras_UserId_FechaRegistro'
+                  AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+            )
+            BEGIN
+                DROP INDEX [IX_RegistrosHoras_UserId_FechaRegistro] ON [dbo].[RegistrosHoras];
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE name = N'IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto'
+                  AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+            )
+            BEGIN
+                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto]
+                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [Cliente], [Proyecto]);
             END
             """);
 
