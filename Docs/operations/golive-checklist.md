@@ -34,30 +34,30 @@ Completar este checklist **antes** de abrir el sistema a los usuarios finales. C
 
 ## Sección 2 — Configuración de la Aplicación
 
-- [ ] `appsettings.Production.json` configurado con:
-  - [ ] `ConnectionStrings.DefaultConnection` apuntando a la BD de producción
-  - [ ] `Jwt.Key` configurado con valor seguro (≥ 32 caracteres, aleatorio)
-  - [ ] `Jwt.Issuer` y `Jwt.Audience` configurados correctamente
-  - [ ] `Smtp.Host` configurado (o dejado vacío si SMTP no está disponible en go-live)
-- [ ] Archivo `appsettings.json` NO contiene contraseñas de producción (usar variables de entorno o `appsettings.Production.json`)
-- [ ] Las secciones `"Serilog"` en `appsettings.Production.json` están configuradas (solo sink de archivo, sin consola)
+- [x] `appsettings.Production.json` configurado con:
+  - [x] `ConnectionStrings.DefaultConnection` apuntando a la BD de producción
+  - [x] `Jwt.Key` configurado con valor seguro (≥ 32 caracteres, aleatorio)
+  - [x] `Jwt.Issuer` y `Jwt.Audience` configurados correctamente
+  - [x] `Smtp.Host` configurado (dejado vacío en go-live)
+- [x] Archivo `appsettings.json` NO contiene contraseñas de producción (secrets en Azure App Service Application Settings)
+- [x] Las secciones `"Serilog"` en `appsettings.Production.json` están configuradas (solo sink de archivo, sin consola)
 - [ ] Aplicación compilada en modo `Release` (`dotnet publish --configuration Release`)
 - [ ] Archivos publicados desplegados en el servidor
 
-**Observaciones:**
+**Observaciones:** Secrets (ConnectionString, JWT) configurados como Azure App Service Application Settings, no en archivos de configuración. Deploy automático vía GitHub Actions al hacer push a master.
 
 ---
 
 ## Sección 3 — Base de Datos
 
-- [ ] SQL Server Agent habilitado (requerido para backups automáticos)
-- [ ] Base de datos `TimesheetDb` creada
-- [ ] Migraciones aplicadas: `dotnet ef database update --project Backend/src/Infrastructure --startup-project Backend/src/Api`
-- [ ] Verificar tablas creadas (al menos: `AspNetUsers`, `RegistroHoras`, `BitacoraEventos`, `Empleados`, `Clientes`, `Proyectos`)
+- [n/a] SQL Server Agent habilitado (Azure SQL Managed — no aplica)
+- [x] Base de datos `TimesheetDb` creada
+- [x] Migraciones aplicadas: `dotnet ef database update --project Backend/src/Infrastructure --startup-project Backend/src/Api`
+- [x] Verificar tablas creadas (al menos: `AspNetUsers`, `RegistroHoras`, `BitacoraEventos`, `Empleados`, `Clientes`, `Proyectos`)
 - [ ] Seed inicial ejecutado (Admin, catálogos base cargados)
-- [ ] Verificar que el usuario `sa` (o el usuario de aplicación) tiene permisos `db_owner` sobre `TimesheetDb`
+- [x] Verificar que el usuario de aplicación tiene permisos sobre `TimesheetDb`
 
-**Observaciones:**
+**Observaciones:** BD en Azure SQL (sqltimesheetv1js2026.database.windows.net). Migraciones aplicadas manualmente el 2026-05-24.
 
 ---
 
