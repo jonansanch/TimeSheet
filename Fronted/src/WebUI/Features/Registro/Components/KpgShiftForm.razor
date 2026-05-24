@@ -180,7 +180,9 @@
                 <MudItem xs="12">
                     <MudTextField T="string" Label="@L["Label_Description"]" Variant="Variant.Outlined"
                                   Lines="3" @bind-Value="_model.Descripcion"
-                                  Required="true" RequiredError="@L["Reg_DescriptionRequired"]" />
+                                  MaxLength="1000"
+                                  Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
+                                  Counter="1000" />
                 </MudItem>
             </MudGrid>
 
@@ -450,12 +452,16 @@
         finally { _isSaving = false; }
     }
 
-    public void SetFecha(DateOnly fecha)
+    public void SetFecha(DateOnly fecha, List<DateOnly>? excepcionesAprobadas = null)
     {
         _fecha    = fecha.ToDateTime(TimeOnly.MinValue);
         var today   = DateOnly.FromDateTime(DateTime.Today);
         var earliest = BusinessDayCalculator.GetEarliestAllowedDate(today, _windowDays);
-        _dateAvailability = BusinessDayCalculator.GetAvailability(fecha, today, earliest);
+
+        _dateAvailability = excepcionesAprobadas?.Contains(fecha) == true
+            ? DateAvailability.Retroactive
+            : BusinessDayCalculator.GetAvailability(fecha, today, earliest);
+
         _guardado         = false;
         _errorMessage     = null;
         _excepcionEnviada = false;

@@ -20,3 +20,4 @@ public record CreateUserRequest(string Email, string Password, string Role, stri
 public record ChangeUserRoleRequest(string Role);
 
 public record DeleteUserResponse(bool WasHardDeleted);
+public record AdminResetPasswordRequest(string NewPassword);

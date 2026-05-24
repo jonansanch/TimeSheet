@@ -1,0 +1,103 @@
+@page "/mis-solicitudes"
+@attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject ISolicitudExcepcionRepository Repo
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["MisExc_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+            @L["MisExc_Title"]
+        </MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @L["MisExc_Subtitle"]
+        </MudText>
+    </div>
+
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    else if (_solicitudes.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Inbox">
+            @L["MisExc_NoRequests"]
+        </MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="MiSolicitudExcepcionResponse"
+                     Items="_solicitudes"
+                     Dense="true"
+                     Filterable="false"
+                     SortMode="SortMode.Single"
+                     RowsPerPage="10">
+            <Columns>
+                <TemplateColumn Title="@L["Exc_ColDate"]" Sortable="true">
+                    <CellTemplate>
+                        @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Justificacion" Title="@L["Exc_ColJustification"]" Sortable="false" />
+                <TemplateColumn Title="@L["Exc_ColStatus"]" Sortable="false">
+                    <CellTemplate>
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Color="@GetEstadoColor(context.Item.Estado)">
+                            @context.Item.Estado
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Exc_ColAge"]" Sortable="false">
+                    <CellTemplate>
+                        @{ var dias = (int)(DateTimeOffset.UtcNow - context.Item.Created).TotalDays; }
+                        @(string.Format(dias == 1 ? L["Exc_DayAgo"].Value : L["Exc_DaysAgo"].Value, dias))
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="MiSolicitudExcepcionResponse" PageSizeOptions="new[] { 10, 20, 50 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_MisSolicitudes"].Value, null, disabled: true)
+    ];
+
+    private List<MiSolicitudExcepcionResponse> _solicitudes = [];
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _solicitudes = await Repo.GetMisSolicitudesAsync();
+        }
+        catch
+        {
+            _errorMessage = L["Exc_ErrorLoad"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static Color GetEstadoColor(string estado) => estado switch
+    {
+        "Aprobada" => Color.Success,
+        "Rechazada" => Color.Error,
+        _ => Color.Warning
+    };
+}

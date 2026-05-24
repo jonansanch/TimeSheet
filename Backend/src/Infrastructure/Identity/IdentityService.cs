@@ -237,6 +237,20 @@ public class IdentityService : IIdentityService
         return result.ToApplicationResult();
     }
 
+    public async Task<Result> AdminResetPasswordAsync(string userId, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+            return Result.Failure(["Usuario no encontrado."]);
+
+        var removeResult = await _userManager.RemovePasswordAsync(user);
+        if (!removeResult.Succeeded)
+            return removeResult.ToApplicationResult();
+
+        var addResult = await _userManager.AddPasswordAsync(user, newPassword);
+        return addResult.ToApplicationResult();
+    }
+
     private sealed class UserAdminRow
     {
         public string Id { get; set; } = "";

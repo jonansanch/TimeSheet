@@ -51,6 +51,7 @@
   <data name="Nav_ReporteHoras"><value>Hours Report</value></data>
   <data name="Nav_Timesheet"><value>Individual Timesheet</value></data>
   <data name="Nav_ClientsProjects"><value>Clients &amp; Projects</value></data>
+  <data name="Nav_MisSolicitudes"><value>My Requests</value></data>
 
   <!-- === COMMON BUTTONS === -->
   <data name="Btn_Save"><value>Save</value></data>
@@ -269,6 +270,13 @@
   <data name="Users_ChangeRole"><value>Change Role</value></data>
   <data name="Users_RoleChanged"><value>Role updated successfully.</value></data>
   <data name="Users_PasswordHint"><value>Minimum 6 characters with uppercase, lowercase, number and symbol. Ex: Employee1234!</value></data>
+  <data name="Users_ResetPasswordTitle"><value>Reset Password</value></data>
+  <data name="Users_ResetPasswordMsg"><value>A new password will be assigned to user {0}. Inform them of the new password through a secure channel.</value></data>
+  <data name="Users_ResetPasswordBtn"><value>Reset</value></data>
+  <data name="Users_PasswordResetOk"><value>Password updated successfully.</value></data>
+  <data name="Label_NewPassword"><value>New password</value></data>
+  <data name="Label_ConfirmPassword"><value>Confirm password</value></data>
+  <data name="Val_PasswordMismatch"><value>Passwords do not match.</value></data>
 
   <!-- === ADMIN: RESOURCES === -->
   <data name="Resources_Title"><value>Resource Management</value></data>
@@ -332,6 +340,9 @@
   <data name="Exc_RequestAuth"><value>Request authorization</value></data>
   <data name="Exc_OutOfWindowMsg"><value>This date is outside the allowed registration window. Describe the reason so an administrator can approve it.</value></data>
   <data name="Exc_ErrorSend"><value>Could not send the exception request. Please try again.</value></data>
+  <data name="MisExc_Title"><value>My Exception Requests</value></data>
+  <data name="MisExc_Subtitle"><value>Check the status of your exception requests.</value></data>
+  <data name="MisExc_NoRequests"><value>You have no exception requests registered.</value></data>
 
   <!-- === ADMIN: PARAMETERS === -->
   <data name="Params_Title"><value>System Parameters</value></data>
@@ -463,6 +474,8 @@
   <data name="Cal_HasRecord"><value>Has record</value></data>
   <data name="Cal_WithRecord"><value>With record</value></data>
   <data name="Cal_WithoutRecord"><value>Without record</value></data>
+  <data name="Cal_HasException"><value>Approved exception</value></data>
+  <data name="Cal_ExceptionApproved"><value>Approved exception</value></data>
 
   <!-- === GENERAL === -->
   <data name="Loading"><value>Loading...</value></data>

@@ -16,6 +16,36 @@ public class SolicitudExcepcionRepository : ISolicitudExcepcionRepository
         _authState = authState;
     }
 
+    public async Task<List<DateOnly>> GetMisAprobadasAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return [];
+
+        using var message = new HttpRequestMessage(HttpMethod.Get, "api/solicitudes-excepcion/mis-aprobadas");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+
+        var response = await _http.SendAsync(message, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return [];
+
+        return await response.Content.ReadFromJsonAsync<List<DateOnly>>(cancellationToken: cancellationToken) ?? [];
+    }
+
+    public async Task<List<MiSolicitudExcepcionResponse>> GetMisSolicitudesAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return [];
+
+        using var message = new HttpRequestMessage(HttpMethod.Get, "api/solicitudes-excepcion/mis-solicitudes");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+
+        var response = await _http.SendAsync(message, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return [];
+
+        return await response.Content.ReadFromJsonAsync<List<MiSolicitudExcepcionResponse>>(cancellationToken: cancellationToken) ?? [];
+    }
+
     public async Task<SolicitudExcepcionResponse?> CreateAsync(
         CreateSolicitudExcepcionRequest request,
         CancellationToken cancellationToken = default)

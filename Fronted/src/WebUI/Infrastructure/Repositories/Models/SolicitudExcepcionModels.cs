@@ -8,3 +8,10 @@ public record SolicitudExcepcionResponse(
     DateOnly FechaRegistro,
     string Justificacion,
     string Estado);
+
+public record MiSolicitudExcepcionResponse(
+    int Id,
+    DateOnly FechaRegistro,
+    string Justificacion,
+    string Estado,
+    DateTimeOffset Created);

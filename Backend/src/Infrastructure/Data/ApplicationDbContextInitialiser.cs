@@ -75,11 +75,11 @@ public class ApplicationDbContextInitialiser
 
         // ── Usuarios ─────────────────────────────────────────────────────────
         var admin      = await EnsureUserAsync("admin@kpg.com",          "Admin1234!",      "Administrador KPG",  Roles.Admin);
-        var gerente    = await EnsureUserAsync("gerente@kpg.com",         "Gerente1234!",    "Laura Martínez",     Roles.Gerente);
-        var supervisor = await EnsureUserAsync("supervisor@kpg.com",      "Supervisor1234!", "Miguel Torres",      Roles.Supervisor);
-        var emp1       = await EnsureUserAsync("empleado@kpg.com",        "Empleado1234!",   "Juan Pérez",         Roles.Empleado);
-        var emp2       = await EnsureUserAsync("ana.garcia@kpg.com",      "Empleado1234!",   "Ana García",         Roles.Empleado);
-        var emp3       = await EnsureUserAsync("carlos.ruiz@kpg.com",     "Empleado1234!",   "Carlos Ruiz",        Roles.Empleado);
+        var gerente    = await EnsureUserAsync("gerente@kpg.com",      "Gerente1234!",    "Laura Martínez",     Roles.Gerente);
+        var supervisor = await EnsureUserAsync("supervisor@kpg.com",   "Supervisor1234!", "Miguel Torres",      Roles.Supervisor);
+        var emp1       = await EnsureUserAsync("empleado@kpg.com",     "Empleado1234!",   "Juan Pérez",         Roles.Empleado);
+        var emp2       = await EnsureUserAsync("ana.garcia@kpg.com",   "Empleado1234!",   "Ana García",         Roles.Empleado);
+        var emp3       = await EnsureUserAsync("carlos.ruiz@kpg.com",  "Empleado1234!",   "Carlos Ruiz",        Roles.Empleado);
 
         // ── Parámetros del sistema ────────────────────────────────────────────
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.VentanaRetroactividad, "3");

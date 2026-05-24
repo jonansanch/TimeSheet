@@ -16,13 +16,36 @@
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
-                <MudText Typo="Typo.body2" Class="me-3 d-none d-sm-block" Style="opacity:0.85;">
-                    @(context.User.FindFirst("email")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? context.User.Identity?.Name)
-                </MudText>
+                <MudMenu AnchorOrigin="Origin.BottomCenter"
+                         TransformOrigin="Origin.TopCenter"
+                         Class="d-none d-sm-block me-1">
+                    <ActivatorContent>
+                        <MudButton Color="Color.Inherit"
+                                   EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                                   Style="text-transform:none; opacity:0.85; font-size:0.875rem;">
+                            @(context.User.FindFirst("email")?.Value
+                              ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                              ?? context.User.Identity?.Name)
+                        </MudButton>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem Href="/perfil"
+                                     Icon="@Icons.Material.Filled.AccountCircle">
+                            Mi Perfil
+                        </MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem OnClick="HandleLogout"
+                                     Icon="@Icons.Material.Filled.Logout"
+                                     IconColor="Color.Error">
+                            Cerrar sesión
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
                 <KpgLanguageSelector />
                 <MudIconButton Icon="@Icons.Material.Filled.Logout"
                                Color="Color.Inherit"
                                title="Cerrar sesión"
+                               Class="d-sm-none"
                                OnClick="HandleLogout" />
             </Authorized>
         </AuthorizeView>

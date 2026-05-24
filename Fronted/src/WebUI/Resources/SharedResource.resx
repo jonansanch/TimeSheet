@@ -51,6 +51,7 @@
   <data name="Nav_ReporteHoras"><value>Reporte de Horas</value></data>
   <data name="Nav_Timesheet"><value>Timesheet Individual</value></data>
   <data name="Nav_ClientsProjects"><value>Clientes y Proyectos</value></data>
+  <data name="Nav_MisSolicitudes"><value>Mis Solicitudes</value></data>
 
   <!-- === BOTONES COMUNES === -->
   <data name="Btn_Save"><value>Guardar</value></data>
@@ -269,6 +270,13 @@
   <data name="Users_ChangeRole"><value>Cambiar Rol</value></data>
   <data name="Users_RoleChanged"><value>Rol actualizado correctamente.</value></data>
   <data name="Users_PasswordHint"><value>Mínimo 6 caracteres con mayúscula, minúscula, número y símbolo. Ej: Empleado1234!</value></data>
+  <data name="Users_ResetPasswordTitle"><value>Resetear Contraseña</value></data>
+  <data name="Users_ResetPasswordMsg"><value>Se asignará una nueva contraseña al usuario {0}. Infórmele la nueva clave por un canal seguro.</value></data>
+  <data name="Users_ResetPasswordBtn"><value>Resetear</value></data>
+  <data name="Users_PasswordResetOk"><value>Contraseña actualizada correctamente.</value></data>
+  <data name="Label_NewPassword"><value>Nueva contraseña</value></data>
+  <data name="Label_ConfirmPassword"><value>Confirmar contraseña</value></data>
+  <data name="Val_PasswordMismatch"><value>Las contraseñas no coinciden.</value></data>
 
   <!-- === ADMIN: RECURSOS === -->
   <data name="Resources_Title"><value>Gestión de Recursos</value></data>
@@ -332,6 +340,9 @@
   <data name="Exc_RequestAuth"><value>Solicitar autorización</value></data>
   <data name="Exc_OutOfWindowMsg"><value>Esta fecha está fuera de la ventana de registro permitida. Describe el motivo para que un administrador pueda aprobarla.</value></data>
   <data name="Exc_ErrorSend"><value>No fue posible enviar la solicitud de excepción. Intente nuevamente.</value></data>
+  <data name="MisExc_Title"><value>Mis Solicitudes de Excepción</value></data>
+  <data name="MisExc_Subtitle"><value>Consulta el estado de tus solicitudes de excepción de registro.</value></data>
+  <data name="MisExc_NoRequests"><value>No tienes solicitudes de excepción registradas.</value></data>
 
   <!-- === ADMIN: PARÁMETROS === -->
   <data name="Params_Title"><value>Parámetros del Sistema</value></data>
@@ -463,6 +474,8 @@
   <data name="Cal_HasRecord"><value>Tiene registro</value></data>
   <data name="Cal_WithRecord"><value>Con registro</value></data>
   <data name="Cal_WithoutRecord"><value>Sin registro</value></data>
+  <data name="Cal_HasException"><value>Excepción aprobada</value></data>
+  <data name="Cal_ExceptionApproved"><value>Excepción aprobada</value></data>
 
   <!-- === LOADING / ERRORES GENERALES === -->
   <data name="Loading"><value>Cargando...</value></data>

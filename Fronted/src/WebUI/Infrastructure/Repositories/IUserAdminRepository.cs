@@ -23,4 +23,6 @@ public interface IUserAdminRepository
         CancellationToken ct = default);
 
     Task<(bool Ok, DeleteUserResponse? Result)> DeleteAsync(string id, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Error)> AdminResetPasswordAsync(string id, AdminResetPasswordRequest request, CancellationToken ct = default);
 }

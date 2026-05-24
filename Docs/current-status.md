@@ -1,77 +1,76 @@
 # Current Status - KPG Timesheet
 
-Ultima actualizacion: 2026-05-21 — fin sesion 12
+Ultima actualizacion: 2026-05-23 — fin sesion 18
 
 ## Estado actual
 
-**Epicas 1-5 completamente implementadas y con QA funcional aprobado por Jonathan.**
+**Epicas 1-7 completamente implementadas. QA funcional en progreso (sesion 18).**
 
-- Epic 1 (Auth/Shell): stories 1.1-1.6 en `done`.
-- Epic 2 (Registro de Horas): stories 2.1-2.7 en `done`.
-- Epic 3 (Ventana Retroactiva / Excepciones / Inmutabilidad): stories 3.1-3.6 en `done`. QA funcional revisado y aprobado.
-- Epic 4 (Administracion de Catalogos): stories 4.1-4.6 en `review`.
-- Epic 5 (Dashboards / Reportes / Notificaciones): stories 5.1-5.11 en `review`. QA funcional aprobado 2026-05-19.
+- Epic 1 (Auth/Shell): stories 1.1-1.6 — done.
+- Epic 2 (Registro de Horas): stories 2.1-2.7 — done.
+- Epic 3 (Ventana Retroactiva / Excepciones / Inmutabilidad): stories 3.1-3.6 — done.
+- Epic 4 (Administracion de Catalogos): stories 4.1-4.6 — done.
+- Epic 5 (Dashboards / Reportes / Notificaciones): stories 5.1-5.11 — done.
+- Epic 6 (Bitacora, Logging, Go-Live, Localizacion): stories 6.1-6.7 — done.
+- Epic 7 (Soporte multiidioma ES/EN): done.
 
 ## Punto exacto para retomar
 
-**Proxima tarea: Iniciar la Epic 6 — Auditoria, Trazabilidad y Preparacion de Go-Live.**
+**Proxima tarea: Continuar QA funcional con todos los roles.**
 
-No existen story files para Epic 6 todavia. Crearlos a partir de:
-`_bmad-output/planning-artifacts/epics.md` (buscar "Epic 6", linea ~1191)
+La sesion 18 corrigio bugs encontrados durante QA. Continuar probando con los usuarios de prueba listados abajo, en particular:
+- Flujo completo de Gerente (dashboards, reportes, bitacora)
+- Flujo completo de Supervisor (dashboard, notificaciones, bitacora)
+- Solicitudes de excepcion (empleado solicita, admin aprueba/rechaza)
 
-Historias a implementar:
+## Lo ultimo implementado (sesion 18 — QA bugs + optimizaciones)
 
-| Historia | Descripcion |
-|----------|-------------|
-| 6.1 | Registrar Eventos Sensibles en Bitacora |
-| 6.2 | Consultar Bitacora como Admin |
-| 6.3 | Consultar Bitacora por Supervisor y Gerente |
-| 6.4 | Exportar Bitacora para Auditoria |
-| 6.5 | Logging, Backups y Recuperacion Operativa |
-| 6.6 | Checklist de Go-Live, QA y UAT |
-| 6.7 | Politica de Idioma y Preparacion para Localizacion |
+### Optimizaciones de rendimiento (sesion 17-18)
 
-## Lo ultimo implementado (sesion 12 — refactor registro unico diario)
+| # | Cambio | Archivo principal |
+|---|--------|------------------|
+| #1 | Indices `IX_RegistrosHoras_FechaRegistro` e `IX_AspNetUsers_IsActive` | `ApplicationDbContextInitialiser.cs` |
+| #2 | `GetRegistrosRecientes`: GROUP BY en SQL | `GetRegistrosRecientesQueryHandler.cs` |
+| #3 | `GetMetricasGlobales`: CTE reemplaza 5 subqueries | `DashboardRepository.cs` |
+| #4 | `IdentityService.GetUsersAsync`: 1 round-trip Dapper | `IdentityService.cs` |
+| #5 | `SqlPendientes`: LEFT JOIN acotado 90 dias | `DashboardRepository.cs` |
+| #6 | `GetCatalogoClientesConProyectos`: 1 LEFT JOIN | `GetCatalogoClientesConProyectosQueryHandler.cs` |
+| #7 | `GetSolicitudesExcepcion`: filtro 180 dias | `GetSolicitudesExcepcionQueryHandler.cs` |
+| #8 | Output cache 60s en endpoints de dashboard | `DependencyInjection.cs`, `Program.cs` |
+| #9 | `Task.WhenAll` en RegistroPage | `RegistroPage.razor` |
 
-**Refactor mayor: modelo de registro de horas cambiado a registro unico diario con bloques AM/PM opcionales.**
+### QA bugs corregidos (sesion 18)
 
-- Antes: dos filas por dia por usuario (una AM y una PM), con campo `Turno` y enum `TurnoRegistro`.
-- Ahora: un registro por dia por usuario con `HoraEntradaAM?/HoraSalidaAM?/HoraEntradaPM?/HoraSalidaPM?`; se requiere al menos un bloque.
-- Eliminado `Backend/src/Domain/Enums/TurnoRegistro.cs` (enum ya no existe).
-- `CreateRegistroHorasCommandHandler` ahora hace upsert: si ya existe registro del dia, agrega el bloque faltante via `SetBloqueAM`/`SetBloquePM`.
-- Indice unico cambiado de `(UserId, FechaRegistro, Turno)` → `(UserId, FechaRegistro)`.
-- `RegistroHorasImmutabilityInterceptor` actualizado: `SiemprePermitidos` incluye ahora los campos de metadata (Cliente, Proyecto, Modalidad, Recurso, Lugar) necesarios para el upsert; `SoloAgregables` cubre los 4 campos de tiempo AM/PM (null→value permitido, value→value prohibido).
-- Frontend `KpgShiftForm.razor` reescrito: formulario unificado con secciones AM y PM opcionales, un solo boton "Guardar jornada".
-- `KpgSaveConfirmationBanner` actualizado: parametros Turno/HoraEntrada/HoraSalida reemplazados por HoraEntradaAM?/HoraSalidaAM?/HoraEntradaPM?/HoraSalidaPM?.
-- `HistorialPage` y `ReportesPage` actualizados con columnas AM/PM separadas.
-- Seeder (`ApplicationDbContextInitialiser`) actualizado con nuevo esquema.
-- 204/204 tests pasan.
+- **`SetFecha` no actualizaba `_dateAvailability`**: registro fuera de ventana no se bloqueaba en frontend al seleccionar desde calendario.
+- **Campo Descripcion sin MaxLength**: frontend no limitaba los 1000 chars permitidos por el backend.
+- **`GET /api/users` bloqueado para Gerente**: endpoint y query record solo permitia Admin; corregido a Admin/Gerente/Supervisor (lectura).
+- **"Mi Perfil" movido al AppBar**: dropdown del email en la barra superior en lugar del menu lateral.
 
-**Sesion 11 — commit 8fb2c1a MODULO REPORTES (referencia anterior):**
+### Dapper TypeHandlers
 
-- `GET /api/reportes/timesheet/excel?userId=&mes=&anio=` — Excel con ClosedXML para Supervisor/Gerente/Admin.
-- Frontend: seccion "Timesheet individual" en `/reportes` con selector empleado + mes + anio.
-- CSS fix: DatePicker popover y domingos deshabilitados.
+Registrados en `DependencyInjection.cs` para compatibilidad SQLite (tests) / SQL Server (produccion):
+- `DateOnlyTypeHandler` / `NullableDateOnlyTypeHandler`
+- `DateTimeOffsetTypeHandler` / `NullableDateTimeOffsetTypeHandler`
 
 ## Estado de compilacion y tests
 
 ```powershell
-dotnet test Backend\KPG.Timesheet.sln --no-restore
-dotnet build Backend\KPG.Timesheet.sln --no-restore
-dotnet build Fronted\KPG.Timesheet.WebUI.sln --no-restore
+dotnet test Backend\KPG.Timesheet.sln
+dotnet build Backend\KPG.Timesheet.sln
+dotnet build Fronted\KPG.Timesheet.WebUI.sln
 ```
 
-Resultado al 2026-05-21:
-- Backend tests: **204/204 pasan** (68 domain + 24 application + 112 integration).
+Resultado al 2026-05-23:
+- Backend tests: **231/231 pasan** (68 Domain unit + 24 Application unit + 139 Integration).
 - Backend build: 0 errores, 0 warnings.
 - Frontend build: 0 errores, 0 warnings.
-- Ultimo commit: `54ef173 epic 6 implementation` + refactor sesion 12 (pendiente commit)
 
 ## Usuarios de prueba
 
 | Email | Password | Rol |
 |-------|----------|-----|
 | admin@kpg.com | Admin1234! | Admin |
+| gerente@kpg.com | Gerente1234! | Gerente |
 | supervisor@kpg.com | Supervisor1234! | Supervisor |
 | empleado@kpg.com | Empleado1234! | Empleado |
 | ana.garcia@kpg.com | Empleado1234! | Empleado |
@@ -99,6 +98,7 @@ dotnet run --project Fronted\src\WebUI\KPG.Timesheet.WebUI.csproj --launch-profi
 - Epics: `_bmad-output/planning-artifacts/epics.md`
 - PRD: `_bmad-output/planning-artifacts/prd.md`
 - Arquitectura: `_bmad-output/planning-artifacts/architecture.md`
-- UX: `_bmad-output/planning-artifacts/ux-design-specification.md`
-- Handoff anterior (mayo 14): `Docs/handoff/handoff-2026-05-14.md`
-- Handoff actual (mayo 19): `Docs/handoff/handoff-2026-05-19.md`
+- Manual tecnico: `Docs/manuals/manual-tecnico.md`
+- Manual administrador: `Docs/manuals/manual-administrador.md`
+- Manual usuario: `Docs/manuals/manual-usuario.md`
+- Handoff sesion 18: `Docs/handoff/handoff-2026-05-23.md`

@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "KPG.Timesheet.WebUI",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-mpJ0OTVvgHKGazxVcZ1e6Qi0Yo+NDuhXMva7ZH7DqLE=",
+    "hash": "sha256-lxtsqCAlVa4WdaImAakcYDzJ+ZX0H0bfNnSrNRQqWac=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.rjbmzc4jpg.js"
@@ -1266,16 +1266,16 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "KPG.Timesheet.WebUI.wasm",
-        "name": "KPG.Timesheet.WebUI.y5q25h06to.wasm",
-        "hash": "sha256-9nn5jhj/7lEKKLk8icYd5gJsnU2N9+voI2/ANgeU7ts=",
+        "name": "KPG.Timesheet.WebUI.zjck1pu4qg.wasm",
+        "hash": "sha256-cf5GBUyANYPtizc+2QIREF5+woraBu/X/qUslIBl4LI=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "KPG.Timesheet.WebUI.pdb",
-        "name": "KPG.Timesheet.WebUI.foj4px2x11.pdb",
-        "hash": "sha256-YYbTR7OHyODr/GhkziSabmco25pj4BlGNLLHKyk9JbU=",
+        "name": "KPG.Timesheet.WebUI.82uwmddff7.pdb",
+        "hash": "sha256-MBrKqdQdYnMDTugSHbHP/LvtERb0Qo60PJ7ZYrWr9m0=",
         "cache": "force-cache"
       }
     ],
@@ -1283,8 +1283,8 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       "en": [
         {
           "virtualPath": "KPG.Timesheet.WebUI.resources.wasm",
-          "name": "KPG.Timesheet.WebUI.resources.cuh7lti7ga.wasm",
-          "hash": "sha256-FP9+vgolHU4CgcpCp9t3K/vRj2cMB9HMHvjiZsQnY3Y=",
+          "name": "KPG.Timesheet.WebUI.resources.qow06j90d9.wasm",
+          "hash": "sha256-eift/ouVH7BV6/+CAyA8JG+iCKmhM6DSDdS/RpzMZiA=",
           "cache": "force-cache"
         }
       ]

@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Features.Users.Commands.ActivateUser;
+using KPG.Timesheet.Application.Features.Users.Commands.AdminResetPassword;
 using KPG.Timesheet.Application.Features.Users.Commands.ChangeUserRole;
 using KPG.Timesheet.Application.Features.Users.Commands.CreateUser;
 using KPG.Timesheet.Application.Features.Users.Commands.DeactivateUser;
@@ -17,13 +18,15 @@ public class Users : IEndpointGroup
 
     public static void Map(RouteGroupBuilder groupBuilder)
     {
-        var adminOnly = new AuthorizeAttribute { Roles = Roles.Admin };
+        var adminOnly   = new AuthorizeAttribute { Roles = Roles.Admin };
+        var readAllowed = new AuthorizeAttribute { Roles = $"{Roles.Admin},{Roles.Gerente},{Roles.Supervisor}" };
 
-        groupBuilder.MapGet(GetUsers).RequireAuthorization(adminOnly);
+        groupBuilder.MapGet(GetUsers).RequireAuthorization(readAllowed);
         groupBuilder.MapPost(CreateUser).RequireAuthorization(adminOnly);
         groupBuilder.MapPost(ActivateUser, "{id}/activate").RequireAuthorization(adminOnly);
         groupBuilder.MapPost(DeactivateUser, "{id}/deactivate").RequireAuthorization(adminOnly);
         groupBuilder.MapPut(ChangeUserRole, "{id}/role").RequireAuthorization(adminOnly);
+        groupBuilder.MapPut(AdminResetPassword, "{id}/reset-password").RequireAuthorization(adminOnly);
         groupBuilder.MapDelete(DeleteUser, "{id}").RequireAuthorization(adminOnly);
     }
 
@@ -106,6 +109,23 @@ public class Users : IEndpointGroup
         return Results.Ok(result);
     }
 
+    [EndpointSummary("Resetear contraseña (Admin)")]
+    [EndpointDescription("El Admin asigna una nueva contraseña a cualquier usuario sin necesitar la actual.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public static async Task<IResult> AdminResetPassword(
+        string id,
+        [FromBody] AdminResetPasswordRequest request,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new AdminResetPasswordCommand(id, request.NewPassword), cancellationToken);
+        return Results.NoContent();
+    }
+
     [EndpointSummary("Eliminar usuario")]
     [EndpointDescription("Elimina fisicamente cuentas sin historia; si hay historia, conserva la cuenta inactiva.")]
     [ProducesResponseType<DeleteUserDto>(StatusCodes.Status200OK)]
@@ -124,3 +144,4 @@ public class Users : IEndpointGroup
 }
 
 public record ChangeUserRoleRequest(string Role);
+public record AdminResetPasswordRequest(string NewPassword);

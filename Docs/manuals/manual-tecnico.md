@@ -76,6 +76,17 @@ Backend/src/
 | **Output Cache** | Endpoints de dashboard cacheados 60 s (`CacheOutput("dashboard")`, varía por query string) |
 | **Server-side pagination** | Historial y gestión de usuarios usan paginación en SQL; frontend usa `MudDataGrid ServerData` |
 
+### Autorización en dos niveles
+
+Cada operación tiene dos guardias independientes:
+
+1. **Endpoint** (`RequireAuthorization` en `Endpoints/*.cs`) — rechaza antes de llegar a MediatR.
+2. **Query/Command** (`[Authorize(Roles = ...)]` en el record de la capa Application) — procesado por `AuthorizationBehavior` en el pipeline de MediatR.
+
+Ambos niveles deben ser consistentes. Ejemplo: `GET /api/users` permite lectura a `Admin`, `Gerente` y `Supervisor`; por eso tanto el endpoint como `GetUsersQuery` declaran los tres roles. Las operaciones de escritura (`POST`, `PUT`, `DELETE` sobre usuarios) siguen siendo exclusivas de `Admin`.
+
+Si solo se actualiza el endpoint pero no el query record (o viceversa), el segundo guard lanzará `ForbiddenAccessException` aunque el primero haya pasado.
+
 ### Optimizaciones de rendimiento implementadas
 
 #### Capa de base de datos
@@ -396,6 +407,7 @@ Los handlers se registran en `SqlMapper.AddTypeHandler(...)` una sola vez al arr
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
 | admin@kpg.com | Admin1234! | Admin |
+| gerente@kpg.com | Gerente1234! | Gerente |
 | supervisor@kpg.com | Supervisor1234! | Supervisor |
 | empleado@kpg.com | Empleado1234! | Empleado |
 | ana.garcia@kpg.com | Empleado1234! | Empleado |

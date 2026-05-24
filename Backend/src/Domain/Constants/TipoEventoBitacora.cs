@@ -15,4 +15,5 @@ public static class TipoEventoBitacora
     public const string ModificacionDescripcion = "ModificacionDescripcion";
     public const string EliminacionRegistro = "EliminacionRegistro";
     public const string NotificacionEnviada = "NotificacionEnviada";
+    public const string ResetContrasena = "ResetContrasena";
 }

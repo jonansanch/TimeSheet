@@ -46,15 +46,16 @@
                     var tieneRegistro = DiasConRegistro.Contains(fecha);
                     var esHoy         = fecha == _hoy;
                     var esSeleccionado = fecha == FechaSeleccionada;
-                    var esDomingo     = fecha.DayOfWeek == DayOfWeek.Sunday;
-                    var esFuturo      = fecha > _hoy;
-                    var fueraVentana  = !esFuturo && (_hoy.DayNumber - fecha.DayNumber) > VentanaDias && !tieneRegistro;
-                    var deshabilitado = esDomingo || esFuturo;
+                    var esDomingo          = fecha.DayOfWeek == DayOfWeek.Sunday;
+                    var esFuturo           = fecha > _hoy;
+                    var tieneExcepcion     = DiasConExcepcionAprobada.Contains(fecha);
+                    var fueraVentana       = !esFuturo && (_hoy.DayNumber - fecha.DayNumber) > VentanaDias && !tieneRegistro && !tieneExcepcion;
+                    var deshabilitado      = esDomingo || esFuturo;
 
                     <div style="display:flex;justify-content:center;align-items:center;padding:2px;">
-                        <MudTooltip Text="@(tieneRegistro ? L["Cal_HasRecord"].Value : "")" Disabled="@(!tieneRegistro)">
+                        <MudTooltip Text="@(tieneRegistro ? L["Cal_HasRecord"].Value : tieneExcepcion ? L["Cal_HasException"].Value : "")" Disabled="@(!tieneRegistro && !tieneExcepcion)">
                             <MudIconButton Size="Size.Small"
-                                           Style="@GetDiaStyle(esSeleccionado, tieneRegistro, esHoy, deshabilitado, fueraVentana)"
+                                           Style="@GetDiaStyle(esSeleccionado, tieneRegistro, tieneExcepcion, esHoy, deshabilitado, fueraVentana)"
                                            Disabled="@deshabilitado"
                                            OnClick="@(() => OnDiaClick(fecha))">
                                 <MudText Typo="Typo.caption"
@@ -78,6 +79,13 @@
                 <div style="width:10px;height:10px;border-radius:50%;background:#E0E0E0;"></div>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Cal_WithoutRecord"]</MudText>
             </MudStack>
+            @if (DiasConExcepcionAprobada.Count > 0)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#F57C20;"></div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Cal_ExceptionApproved"]</MudText>
+                </MudStack>
+            }
         </MudStack>
 
     </MudStack>
@@ -86,6 +94,7 @@
 @code {
     [Parameter] public DateOnly PrimerDiaMes { get; set; } = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     [Parameter] public List<DateOnly> DiasConRegistro { get; set; } = [];
+    [Parameter] public List<DateOnly> DiasConExcepcionAprobada { get; set; } = [];
     [Parameter] public DateOnly? FechaSeleccionada { get; set; }
     [Parameter] public int VentanaDias { get; set; } = 3;
     [Parameter] public bool IsLoading { get; set; }
@@ -123,10 +132,11 @@
         OnDiaSeleccionado.InvokeAsync(fecha);
     }
 
-    private static string GetDiaStyle(bool seleccionado, bool tieneRegistro, bool esHoy, bool deshabilitado, bool fueraVentana)
+    private static string GetDiaStyle(bool seleccionado, bool tieneRegistro, bool tieneExcepcion, bool esHoy, bool deshabilitado, bool fueraVentana)
     {
         var bg = seleccionado   ? "#0D3B5E"
                : tieneRegistro  ? "#2E7D32"
+               : tieneExcepcion ? "#F57C20"
                : esHoy          ? "#E3F2FD"
                : "transparent";
         var opacity = deshabilitado ? "0.3" : fueraVentana ? "0.5" : "1";

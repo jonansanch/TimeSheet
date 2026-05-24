@@ -87,6 +87,12 @@
                                            aria-label="@L["Users_ChangeRole"]"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => AbrirCambiarRolAsync(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.LockReset"
+                                           Color="Color.Warning"
+                                           Size="Size.Small"
+                                           aria-label="@L["Users_ResetPasswordTitle"]"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AbrirResetPasswordAsync(context.Item))" />
                             @if (context.Item.IsActive)
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.Block"
@@ -331,6 +337,39 @@
             {
                 Snackbar.Add(L["Users_ErrorSave"].Value, Severity.Error);
             }
+        }
+        finally
+        {
+            _isProcesando = false;
+        }
+    }
+
+    private async Task AbrirResetPasswordAsync(UserAdminResponse item)
+    {
+        var parameters = new DialogParameters<KpgUserPasswordDialog>
+        {
+            { x => x.Email, item.Email }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        var dialog = await DialogService.ShowAsync<KpgUserPasswordDialog>(L["Users_ResetPasswordTitle"], parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not AdminResetPasswordRequest request)
+            return;
+
+        _isProcesando = true;
+
+        try
+        {
+            var (ok, error) = await Repo.AdminResetPasswordAsync(item.Id, request);
+            if (ok)
+                Snackbar.Add(L["Users_PasswordResetOk"].Value, Severity.Success);
+            else
+                Snackbar.Add(error ?? L["Users_ErrorSave"].Value, Severity.Error);
         }
         finally
         {

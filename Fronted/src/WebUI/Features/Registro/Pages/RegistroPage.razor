@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @inject IRegistroHorasRepository RegistroRepo
 @inject IParametroSistemaRepository ParametroSistemaRepo
+@inject ISolicitudExcepcionRepository ExcepcionRepo
 @inject IStringLocalizer<SharedResource> L
 
 <PageTitle>@L["Reg_Title"] - KPG Timesheet</PageTitle>
@@ -21,6 +22,7 @@
         <MudItem xs="12" md="4">
             <KpgMiniCalendario PrimerDiaMes="@_primerDiaMes"
                                DiasConRegistro="@_diasConRegistro"
+                               DiasConExcepcionAprobada="@_diasConExcepcionAprobada"
                                FechaSeleccionada="@_fechaSeleccionada"
                                VentanaDias="@_ventanaDias"
                                IsLoading="@_loadingCalendario"
@@ -39,6 +41,7 @@
 
     private DateOnly _primerDiaMes = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private List<DateOnly> _diasConRegistro = [];
+    private List<DateOnly> _diasConExcepcionAprobada = [];
     private DateOnly? _fechaSeleccionada;
     private int _ventanaDias = 3;
     private bool _loadingCalendario = true;
@@ -50,12 +53,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarVentanaAsync(), CargarCalendarioAsync());
+        await Task.WhenAll(CargarVentanaAsync(), CargarCalendarioAsync(), CargarExcepcionesAsync());
     }
 
     private async Task CargarVentanaAsync()
     {
         try { _ventanaDias = await ParametroSistemaRepo.GetVentanaRetroactividadAsync(); } catch { }
+    }
+
+    private async Task CargarExcepcionesAsync()
+    {
+        try { _diasConExcepcionAprobada = await ExcepcionRepo.GetMisAprobadasAsync(); } catch { }
     }
 
     private async Task CargarCalendarioAsync()
@@ -84,7 +92,7 @@
     private void HandleDiaSeleccionado(DateOnly fecha)
     {
         _fechaSeleccionada = fecha;
-        _shiftForm.SetFecha(fecha);
+        _shiftForm.SetFecha(fecha, _diasConExcepcionAprobada);
     }
 
     private async Task HandleRegistroGuardado(DateOnly fecha)

@@ -93,6 +93,21 @@ public class UserAdminRepository : IUserAdminRepository
         return (result is not null, result);
     }
 
+    public async Task<(bool Ok, string? Error)> AdminResetPasswordAsync(string id, AdminResetPasswordRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return (false, "Sesion no disponible.");
+
+        using var message = CreateMessage(HttpMethod.Put, $"api/users/{id}/reset-password");
+        message.Content = JsonContent.Create(request);
+
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode)
+            return (false, await ReadErrorAsync(response, ct));
+
+        return (true, null);
+    }
+
     private async Task<(bool Ok, UserAdminResponse? User)> SendUserActionAsync(HttpMethod method, string url, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
