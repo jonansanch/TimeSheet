@@ -18,15 +18,15 @@ Completar este checklist **antes** de abrir el sistema a los usuarios finales. C
 
 ## Sección 1 — Infraestructura del Servidor
 
-- [ ] Servidor Windows disponible (IIS o servicio Windows con Kestrel)
-- [ ] .NET 10 Runtime instalado en el servidor
-- [ ] SQL Server instalado y accesible desde el servidor de aplicación
-- [ ] Certificado SSL/TLS vigente para el dominio (e.g. `https://timesheet.kpg.com`)
-- [ ] Puerto HTTPS (443) abierto en el firewall interno
-- [ ] Carpeta de backups creada: `D:\Backups\Timesheet\` (o ruta acordada)
-- [ ] Carpeta de logs con permisos de escritura para el proceso de aplicación
-- [ ] Resolución DNS interna apuntando al servidor (`timesheet.kpg.com` → IP del servidor)
-- [ ] Resolución probada desde al menos una PC de usuario (ping/browser)
+- [x] Servidor Windows disponible (IIS o servicio Windows con Kestrel)
+- [x] .NET 10 Runtime instalado en el servidor
+- [x] SQL Server instalado y accesible desde el servidor de aplicación
+- [x] Certificado SSL/TLS vigente para el dominio (e.g. `https://timesheet.kpg.com`)
+- [x] Puerto HTTPS (443) abierto en el firewall interno
+- [x] Carpeta de backups creada: `D:\Backups\Timesheet\` (o ruta acordada)
+- [x] Carpeta de logs con permisos de escritura para el proceso de aplicación
+- [x] Resolución DNS interna apuntando al servidor (`timesheet.kpg.com` → IP del servidor)
+- [x] Resolución probada desde al menos una PC de usuario (ping/browser)
 
 **Observaciones:**
 
