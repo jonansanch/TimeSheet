@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+
+  <!-- === NAVEGACIÓN === -->
+  <data name="Nav_Home"><value>Inicio</value></data>
+  <data name="Home_Welcome"><value>Bienvenido a KPG Timesheet</value></data>
+  <data name="Home_CardRegisterDesc"><value>Registra tus horas de trabajo.</value></data>
+  <data name="Home_GoToRegister"><value>Ir a Registro</value></data>
+  <data name="Home_CardDashboardDesc"><value>Visualiza el estado del equipo.</value></data>
+  <data name="Home_GoToDashboard"><value>Ir a Dashboard</value></data>
+  <data name="Home_CardReportsDesc"><value>Genera reportes de horas trabajadas.</value></data>
+  <data name="Home_GoToReports"><value>Ir a Reportes</value></data>
+  <data name="Home_CardAdminDesc"><value>Gestiona usuarios y configuración del sistema.</value></data>
+  <data name="Home_GoToAdmin"><value>Ir a Administración</value></data>
+  <data name="Nav_Register"><value>Registro</value></data>
+  <data name="Nav_MyRecords"><value>Mis Registros</value></data>
+  <data name="Nav_Dashboard"><value>Dashboard</value></data>
+  <data name="Nav_Reports"><value>Reportes</value></data>
+  <data name="Nav_Notifications"><value>Notificaciones</value></data>
+  <data name="Nav_Bitacora"><value>Bitácora</value></data>
+  <data name="Nav_Admin"><value>Administración</value></data>
+  <data name="Nav_Users"><value>Usuarios</value></data>
+  <data name="Nav_Resources"><value>Recursos</value></data>
+  <data name="Nav_Clients"><value>Clientes</value></data>
+  <data name="Nav_ExceptionRequests"><value>Solicitudes Excepción</value></data>
+  <data name="Nav_AdminBitacora"><value>Bitácora</value></data>
+  <data name="Nav_Params"><value>Parámetros</value></data>
+  <data name="Nav_GeneralConfig"><value>Configuración General</value></data>
+  <data name="Nav_Modalities"><value>Modalidades</value></data>
+  <data name="Nav_WorkPlaces"><value>Lugares de Trabajo</value></data>
+  <data name="Nav_Menu"><value>Menú</value></data>
+  <data name="Nav_Logout"><value>Cerrar sesión</value></data>
+  <data name="Nav_ReporteHoras"><value>Reporte de Horas</value></data>
+  <data name="Nav_Timesheet"><value>Timesheet Individual</value></data>
+  <data name="Nav_ClientsProjects"><value>Clientes y Proyectos</value></data>
+
+  <!-- === BOTONES COMUNES === -->
+  <data name="Btn_Save"><value>Guardar</value></data>
+  <data name="Btn_Cancel"><value>Cancelar</value></data>
+  <data name="Btn_Edit"><value>Editar</value></data>
+  <data name="Btn_Delete"><value>Eliminar</value></data>
+  <data name="Btn_New"><value>Nuevo</value></data>
+  <data name="Btn_Activate"><value>Activar</value></data>
+  <data name="Btn_Deactivate"><value>Desactivar</value></data>
+  <data name="Btn_Approve"><value>Aprobar</value></data>
+  <data name="Btn_Reject"><value>Rechazar</value></data>
+  <data name="Btn_ExportExcel"><value>Exportar Excel</value></data>
+  <data name="Btn_ExportPdf"><value>Exportar PDF</value></data>
+  <data name="Btn_GenerateReport"><value>Generar Reporte</value></data>
+  <data name="Btn_Download"><value>Descargar</value></data>
+  <data name="Btn_RegisterHours"><value>Registrar horas</value></data>
+  <data name="Btn_RequestException"><value>Solicitar excepción</value></data>
+  <data name="Btn_Send"><value>Enviar</value></data>
+  <data name="Btn_DownloadTimesheet"><value>Descargar Timesheet</value></data>
+  <data name="Btn_Create"><value>Crear</value></data>
+  <data name="Btn_Close"><value>Cerrar</value></data>
+  <data name="Btn_Confirm"><value>Confirmar</value></data>
+  <data name="Btn_SendRequest"><value>Enviar solicitud</value></data>
+
+  <!-- === ETIQUETAS COMUNES === -->
+  <data name="Label_Email"><value>Correo</value></data>
+  <data name="Label_Password"><value>Contraseña</value></data>
+  <data name="Label_FullName"><value>Nombre completo</value></data>
+  <data name="Label_Role"><value>Rol</value></data>
+  <data name="Label_Status"><value>Estado</value></data>
+  <data name="Label_Active"><value>Activo</value></data>
+  <data name="Label_Inactive"><value>Inactivo</value></data>
+  <data name="Label_Date"><value>Fecha</value></data>
+  <data name="Label_Client"><value>Cliente</value></data>
+  <data name="Label_Project"><value>Proyecto</value></data>
+  <data name="Label_Modality"><value>Modalidad</value></data>
+  <data name="Label_Resource"><value>Recurso</value></data>
+  <data name="Label_Description"><value>Descripción</value></data>
+  <data name="Label_Place"><value>Lugar</value></data>
+  <data name="Label_Entry"><value>Entrada</value></data>
+  <data name="Label_Exit"><value>Salida</value></data>
+  <data name="Label_Period"><value>Período</value></data>
+  <data name="Label_Employee"><value>Empleado</value></data>
+  <data name="Label_Name"><value>Nombre</value></data>
+  <data name="Label_Hours"><value>Horas</value></data>
+  <data name="Label_Shift"><value>Turno</value></data>
+  <data name="Label_Month"><value>Mes</value></data>
+  <data name="Label_Year"><value>Año</value></data>
+  <data name="Label_Justification"><value>Justificación</value></data>
+  <data name="Label_Days"><value>días</value></data>
+  <data name="Label_Actions"><value>Acciones</value></data>
+  <data name="Label_Type"><value>Tipo</value></data>
+  <data name="Label_Recipient"><value>Destinatario</value></data>
+  <data name="Label_Event"><value>Evento</value></data>
+  <data name="Label_Details"><value>Detalles</value></data>
+  <data name="Label_User"><value>Usuario</value></data>
+  <data name="Label_Projects"><value>Proyectos</value></data>
+  <data name="Label_Optional"><value>Opcional</value></data>
+  <data name="Label_TempPassword"><value>Contraseña temporal</value></data>
+  <data name="Label_InitialRole"><value>Rol inicial</value></data>
+  <data name="Label_NewRole"><value>Nuevo rol</value></data>
+  <data name="Label_CurrentRole"><value>Rol actual</value></data>
+
+  <!-- === VALIDACIONES === -->
+  <data name="Val_EmailRequired"><value>El email es requerido.</value></data>
+  <data name="Val_PasswordRequired"><value>La contraseña es requerida.</value></data>
+  <data name="Val_RoleRequired"><value>El rol es requerido.</value></data>
+  <data name="Val_NameRequired"><value>El nombre es requerido.</value></data>
+  <data name="Val_JustificationRequired"><value>La justificación es requerida.</value></data>
+
+  <!-- === ESTADOS === -->
+  <data name="Status_Pending"><value>Pendiente</value></data>
+  <data name="Status_Approved"><value>Aprobada</value></data>
+  <data name="Status_Rejected"><value>Rechazada</value></data>
+  <data name="Status_Complete"><value>Completo</value></data>
+  <data name="Status_Partial"><value>Parcial</value></data>
+  <data name="Status_ThisMonth"><value>Este mes</value></data>
+  <data name="Status_ThisWeek"><value>Esta semana</value></data>
+  <data name="Status_Today"><value>Hoy</value></data>
+  <data name="Status_Custom"><value>Personalizado</value></data>
+
+  <!-- === PAGINADOR === -->
+  <data name="Pager_RowsPerPage"><value>Mostrar:</value></data>
+
+  <!-- === IDIOMA === -->
+  <data name="Lang_Switch"><value>Switch to English</value></data>
+  <data name="Lang_Current"><value>ES</value></data>
+
+  <!-- === LOGIN === -->
+  <data name="Login_Title"><value>Iniciar sesión</value></data>
+  <data name="Login_Subtitle"><value>Ingresa tus credenciales para continuar.</value></data>
+  <data name="Login_Button"><value>Entrar</value></data>
+  <data name="Login_Error"><value>Credenciales incorrectas. Verifica tu correo y contraseña.</value></data>
+  <data name="Login_Loading"><value>Verificando...</value></data>
+  <data name="Login_ContactAdmin"><value>¿Problemas para acceder? Contacte al Administrador del sistema.</value></data>
+
+  <!-- === REGISTRO DE JORNADA === -->
+  <data name="Reg_Title"><value>Registro de Jornada</value></data>
+  <data name="Reg_Subtitle"><value>Completa tu jornada de trabajo del día.</value></data>
+  <data name="Reg_ShiftAM"><value>Turno AM</value></data>
+  <data name="Reg_ShiftPM"><value>Turno PM</value></data>
+  <data name="Reg_RecentlyUsed"><value>Usados recientemente:</value></data>
+  <data name="Reg_ApplySuggestion"><value>Aplicar</value></data>
+  <data name="Reg_SaveShift"><value>Guardar jornada</value></data>
+  <data name="Reg_Saving"><value>Guardando...</value></data>
+  <data name="Reg_SavedTitle"><value>Jornada guardada</value></data>
+  <data name="Reg_TotalHours"><value>Total:</value></data>
+  <data name="Reg_TotalHoursSuffix"><value>horas</value></data>
+  <data name="Reg_ExceptionWarning"><value>Esta fecha está fuera de la ventana de registro permitida ({0} días hábiles).</value></data>
+  <data name="Reg_ExceptionSent"><value>Solicitud de excepción enviada para</value></data>
+  <data name="Reg_ModalityRequired"><value>La modalidad es requerida.</value></data>
+  <data name="Reg_EntryRequired"><value>La entrada es requerida.</value></data>
+  <data name="Reg_ExitRequired"><value>La salida es requerida.</value></data>
+  <data name="Reg_ExitAfterEntry"><value>La salida debe ser mayor que la entrada.</value></data>
+  <data name="Reg_AtLeastOneShift"><value>Debe ingresar al menos una hora de entrada en el turno AM o PM.</value></data>
+  <data name="Reg_ClientRequired"><value>El cliente es requerido.</value></data>
+  <data name="Reg_ProjectRequired"><value>El proyecto es requerido.</value></data>
+  <data name="Reg_ResourceRequired"><value>El recurso es requerido.</value></data>
+  <data name="Reg_DescriptionRequired"><value>La descripción es requerida.</value></data>
+  <data name="Reg_PlaceRequired"><value>El lugar es requerido.</value></data>
+  <data name="Reg_DayData"><value>Datos del día</value></data>
+  <data name="Reg_ErrorSave"><value>No fue posible guardar la jornada. Revise los datos e intente nuevamente.</value></data>
+  <data name="Reg_ErrorSaveGeneral"><value>Ocurrió un error guardando la jornada.</value></data>
+
+  <!-- === HISTORIAL === -->
+  <data name="Hist_Title"><value>Mis Registros</value></data>
+  <data name="Hist_Subtitle"><value>Historial de horas reportadas.</value></data>
+  <data name="Hist_NoRecords"><value>Aún no tienes registros.</value></data>
+  <data name="Hist_NoRecordsHint"><value>Empieza registrando las horas de hoy.</value></data>
+  <data name="Hist_DeleteTitle"><value>Eliminar registro</value></data>
+  <data name="Hist_DeleteConfirm"><value>¿Eliminar el registro del</value></data>
+  <data name="Hist_DeleteCannotUndo"><value>Esta acción no se puede deshacer.</value></data>
+  <data name="Hist_DeletedMsg"><value>Registro del {0} eliminado.</value></data>
+  <data name="Hist_EditDescription"><value>Editar descripción</value></data>
+  <data name="Hist_DescUpdated"><value>Descripción actualizada correctamente.</value></data>
+  <data name="Hist_ErrorLoad"><value>No fue posible cargar el historial. Intente nuevamente.</value></data>
+  <data name="Hist_ErrorDelete"><value>No fue posible eliminar el registro. Intente nuevamente.</value></data>
+  <data name="Hist_ErrorUpdate"><value>No fue posible actualizar la descripción. Intente nuevamente.</value></data>
+
+  <!-- === DASHBOARD === -->
+  <data name="Dash_Title"><value>Dashboard</value></data>
+  <data name="Dash_TeamStatusTitle"><value>Estado del Equipo</value></data>
+  <data name="Dash_TeamStatusSubtitle"><value>Registros del día por colaborador.</value></data>
+  <data name="Dash_Total"><value>Total</value></data>
+  <data name="Dash_Complete"><value>Completos</value></data>
+  <data name="Dash_Partial"><value>Parciales</value></data>
+  <data name="Dash_Pending"><value>Pendientes</value></data>
+  <data name="Dash_CriticalPending"><value>Pendientes Críticos</value></data>
+  <data name="Dash_CriticalPendingSubtitle"><value>Colaboradores con {0}+ días hábiles sin registro.</value></data>
+  <data name="Dash_NoCritical"><value>Sin pendientes críticos.</value></data>
+  <data name="Dash_HoursDistTitle"><value>Distribución de Horas</value></data>
+  <data name="Dash_HoursDistSubtitle"><value>Horas totales por colaborador en el período.</value></data>
+  <data name="Dash_GerencialTitle"><value>Dashboard Gerencial</value></data>
+  <data name="Dash_ByClient"><value>Por Cliente</value></data>
+  <data name="Dash_ByProject"><value>Por Proyecto</value></data>
+  <data name="Dash_ColCollaborator"><value>Colaborador</value></data>
+  <data name="Dash_ColHours"><value>Horas</value></data>
+  <data name="Dash_ColClient"><value>Cliente</value></data>
+  <data name="Dash_ColProject"><value>Proyecto</value></data>
+  <data name="Dash_NoData"><value>Sin datos disponibles.</value></data>
+  <data name="Dash_ErrorLoad"><value>No fue posible cargar el dashboard.</value></data>
+  <data name="Dash_StatusComplete"><value>Completo</value></data>
+  <data name="Dash_StatusPartial"><value>Parcial</value></data>
+  <data name="Dash_StatusPending"><value>Pendiente</value></data>
+  <data name="Dash_ColEmail"><value>Email</value></data>
+
+  <!-- === REPORTES === -->
+  <data name="Rep_Title"><value>Reporte de Horas</value></data>
+  <data name="Rep_Subtitle"><value>Consulta y filtra registros de horas del equipo.</value></data>
+  <data name="Rep_FilterEmployee"><value>Filtrar por empleado</value></data>
+  <data name="Rep_FilterClient"><value>Filtrar por inicio del nombre de cliente</value></data>
+  <data name="Rep_FilterProject"><value>Filtrar por inicio del nombre de proyecto</value></data>
+  <data name="Rep_NoResults"><value>Sin resultados para los filtros seleccionados. Ajuste los filtros e intente nuevamente.</value></data>
+  <data name="Rep_ErrorLoad"><value>Error al generar el reporte. Intente nuevamente.</value></data>
+  <data name="Rep_IndividualTimesheet"><value>Timesheet individual</value></data>
+  <data name="Rep_IndividualSubtitle"><value>Descarga el timesheet mensual de un colaborador en formato KPG.</value></data>
+  <data name="Rep_ColDate"><value>Fecha</value></data>
+  <data name="Rep_ColEmployee"><value>Empleado</value></data>
+  <data name="Rep_ColShift"><value>Turno</value></data>
+  <data name="Rep_ColEntry"><value>Entrada</value></data>
+  <data name="Rep_ColExit"><value>Salida</value></data>
+  <data name="Rep_ColHours"><value>Horas</value></data>
+  <data name="Rep_ColClient"><value>Cliente</value></data>
+  <data name="Rep_ColProject"><value>Proyecto</value></data>
+  <data name="Rep_ColDescription"><value>Descripción</value></data>
+
+  <!-- === NOTIFICACIONES === -->
+  <data name="Notif_Title"><value>Historial de Notificaciones</value></data>
+  <data name="Notif_Subtitle"><value>Correos de recordatorio enviados a colaboradores.</value></data>
+  <data name="Notif_NoRecords"><value>No hay notificaciones en el período seleccionado.</value></data>
+  <data name="Notif_ErrorLoad"><value>No fue posible cargar las notificaciones.</value></data>
+
+  <!-- === BITÁCORA === -->
+  <data name="Bit_Title"><value>Bitácora de Auditoría</value></data>
+  <data name="Bit_TitleAdmin"><value>Bitácora General</value></data>
+  <data name="Bit_Subtitle"><value>Historial de eventos del sistema.</value></data>
+  <data name="Bit_NoRecords"><value>No hay registros en la bitácora para los filtros seleccionados.</value></data>
+  <data name="Bit_ErrorLoad"><value>No fue posible cargar la bitácora.</value></data>
+
+  <!-- === ADMIN: USUARIOS === -->
+  <data name="Users_Title"><value>Gestión de Usuarios</value></data>
+  <data name="Users_Subtitle"><value>Administra las cuentas de usuario del sistema.</value></data>
+  <data name="Users_NewUser"><value>Nuevo Usuario</value></data>
+  <data name="Users_NewTitle"><value>Nuevo Usuario</value></data>
+  <data name="Users_EditTitle"><value>Editar Usuario</value></data>
+  <data name="Users_ColEmail"><value>Email</value></data>
+  <data name="Users_ColName"><value>Nombre</value></data>
+  <data name="Users_ColRole"><value>Rol</value></data>
+  <data name="Users_ColStatus"><value>Estado</value></data>
+  <data name="Users_ColDeactivated"><value>Desactivado</value></data>
+  <data name="Users_DeactivateConfirm"><value>¿Desactivar a "{0}"? No podrá iniciar sesión.</value></data>
+  <data name="Users_ActivateConfirm"><value>¿Reactivar a "{0}"?</value></data>
+  <data name="Users_SavedOk"><value>Usuario guardado correctamente.</value></data>
+  <data name="Users_ErrorSave"><value>No fue posible guardar el usuario. Intente nuevamente.</value></data>
+  <data name="Users_ErrorLoad"><value>No fue posible cargar los usuarios.</value></data>
+  <data name="Users_ChangeRole"><value>Cambiar Rol</value></data>
+  <data name="Users_RoleChanged"><value>Rol actualizado correctamente.</value></data>
+  <data name="Users_PasswordHint"><value>Mínimo 6 caracteres con mayúscula, minúscula, número y símbolo. Ej: Empleado1234!</value></data>
+
+  <!-- === ADMIN: RECURSOS === -->
+  <data name="Resources_Title"><value>Gestión de Recursos</value></data>
+  <data name="Resources_Subtitle"><value>Recursos disponibles para asignar en los registros de horas.</value></data>
+  <data name="Resources_NewResource"><value>Nuevo Recurso</value></data>
+  <data name="Resources_NewTitle"><value>Nuevo Recurso</value></data>
+  <data name="Resources_EditTitle"><value>Editar Recurso</value></data>
+  <data name="Resources_ColName"><value>Nombre</value></data>
+  <data name="Resources_ColStatus"><value>Estado</value></data>
+  <data name="Resources_DeactivateConfirm"><value>¿Desactivar "{0}"? No aparecerá en nuevos registros.</value></data>
+  <data name="Resources_SavedOk"><value>Recurso guardado correctamente.</value></data>
+  <data name="Resources_ErrorSave"><value>No fue posible guardar el recurso. Intente nuevamente.</value></data>
+  <data name="Resources_ErrorLoad"><value>No fue posible cargar los recursos.</value></data>
+
+  <!-- === ADMIN: CLIENTES === -->
+  <data name="Clients_Title"><value>Gestión de Clientes</value></data>
+  <data name="Clients_Subtitle"><value>Clientes y proyectos disponibles para los registros de horas.</value></data>
+  <data name="Clients_NewClient"><value>Nuevo Cliente</value></data>
+  <data name="Clients_NewClientTitle"><value>Nuevo Cliente</value></data>
+  <data name="Clients_EditClientTitle"><value>Editar Cliente</value></data>
+  <data name="Clients_NewProject"><value>Nuevo Proyecto</value></data>
+  <data name="Clients_NewProjectTitle"><value>Nuevo Proyecto</value></data>
+  <data name="Clients_EditProjectTitle"><value>Editar Proyecto</value></data>
+  <data name="Clients_ColClient"><value>Cliente</value></data>
+  <data name="Clients_ColProjects"><value>Proyectos</value></data>
+  <data name="Clients_NoProjects"><value>Sin proyectos</value></data>
+  <data name="Clients_SavedOk"><value>guardado correctamente.</value></data>
+  <data name="Clients_ErrorSave"><value>No fue posible guardar. Intente nuevamente.</value></data>
+  <data name="Clients_ErrorLoad"><value>No fue posible cargar los clientes.</value></data>
+
+  <!-- === ADMIN: PROYECTOS === -->
+  <data name="Proj_NoProjects"><value>No hay proyectos registrados para este cliente.</value></data>
+  <data name="Proj_NewProject"><value>Nuevo Proyecto</value></data>
+  <data name="Proj_EditProject"><value>Editar Proyecto</value></data>
+  <data name="Proj_DeactivateConfirm"><value>¿Desactivar proyecto "{0}"?</value></data>
+  <data name="Proj_ActivateConfirm"><value>¿Activar proyecto "{0}"?</value></data>
+  <data name="Proj_SavedOk"><value>Proyecto guardado correctamente.</value></data>
+  <data name="Proj_ErrorLoad"><value>No fue posible cargar los proyectos.</value></data>
+  <data name="Proj_ErrorSave"><value>No fue posible guardar el proyecto.</value></data>
+
+  <!-- === ADMIN: SOLICITUDES EXCEPCIÓN === -->
+  <data name="Exc_Title"><value>Solicitudes de Excepción</value></data>
+  <data name="Exc_Subtitle"><value>Solicitudes de registro fuera de la ventana de retroactividad.</value></data>
+  <data name="Exc_ColEmployee"><value>Empleado</value></data>
+  <data name="Exc_ColDate"><value>Fecha Solicitada</value></data>
+  <data name="Exc_ColJustification"><value>Justificación</value></data>
+  <data name="Exc_ColSubmitted"><value>Fecha Solicitud</value></data>
+  <data name="Exc_ColStatus"><value>Estado</value></data>
+  <data name="Exc_ApprovedMsg"><value>Solicitud aprobada correctamente.</value></data>
+  <data name="Exc_RejectedMsg"><value>Solicitud rechazada correctamente.</value></data>
+  <data name="Exc_ErrorLoad"><value>No fue posible cargar las solicitudes.</value></data>
+  <data name="Exc_ErrorAction"><value>No fue posible procesar la solicitud. Intente nuevamente.</value></data>
+  <data name="Exc_NoRequests"><value>No hay solicitudes registradas.</value></data>
+  <data name="Exc_ColAge"><value>Antigüedad</value></data>
+  <data name="Exc_DayAgo"><value>hace {0} día</value></data>
+  <data name="Exc_DaysAgo"><value>hace {0} días</value></data>
+  <data name="Exc_ApproveConfirm"><value>¿Aprobar la solicitud de {0} para el {1}?</value></data>
+  <data name="Exc_RejectConfirm"><value>¿Rechazar la solicitud de {0} para el {1}?</value></data>
+  <data name="Exc_BtnApprove"><value>Aprobar solicitud</value></data>
+  <data name="Exc_BtnReject"><value>Rechazar solicitud</value></data>
+  <data name="Exc_RequestAuth"><value>Solicitar autorización</value></data>
+  <data name="Exc_OutOfWindowMsg"><value>Esta fecha está fuera de la ventana de registro permitida. Describe el motivo para que un administrador pueda aprobarla.</value></data>
+  <data name="Exc_ErrorSend"><value>No fue posible enviar la solicitud de excepción. Intente nuevamente.</value></data>
+
+  <!-- === ADMIN: PARÁMETROS === -->
+  <data name="Params_Title"><value>Parámetros del Sistema</value></data>
+  <data name="Params_Subtitle"><value>Configuración operativa del sistema.</value></data>
+  <data name="Params_RetroWindow"><value>Ventana de Retroactividad</value></data>
+  <data name="Params_RetroWindowDesc"><value>Días hábiles hacia atrás que puede registrar un empleado sin excepción.</value></data>
+  <data name="Params_NotifThreshold"><value>Umbral de Notificaciones</value></data>
+  <data name="Params_NotifThresholdDesc"><value>Días hábiles sin registro antes de enviar recordatorio automático.</value></data>
+  <data name="Params_SavedOk"><value>Parámetro actualizado correctamente.</value></data>
+  <data name="Params_ErrorSave"><value>No fue posible guardar el parámetro. Intente nuevamente.</value></data>
+  <data name="Params_ErrorLoad"><value>No fue posible cargar los parámetros.</value></data>
+
+  <!-- === ADMIN: MODALIDADES === -->
+  <data name="Mod_Title"><value>Modalidades de Trabajo</value></data>
+  <data name="Mod_Subtitle"><value>Modalidades disponibles para seleccionar en el registro de horas.</value></data>
+  <data name="Mod_NewModality"><value>Nueva Modalidad</value></data>
+  <data name="Mod_NewTitle"><value>Nueva Modalidad</value></data>
+  <data name="Mod_EditTitle"><value>Editar Modalidad</value></data>
+  <data name="Mod_DeactivateConfirm"><value>¿Desactivar "{0}"? No aparecerá en nuevos registros.</value></data>
+  <data name="Mod_SavedOk"><value>Modalidad guardada correctamente.</value></data>
+  <data name="Mod_ErrorSave"><value>No fue posible guardar la modalidad. Intente nuevamente.</value></data>
+  <data name="Mod_ErrorLoad"><value>No fue posible cargar las modalidades.</value></data>
+
+  <!-- === ADMIN: LUGARES DE TRABAJO === -->
+  <data name="WP_Title"><value>Lugares de Trabajo</value></data>
+  <data name="WP_Subtitle"><value>Lugares disponibles para seleccionar en el registro de horas.</value></data>
+  <data name="WP_NewPlace"><value>Nuevo Lugar</value></data>
+  <data name="WP_NewTitle"><value>Nuevo Lugar de Trabajo</value></data>
+  <data name="WP_EditTitle"><value>Editar Lugar de Trabajo</value></data>
+  <data name="WP_DeactivateConfirm"><value>¿Desactivar "{0}"? No aparecerá en nuevos registros.</value></data>
+  <data name="WP_SavedOk"><value>Lugar de trabajo guardado correctamente.</value></data>
+  <data name="WP_ErrorSave"><value>No fue posible guardar el lugar. Intente nuevamente.</value></data>
+  <data name="WP_ErrorLoad"><value>No fue posible cargar los lugares de trabajo.</value></data>
+
+  <!-- === DASHBOARD EXTRAS === -->
+  <data name="Dash_Subtitle"><value>Estado diario del equipo</value></data>
+  <data name="Dash_TotalEmployees"><value>Total empleados</value></data>
+  <data name="Dash_TeamTotal"><value>Total equipo:</value></data>
+  <data name="Dash_AdminMetrics"><value>Métricas globales</value></data>
+  <data name="Dash_ActiveClients"><value>Clientes activos</value></data>
+  <data name="Dash_ActiveUsers"><value>Usuarios activos</value></data>
+  <data name="Dash_TotalRecords"><value>Total registros</value></data>
+  <data name="Dash_TotalHours"><value>Total horas</value></data>
+  <data name="Dash_PendingToday"><value>Sin registrar hoy</value></data>
+  <data name="Dash_TopClient"><value>Top cliente</value></data>
+  <data name="Dash_Tendency"><value>Tendencia de registros</value></data>
+  <data name="Dash_NoTeamMembers"><value>No hay miembros del equipo registrados.</value></data>
+  <data name="Dash_NoHoursInPeriod"><value>No hay registros de horas en el período seleccionado.</value></data>
+  <data name="Dash_GerencialSubtitle"><value>Vista gerencial</value></data>
+  <data name="Dash_NoDaysWithout"><value>Sin registros</value></data>
+  <data name="Dash_DaysWithout"><value>{0} d sin registro</value></data>
+
+  <!-- === REPORTES EXTRAS === -->
+  <data name="Rep_Period"><value>Período</value></data>
+  <data name="Rep_Records"><value>registros</value></data>
+  <data name="Rep_TotalHours"><value>h totales</value></data>
+  <data name="Rep_ColEntAM"><value>Ent. AM</value></data>
+  <data name="Rep_ColSalAM"><value>Sal. AM</value></data>
+  <data name="Rep_ColEntPM"><value>Ent. PM</value></data>
+  <data name="Rep_ColSalPM"><value>Sal. PM</value></data>
+  <data name="Rep_ColModality"><value>Modalidad</value></data>
+  <data name="Rep_ColPlace"><value>Lugar</value></data>
+  <data name="Rep_NoResults2"><value>No hay registros que coincidan con los filtros seleccionados. Intenta ampliar el período o ajustar los criterios.</value></data>
+  <data name="Rep_TimesheetSubtitle"><value>Genera el Excel de timesheet mensual con el formato oficial KPG para un empleado.</value></data>
+  <data name="Rep_GenerateTimesheet"><value>Generar Timesheet</value></data>
+
+  <!-- === NOTIFICACIONES EXTRAS === -->
+  <data name="Notif_LabelFrom"><value>Desde</value></data>
+  <data name="Notif_LabelTo"><value>Hasta</value></data>
+  <data name="Notif_ColSentDate"><value>Fecha envío</value></data>
+  <data name="Notif_ColDaysWithout"><value>Días sin registro</value></data>
+  <data name="Notif_ColRefDate"><value>Ref. fecha</value></data>
+  <data name="Notif_All"><value>Todos</value></data>
+  <data name="Notif_SuccessOnly"><value>Solo exitosos</value></data>
+  <data name="Notif_ErrorsOnly"><value>Solo errores</value></data>
+  <data name="Notif_Sent"><value>Enviado</value></data>
+  <data name="Notif_TotalChip"><value>notificaciones</value></data>
+  <data name="Notif_NoResults"><value>No hay notificaciones que coincidan con los filtros seleccionados.</value></data>
+
+  <!-- === BITÁCORA EXTRAS === -->
+  <data name="Bit_LabelFrom"><value>Desde</value></data>
+  <data name="Bit_LabelTo"><value>Hasta</value></data>
+  <data name="Bit_ColDateTime"><value>Fecha y hora</value></data>
+  <data name="Bit_ColEventType"><value>Tipo de evento</value></data>
+  <data name="Bit_ColActor"><value>Actor</value></data>
+  <data name="Bit_ColEntity"><value>Entidad</value></data>
+  <data name="Bit_ColEntityId"><value>ID entidad</value></data>
+  <data name="Bit_ColMetadata"><value>Metadata</value></data>
+  <data name="Bit_TotalEvents"><value>evento</value></data>
+  <data name="Bit_TotalEventsPlural"><value>eventos</value></data>
+  <data name="Bit_NoEvents"><value>No hay eventos que coincidan con los filtros seleccionados.</value></data>
+  <data name="Bit_Subtitle2"><value>Consulta y filtra eventos sensibles registrados en el sistema.</value></data>
+  <data name="Bit_Subtitle3"><value>Consulta y filtra eventos según tu alcance de rol.</value></data>
+
+  <!-- === BÚSQUEDA COMÚN === -->
+  <data name="Btn_Search"><value>Buscar</value></data>
+  <data name="Label_FilterEventType"><value>Tipo de evento</value></data>
+
+  <!-- === PERFIL === -->
+  <data name="Nav_Profile"><value>Mi perfil</value></data>
+  <data name="Profile_Title"><value>Mi perfil</value></data>
+  <data name="Profile_Subtitle"><value>Gestiona tu información y seguridad de cuenta.</value></data>
+  <data name="Profile_SectionInfo"><value>Información de cuenta</value></data>
+  <data name="Profile_SectionPassword"><value>Cambiar contraseña</value></data>
+  <data name="Profile_LabelEmail"><value>Correo electrónico</value></data>
+  <data name="Profile_LabelRoles"><value>Roles asignados</value></data>
+  <data name="Profile_CurrentPassword"><value>Contraseña actual</value></data>
+  <data name="Profile_NewPassword"><value>Nueva contraseña</value></data>
+  <data name="Profile_ConfirmPassword"><value>Confirmar nueva contraseña</value></data>
+  <data name="Profile_BtnChangePassword"><value>Cambiar contraseña</value></data>
+  <data name="Profile_PasswordChanged"><value>Contraseña actualizada correctamente.</value></data>
+  <data name="Profile_PasswordMismatch"><value>La nueva contraseña y la confirmación no coinciden.</value></data>
+  <data name="Profile_ErrorChange"><value>No se pudo cambiar la contraseña.</value></data>
+
+  <!-- === FORGOT / RESET PASSWORD === -->
+  <data name="Login_ForgotPassword"><value>¿Olvidaste tu contraseña?</value></data>
+  <data name="FP_Title"><value>Recuperar contraseña</value></data>
+  <data name="FP_Subtitle"><value>Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.</value></data>
+  <data name="FP_SendLink"><value>Enviar enlace</value></data>
+  <data name="FP_Sent"><value>Si el email está registrado, recibirás un enlace en los próximos minutos. Revisa también tu carpeta de spam.</value></data>
+  <data name="FP_BackToLogin"><value>Volver al inicio de sesión</value></data>
+  <data name="RP_Title"><value>Nueva contraseña</value></data>
+  <data name="RP_Submit"><value>Restablecer contraseña</value></data>
+  <data name="RP_Success"><value>Contraseña restablecida correctamente. Ya puedes iniciar sesión.</value></data>
+  <data name="RP_InvalidLink"><value>El enlace expiró o no es válido. Solicita uno nuevo.</value></data>
+  <data name="RP_RequestNew"><value>Solicitar nuevo enlace</value></data>
+
+  <!-- === CALENDARIO MINI === -->
+  <data name="Cal_HasRecord"><value>Tiene registro</value></data>
+  <data name="Cal_WithRecord"><value>Con registro</value></data>
+  <data name="Cal_WithoutRecord"><value>Sin registro</value></data>
+
+  <!-- === LOADING / ERRORES GENERALES === -->
+  <data name="Loading"><value>Cargando...</value></data>
+  <data name="Error_Unexpected"><value>Ocurrió un error inesperado.</value></data>
+  <data name="Error_Retry"><value>Intente nuevamente.</value></data>
+  <data name="Error_Server"><value>Error al comunicarse con el servidor.</value></data>
+  <data name="Error_SessionExpired"><value>Su sesión expiró. Inicie sesión nuevamente.</value></data>
+  <data name="Reload"><value>Recargar</value></data>
+</root>

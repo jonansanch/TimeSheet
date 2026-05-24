@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KPG.Timesheet.WebUI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fab341562e40755ba97a8699fa7ac425cd661906")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1d74676d7a42bdc7195bdba20648fddf87692f0e")]
 [assembly: System.Reflection.AssemblyProductAttribute("KPG.Timesheet.WebUI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KPG.Timesheet.WebUI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

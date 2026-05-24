@@ -1,0 +1,141 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudPaper Elevation="1" Class="pa-3">
+    <MudStack Spacing="2">
+
+        @* Header: nav mes *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                           Size="Size.Small"
+                           Disabled="@IsLoading"
+                           OnClick="@(() => OnMesAnterior.InvokeAsync())" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight:600;text-transform:capitalize;">
+                @_mesLabel
+            </MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                           Size="Size.Small"
+                           Disabled="@(IsLoading || _primerDiaMes >= _hoyPrimerDiaMes)"
+                           OnClick="@(() => OnMesSiguiente.InvokeAsync())" />
+        </MudStack>
+
+        @* Cabecera días de la semana *@
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
+            @foreach (var d in _diasSemana)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight:600;">@d</MudText>
+            }
+        </div>
+
+        @if (IsLoading)
+        {
+            <MudSkeleton Width="100%" Height="120px" SkeletonType="SkeletonType.Rectangle" />
+        }
+        else
+        {
+            @* Grid de días *@
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                @* Celdas vacías para alinear el primer día *@
+                @for (var i = 0; i < _offsetInicio; i++)
+                {
+                    <div></div>
+                }
+
+                @foreach (var dia in _diasDelMes)
+                {
+                    var fecha = new DateOnly(_primerDiaMes.Year, _primerDiaMes.Month, dia);
+                    var tieneRegistro = DiasConRegistro.Contains(fecha);
+                    var esHoy         = fecha == _hoy;
+                    var esSeleccionado = fecha == FechaSeleccionada;
+                    var esDomingo     = fecha.DayOfWeek == DayOfWeek.Sunday;
+                    var esFuturo      = fecha > _hoy;
+                    var fueraVentana  = !esFuturo && (_hoy.DayNumber - fecha.DayNumber) > VentanaDias && !tieneRegistro;
+                    var deshabilitado = esDomingo || esFuturo;
+
+                    <div style="display:flex;justify-content:center;align-items:center;padding:2px;">
+                        <MudTooltip Text="@(tieneRegistro ? L["Cal_HasRecord"].Value : "")" Disabled="@(!tieneRegistro)">
+                            <MudIconButton Size="Size.Small"
+                                           Style="@GetDiaStyle(esSeleccionado, tieneRegistro, esHoy, deshabilitado, fueraVentana)"
+                                           Disabled="@deshabilitado"
+                                           OnClick="@(() => OnDiaClick(fecha))">
+                                <MudText Typo="Typo.caption"
+                                         Style="@GetDiaTextStyle(esSeleccionado, deshabilitado, fueraVentana)">
+                                    @dia
+                                </MudText>
+                            </MudIconButton>
+                        </MudTooltip>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Leyenda *@
+        <MudStack Row="true" Spacing="3" Justify="Justify.Center">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <div style="width:10px;height:10px;border-radius:50%;background:#2E7D32;"></div>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Cal_WithRecord"]</MudText>
+            </MudStack>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <div style="width:10px;height:10px;border-radius:50%;background:#E0E0E0;"></div>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Cal_WithoutRecord"]</MudText>
+            </MudStack>
+        </MudStack>
+
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public DateOnly PrimerDiaMes { get; set; } = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    [Parameter] public List<DateOnly> DiasConRegistro { get; set; } = [];
+    [Parameter] public DateOnly? FechaSeleccionada { get; set; }
+    [Parameter] public int VentanaDias { get; set; } = 3;
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public EventCallback OnMesAnterior { get; set; }
+    [Parameter] public EventCallback OnMesSiguiente { get; set; }
+    [Parameter] public EventCallback<DateOnly> OnDiaSeleccionado { get; set; }
+
+    private static readonly string[] _diasSemana = ["L", "M", "M", "J", "V", "S", "D"];
+    private DateOnly _hoy = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly _primerDiaMes;
+    private DateOnly _hoyPrimerDiaMes;
+    private string _mesLabel = string.Empty;
+    private int _offsetInicio;
+    private IEnumerable<int> _diasDelMes = [];
+
+    protected override void OnParametersSet()
+    {
+        _primerDiaMes    = PrimerDiaMes;
+        _hoyPrimerDiaMes = new DateOnly(_hoy.Year, _hoy.Month, 1);
+
+        var cultura = System.Globalization.CultureInfo.CurrentUICulture;
+        _mesLabel = _primerDiaMes.ToString("MMMM yyyy", cultura);
+
+        var diasEnMes = DateTime.DaysInMonth(_primerDiaMes.Year, _primerDiaMes.Month);
+        _diasDelMes = Enumerable.Range(1, diasEnMes);
+
+        // Lunes=0 … Domingo=6
+        var dow = (int)new DateTime(_primerDiaMes.Year, _primerDiaMes.Month, 1).DayOfWeek;
+        _offsetInicio = dow == 0 ? 6 : dow - 1;
+    }
+
+    private void OnDiaClick(DateOnly fecha)
+    {
+        if (fecha.DayOfWeek == DayOfWeek.Sunday || fecha > _hoy) return;
+        OnDiaSeleccionado.InvokeAsync(fecha);
+    }
+
+    private static string GetDiaStyle(bool seleccionado, bool tieneRegistro, bool esHoy, bool deshabilitado, bool fueraVentana)
+    {
+        var bg = seleccionado   ? "#0D3B5E"
+               : tieneRegistro  ? "#2E7D32"
+               : esHoy          ? "#E3F2FD"
+               : "transparent";
+        var opacity = deshabilitado ? "0.3" : fueraVentana ? "0.5" : "1";
+        return $"width:30px;height:30px;min-width:0;padding:0;border-radius:50%;background:{bg};opacity:{opacity};";
+    }
+
+    private static string GetDiaTextStyle(bool seleccionado, bool deshabilitado, bool fueraVentana)
+    {
+        if (deshabilitado || fueraVentana) return "color:inherit;";
+        return seleccionado ? "color:#fff;font-weight:700;" : "color:inherit;";
+    }
+}

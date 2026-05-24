@@ -8,13 +8,21 @@ public record LoginResponse(
     DateTime ExpiresAt,
     string UserId,
     string Email,
-    List<string> Roles);
+    List<string> Roles,
+    int WarningMinutes);
 
 public record RefreshRequest(string RefreshToken);
 
 public record RefreshResponse(
     string AccessToken,
     string RefreshToken,
-    DateTime ExpiresAt);
+    DateTime ExpiresAt,
+    int WarningMinutes);
 
 public record LogoutRequest(string RefreshToken);
+
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+public record ForgotPasswordRequest(string Email);
+
+public record ResetPasswordRequest(string Email, string Token, string NewPassword);

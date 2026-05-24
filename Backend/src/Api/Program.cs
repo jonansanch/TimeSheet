@@ -36,8 +36,10 @@ app.UseCors(static builder =>
         .AllowAnyOrigin()
         .WithExposedHeaders("Content-Disposition"));
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseOutputCache();
 
 app.UseStatusCodePages(async ctx =>
 {
@@ -67,3 +69,5 @@ app.Map("/", () => Results.Redirect("/scalar"));
 app.MapEndpoints(typeof(Program).Assembly);
 
 await app.RunAsync();
+
+public partial class Program { }

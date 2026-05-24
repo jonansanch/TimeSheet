@@ -1,10 +1,12 @@
+@inject IStringLocalizer<SharedResource> L
+
 <MudDialog>
     <TitleContent>
         <div style="background-color: #FFF8E1; margin: -20px -24px 0; padding: 16px 24px; border-radius: 4px 4px 0 0;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" />
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.h6" Style="font-weight:600;">Solicitar autorización</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Exc_RequestAuth"]</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">@Fecha.ToString("dd/MM/yyyy")</MudText>
                 </MudStack>
             </MudStack>
@@ -12,28 +14,27 @@
     </TitleContent>
     <DialogContent>
         <MudText Typo="Typo.body1" Class="mb-4">
-            Esta fecha está fuera de la ventana de registro permitida.
-            Describe el motivo para que un administrador pueda aprobarla.
+            @L["Exc_OutOfWindowMsg"]
         </MudText>
         <MudTextField @ref="_justificacionField"
                       T="string"
-                      Label="Justificación"
+                      Label="@L["Label_Justification"]"
                       Variant="Variant.Outlined"
                       Lines="4"
                       @bind-Value="_justificacion"
                       MaxLength="1000"
                       Counter="1000"
                       Required="true"
-                      RequiredError="La justificación es requerida."
-                      aria-label="Justificación de la solicitud de excepción" />
+                      RequiredError="@L["Val_JustificationRequired"]"
+                      aria-label="@L["Label_Justification"]" />
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Warning"
                    Disabled="@string.IsNullOrWhiteSpace(_justificacion)"
                    OnClick="Submit">
-            Enviar solicitud
+            @L["Btn_SendRequest"]
         </MudButton>
     </DialogActions>
 </MudDialog>

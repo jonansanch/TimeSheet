@@ -33,8 +33,8 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
         JOIN   AspNetUsers u ON r.UserId = u.Id
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
           AND  (@UserId  IS NULL OR r.UserId  = @UserId)
-          AND  (@Cliente IS NULL OR r.Cliente LIKE '%' + @Cliente + '%')
-          AND  (@Proyecto IS NULL OR r.Proyecto LIKE '%' + @Proyecto + '%')
+          AND  (@ClientePattern IS NULL OR r.Cliente LIKE @ClientePattern ESCAPE '\')
+          AND  (@ProyectoPattern IS NULL OR r.Proyecto LIKE @ProyectoPattern ESCAPE '\')
         ORDER  BY r.FechaRegistro DESC, Empleado
         OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY
         """;
@@ -48,8 +48,8 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
             Desde    = request.Desde,
             Hasta    = request.Hasta,
             UserId   = string.IsNullOrWhiteSpace(request.UserId)   ? null : request.UserId,
-            Cliente  = string.IsNullOrWhiteSpace(request.Cliente)  ? null : request.Cliente.Trim(),
-            Proyecto = string.IsNullOrWhiteSpace(request.Proyecto) ? null : request.Proyecto.Trim()
+            ClientePattern  = BuildPrefixLikePattern(request.Cliente),
+            ProyectoPattern = BuildPrefixLikePattern(request.Proyecto)
         })).ToList();
 
         return request.Formato == ExportFormato.Excel
@@ -67,6 +67,21 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             fileName);
     }
+
+    private static string? BuildPrefixLikePattern(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return EscapeLikePattern(value.Trim()) + "%";
+    }
+
+    private static string EscapeLikePattern(string value)
+        => value
+            .Replace(@"\", @"\\")
+            .Replace("%", @"\%")
+            .Replace("_", @"\_")
+            .Replace("[", @"\[");
 
     private static ExportarReporteHorasResult GenerarPdf(List<ExportRow> rows, ExportarReporteHorasQuery req)
     {

@@ -26,11 +26,11 @@ public class Dashboard : IEndpointGroup
         };
         var soloAdmin = new AuthorizeAttribute { Roles = Roles.Admin };
 
-        groupBuilder.MapGet("estado-equipo", GetEstadoEquipo).RequireAuthorization(supervisorAndAbove);
-        groupBuilder.MapGet("distribucion-horas", GetDistribucionHoras).RequireAuthorization(supervisorAndAbove);
-        groupBuilder.MapGet("gerencial", GetDashboardGerencial).RequireAuthorization(gerenteAndAbove);
-        groupBuilder.MapGet("admin", GetMetricasGlobales).RequireAuthorization(soloAdmin);
-        groupBuilder.MapGet("pendientes-criticos", GetPendientesCriticos).RequireAuthorization(supervisorAndAbove);
+        groupBuilder.MapGet("estado-equipo", GetEstadoEquipo).RequireAuthorization(supervisorAndAbove).CacheOutput("dashboard");
+        groupBuilder.MapGet("distribucion-horas", GetDistribucionHoras).RequireAuthorization(supervisorAndAbove).CacheOutput("dashboard");
+        groupBuilder.MapGet("gerencial", GetDashboardGerencial).RequireAuthorization(gerenteAndAbove).CacheOutput("dashboard");
+        groupBuilder.MapGet("admin", GetMetricasGlobales).RequireAuthorization(soloAdmin).CacheOutput("dashboard");
+        groupBuilder.MapGet("pendientes-criticos", GetPendientesCriticos).RequireAuthorization(supervisorAndAbove).CacheOutput("dashboard");
     }
 
     [EndpointSummary("Estado diario del equipo")]

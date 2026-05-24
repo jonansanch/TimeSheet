@@ -2,33 +2,28 @@
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IModalidadRepository ModalidadRepo
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+@inject CatalogosCacheService CatalogosCache
 
-<PageTitle>Modalidades - KPG Timesheet</PageTitle>
+<PageTitle>@L["Mod_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Modalidades</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Modalidades de trabajo disponibles en el sistema.</MudText>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Mod_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Mod_Subtitle"]</MudText>
     </div>
-
-    @if (!string.IsNullOrWhiteSpace(_success))
-    {
-        <MudAlert Severity="Severity.Success" Dense="true" role="status">@_success</MudAlert>
-    }
-    @if (!string.IsNullOrWhiteSpace(_error))
-    {
-        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_error</MudAlert>
-    }
 
     <MudPaper Elevation="1" Class="pa-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
-            <MudText Typo="Typo.h6" Style="font-weight:600;">Lista de Modalidades</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Mod_Title"]</MudText>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
                        Disabled="_isProcesando"
                        OnClick="AbrirCrearAsync">
-                Nueva Modalidad
+                @L["Mod_NewModality"]
             </MudButton>
         </MudStack>
 
@@ -39,34 +34,34 @@
         else if (_modalidades.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Category">
-                No hay modalidades registradas.
+                @L["Mod_ErrorLoad"]
             </MudAlert>
         }
         else
         {
             <MudDataGrid T="ModalidadResponse" Items="_modalidades" Dense="true" Filterable="false" SortMode="SortMode.None" RowsPerPage="5">
                 <Columns>
-                    <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
-                    <TemplateColumn Title="Estado" Sortable="false">
+                    <PropertyColumn Property="x => x.Nombre" Title="@L["Label_Name"]" />
+                    <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
                         <CellTemplate>
                             <MudChip T="string" Size="Size.Small"
                                      Color="@(context.Item.Activo ? Color.Success : Color.Default)">
-                                @(context.Item.Activo ? "Activa" : "Inactiva")
+                                @(context.Item.Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value)
                             </MudChip>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Acciones" Sortable="false">
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary" Size="Size.Small"
-                                           aria-label="Editar modalidad"
+                                           aria-label="@L["Btn_Edit"]"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => AbrirEditarAsync(context.Item))" />
                             @if (context.Item.Activo)
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
                                                Color="Color.Warning" Size="Size.Small"
-                                               aria-label="Desactivar modalidad"
+                                               aria-label="@L["Btn_Deactivate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -74,7 +69,7 @@
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
                                                Color="Color.Success" Size="Size.Small"
-                                               aria-label="Activar modalidad"
+                                               aria-label="@L["Btn_Activate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -82,26 +77,31 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="ModalidadResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="ModalidadResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
     </MudPaper>
 
-    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+    <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
         <MessageContent>@_msgBoxContent</MessageContent>
         <YesButton>
-            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
         </YesButton>
     </MudMessageBox>
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_Params"].Value, null, disabled: true),
+        new(L["Nav_Modalities"].Value, null, disabled: true)
+    ];
+
     private bool _isLoading = true;
     private bool _isProcesando;
     private List<ModalidadResponse> _modalidades = [];
-    private string? _error;
-    private string? _success;
     private MudMessageBox? _msgBox;
     private string _msgBoxContent = string.Empty;
     private Color  _msgBoxColor   = Color.Primary;
@@ -109,18 +109,18 @@
     protected override async Task OnInitializedAsync()
     {
         try { _modalidades = await ModalidadRepo.GetAllAsync(); }
-        catch { _error = "No fue posible cargar las modalidades."; }
+        catch { Snackbar.Add(L["Mod_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
     }
 
     private async Task AbrirCrearAsync()
     {
         var opts   = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<KpgModalidadDialog>("Nueva Modalidad", opts);
+        var dialog = await DialogService.ShowAsync<KpgModalidadDialog>(L["Mod_NewTitle"], opts);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not CreateModalidadRequest req) return;
 
-        _isProcesando = true; _error = null; _success = null;
+        _isProcesando = true;
         try
         {
             var (ok, m, err) = await ModalidadRepo.CreateAsync(req);
@@ -128,9 +128,10 @@
             {
                 _modalidades.Add(m);
                 _modalidades = [.. _modalidades.OrderBy(x => x.Nombre)];
-                _success = $"Modalidad \"{m.Nombre}\" creada.";
+                CatalogosCache.InvalidarModalidades();
+                Snackbar.Add(L["Mod_SavedOk"].Value, Severity.Success);
             }
-            else _error = err ?? "No fue posible crear la modalidad.";
+            else Snackbar.Add(err ?? L["Mod_ErrorSave"].Value, Severity.Error);
         }
         finally { _isProcesando = false; }
     }
@@ -139,11 +140,11 @@
     {
         var params_ = new DialogParameters<KpgModalidadDialog> { { x => x.Modalidad, item } };
         var opts    = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog  = await DialogService.ShowAsync<KpgModalidadDialog>("Editar Modalidad", params_, opts);
+        var dialog  = await DialogService.ShowAsync<KpgModalidadDialog>(L["Mod_EditTitle"], params_, opts);
         var result  = await dialog.Result;
         if (result?.Canceled != false || result.Data is not UpdateModalidadRequest req) return;
 
-        _isProcesando = true; _error = null; _success = null;
+        _isProcesando = true;
         try
         {
             var (ok, m, err) = await ModalidadRepo.UpdateAsync(item.Id, req);
@@ -151,30 +152,34 @@
             {
                 Reemplazar(item, m);
                 _modalidades = [.. _modalidades.OrderBy(x => x.Nombre)];
-                _success = $"Modalidad actualizada a \"{m.Nombre}\".";
+                CatalogosCache.InvalidarModalidades();
+                Snackbar.Add(L["Mod_SavedOk"].Value, Severity.Success);
             }
-            else _error = err ?? "No fue posible actualizar la modalidad.";
+            else Snackbar.Add(err ?? L["Mod_ErrorSave"].Value, Severity.Error);
         }
         finally { _isProcesando = false; }
     }
 
     private async Task ConfirmarToggleAsync(ModalidadResponse item)
     {
-        _msgBoxContent = item.Activo ? $"¿Desactivar \"{item.Nombre}\"?" : $"¿Activar \"{item.Nombre}\"?";
-        _msgBoxColor   = item.Activo ? Color.Warning : Color.Success;
+        _msgBoxContent = item.Activo
+            ? string.Format(L["Mod_DeactivateConfirm"], item.Nombre)
+            : string.Format(L["Users_ActivateConfirm"], item.Nombre);
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
         StateHasChanged();
         if (await _msgBox!.ShowAsync() != true) return;
 
-        _isProcesando = true; _error = null; _success = null;
+        _isProcesando = true;
         try
         {
             var (ok, m, err) = await ModalidadRepo.ToggleActivaAsync(item.Id);
             if (ok && m is not null)
             {
                 Reemplazar(item, m);
-                _success = m.Activo ? $"\"{m.Nombre}\" activada." : $"\"{m.Nombre}\" desactivada.";
+                CatalogosCache.InvalidarModalidades();
+                Snackbar.Add(L["Mod_SavedOk"].Value, Severity.Success);
             }
-            else _error = err ?? "No fue posible cambiar el estado.";
+            else Snackbar.Add(err ?? L["Mod_ErrorSave"].Value, Severity.Error);
         }
         finally { _isProcesando = false; }
     }

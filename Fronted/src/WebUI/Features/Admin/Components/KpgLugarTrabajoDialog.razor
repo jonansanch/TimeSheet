@@ -1,34 +1,36 @@
+@inject IStringLocalizer<SharedResource> L
+
 <MudDialog>
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" />
-            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_lugar is null ? "Nuevo Lugar de Trabajo" : "Editar Lugar de Trabajo")</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_lugar is null ? L["WP_NewTitle"].Value : L["WP_EditTitle"].Value)</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
             <MudTextField @ref="_nombreField"
                           T="string"
-                          Label="Nombre"
+                          Label="@L["Label_Name"]"
                           Variant="Variant.Outlined"
                           @bind-Value="_nombre"
                           MaxLength="200"
                           Required="true"
-                          RequiredError="El nombre es requerido."
-                          aria-label="Nombre del lugar de trabajo" />
+                          RequiredError="@L["Val_NameRequired"]"
+                          aria-label="@L["Label_Name"]" />
             @if (!string.IsNullOrWhiteSpace(_errorMessage))
             {
-                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
             }
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Disabled="@(!EsValido)"
                    OnClick="Submit">
-            Guardar
+            @L["Btn_Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>

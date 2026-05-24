@@ -41,12 +41,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
             throw new UnauthorizedAccessException("Credenciales inválidas.");
 
         var now = _clock.UtcNow;
+        var nowUtc = now.UtcDateTime;
         var accessToken = _jwtTokenService.GenerateAccessToken(credentials.UserId, credentials.Email, credentials.Roles);
         var expiresAt = now.AddMinutes(_jwtSettings.ExpirationMinutes).UtcDateTime;
 
         await _context.RefreshTokens
             .Where(t => t.UserId == credentials.UserId
-                     && (t.RevokedAt != null || t.ExpiresAt <= now))
+                     && (t.RevokedAt != null || t.ExpiresAt <= nowUtc))
             .ExecuteDeleteAsync(cancellationToken);
 
         var rawRefreshToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
@@ -74,6 +75,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
             ExpiresAt: expiresAt,
             UserId: credentials.UserId,
             Email: credentials.Email,
-            Roles: credentials.Roles);
+            Roles: credentials.Roles,
+            WarningMinutes: _jwtSettings.SessionWarningMinutes);
     }
 }

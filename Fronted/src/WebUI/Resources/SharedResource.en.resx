@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+
+  <!-- === NAVIGATION === -->
+  <data name="Nav_Home"><value>Home</value></data>
+  <data name="Home_Welcome"><value>Welcome to KPG Timesheet</value></data>
+  <data name="Home_CardRegisterDesc"><value>Log your work hours.</value></data>
+  <data name="Home_GoToRegister"><value>Go to Register</value></data>
+  <data name="Home_CardDashboardDesc"><value>View team status.</value></data>
+  <data name="Home_GoToDashboard"><value>Go to Dashboard</value></data>
+  <data name="Home_CardReportsDesc"><value>Generate work hours reports.</value></data>
+  <data name="Home_GoToReports"><value>Go to Reports</value></data>
+  <data name="Home_CardAdminDesc"><value>Manage users and system configuration.</value></data>
+  <data name="Home_GoToAdmin"><value>Go to Administration</value></data>
+  <data name="Nav_Register"><value>Register</value></data>
+  <data name="Nav_MyRecords"><value>My Records</value></data>
+  <data name="Nav_Dashboard"><value>Dashboard</value></data>
+  <data name="Nav_Reports"><value>Reports</value></data>
+  <data name="Nav_Notifications"><value>Notifications</value></data>
+  <data name="Nav_Bitacora"><value>Audit Log</value></data>
+  <data name="Nav_Admin"><value>Administration</value></data>
+  <data name="Nav_Users"><value>Users</value></data>
+  <data name="Nav_Resources"><value>Resources</value></data>
+  <data name="Nav_Clients"><value>Clients</value></data>
+  <data name="Nav_ExceptionRequests"><value>Exception Requests</value></data>
+  <data name="Nav_AdminBitacora"><value>Audit Log</value></data>
+  <data name="Nav_Params"><value>Parameters</value></data>
+  <data name="Nav_GeneralConfig"><value>General Settings</value></data>
+  <data name="Nav_Modalities"><value>Modalities</value></data>
+  <data name="Nav_WorkPlaces"><value>Work Places</value></data>
+  <data name="Nav_Menu"><value>Menu</value></data>
+  <data name="Nav_Logout"><value>Log out</value></data>
+  <data name="Nav_ReporteHoras"><value>Hours Report</value></data>
+  <data name="Nav_Timesheet"><value>Individual Timesheet</value></data>
+  <data name="Nav_ClientsProjects"><value>Clients &amp; Projects</value></data>
+
+  <!-- === COMMON BUTTONS === -->
+  <data name="Btn_Save"><value>Save</value></data>
+  <data name="Btn_Cancel"><value>Cancel</value></data>
+  <data name="Btn_Edit"><value>Edit</value></data>
+  <data name="Btn_Delete"><value>Delete</value></data>
+  <data name="Btn_New"><value>New</value></data>
+  <data name="Btn_Activate"><value>Activate</value></data>
+  <data name="Btn_Deactivate"><value>Deactivate</value></data>
+  <data name="Btn_Approve"><value>Approve</value></data>
+  <data name="Btn_Reject"><value>Reject</value></data>
+  <data name="Btn_ExportExcel"><value>Export Excel</value></data>
+  <data name="Btn_ExportPdf"><value>Export PDF</value></data>
+  <data name="Btn_GenerateReport"><value>Generate Report</value></data>
+  <data name="Btn_Download"><value>Download</value></data>
+  <data name="Btn_RegisterHours"><value>Register hours</value></data>
+  <data name="Btn_RequestException"><value>Request exception</value></data>
+  <data name="Btn_Send"><value>Send</value></data>
+  <data name="Btn_DownloadTimesheet"><value>Download Timesheet</value></data>
+  <data name="Btn_Create"><value>Create</value></data>
+  <data name="Btn_Close"><value>Close</value></data>
+  <data name="Btn_Confirm"><value>Confirm</value></data>
+  <data name="Btn_SendRequest"><value>Send request</value></data>
+
+  <!-- === COMMON LABELS === -->
+  <data name="Label_Email"><value>Email</value></data>
+  <data name="Label_Password"><value>Password</value></data>
+  <data name="Label_FullName"><value>Full name</value></data>
+  <data name="Label_Role"><value>Role</value></data>
+  <data name="Label_Status"><value>Status</value></data>
+  <data name="Label_Active"><value>Active</value></data>
+  <data name="Label_Inactive"><value>Inactive</value></data>
+  <data name="Label_Date"><value>Date</value></data>
+  <data name="Label_Client"><value>Client</value></data>
+  <data name="Label_Project"><value>Project</value></data>
+  <data name="Label_Modality"><value>Modality</value></data>
+  <data name="Label_Resource"><value>Resource</value></data>
+  <data name="Label_Description"><value>Description</value></data>
+  <data name="Label_Place"><value>Place</value></data>
+  <data name="Label_Entry"><value>Entry</value></data>
+  <data name="Label_Exit"><value>Exit</value></data>
+  <data name="Label_Period"><value>Period</value></data>
+  <data name="Label_Employee"><value>Employee</value></data>
+  <data name="Label_Name"><value>Name</value></data>
+  <data name="Label_Hours"><value>Hours</value></data>
+  <data name="Label_Shift"><value>Shift</value></data>
+  <data name="Label_Month"><value>Month</value></data>
+  <data name="Label_Year"><value>Year</value></data>
+  <data name="Label_Justification"><value>Justification</value></data>
+  <data name="Label_Days"><value>days</value></data>
+  <data name="Label_Actions"><value>Actions</value></data>
+  <data name="Label_Type"><value>Type</value></data>
+  <data name="Label_Recipient"><value>Recipient</value></data>
+  <data name="Label_Event"><value>Event</value></data>
+  <data name="Label_Details"><value>Details</value></data>
+  <data name="Label_User"><value>User</value></data>
+  <data name="Label_Projects"><value>Projects</value></data>
+  <data name="Label_Optional"><value>Optional</value></data>
+  <data name="Label_TempPassword"><value>Temporary password</value></data>
+  <data name="Label_InitialRole"><value>Initial role</value></data>
+  <data name="Label_NewRole"><value>New role</value></data>
+  <data name="Label_CurrentRole"><value>Current role</value></data>
+
+  <!-- === VALIDATION === -->
+  <data name="Val_EmailRequired"><value>Email is required.</value></data>
+  <data name="Val_PasswordRequired"><value>Password is required.</value></data>
+  <data name="Val_RoleRequired"><value>Role is required.</value></data>
+  <data name="Val_NameRequired"><value>Name is required.</value></data>
+  <data name="Val_JustificationRequired"><value>Justification is required.</value></data>
+
+  <!-- === STATUS === -->
+  <data name="Status_Pending"><value>Pending</value></data>
+  <data name="Status_Approved"><value>Approved</value></data>
+  <data name="Status_Rejected"><value>Rejected</value></data>
+  <data name="Status_Complete"><value>Complete</value></data>
+  <data name="Status_Partial"><value>Partial</value></data>
+  <data name="Status_ThisMonth"><value>This month</value></data>
+  <data name="Status_ThisWeek"><value>This week</value></data>
+  <data name="Status_Today"><value>Today</value></data>
+  <data name="Status_Custom"><value>Custom</value></data>
+
+  <!-- === PAGER === -->
+  <data name="Pager_RowsPerPage"><value>Show:</value></data>
+
+  <!-- === LANGUAGE === -->
+  <data name="Lang_Switch"><value>Cambiar a Español</value></data>
+  <data name="Lang_Current"><value>EN</value></data>
+
+  <!-- === LOGIN === -->
+  <data name="Login_Title"><value>Sign in</value></data>
+  <data name="Login_Subtitle"><value>Enter your credentials to continue.</value></data>
+  <data name="Login_Button"><value>Sign in</value></data>
+  <data name="Login_Error"><value>Incorrect credentials. Check your email and password.</value></data>
+  <data name="Login_Loading"><value>Verifying...</value></data>
+  <data name="Login_ContactAdmin"><value>Having trouble? Contact your system administrator.</value></data>
+
+  <!-- === DAILY REGISTER === -->
+  <data name="Reg_Title"><value>Daily Work Log</value></data>
+  <data name="Reg_Subtitle"><value>Complete your work day log.</value></data>
+  <data name="Reg_ShiftAM"><value>AM Shift</value></data>
+  <data name="Reg_ShiftPM"><value>PM Shift</value></data>
+  <data name="Reg_RecentlyUsed"><value>Recently used:</value></data>
+  <data name="Reg_ApplySuggestion"><value>Apply</value></data>
+  <data name="Reg_SaveShift"><value>Save work day</value></data>
+  <data name="Reg_Saving"><value>Saving...</value></data>
+  <data name="Reg_SavedTitle"><value>Work day saved</value></data>
+  <data name="Reg_TotalHours"><value>Total:</value></data>
+  <data name="Reg_TotalHoursSuffix"><value>hours</value></data>
+  <data name="Reg_ExceptionWarning"><value>This date is outside the allowed registration window ({0} business days).</value></data>
+  <data name="Reg_ExceptionSent"><value>Exception request sent for</value></data>
+  <data name="Reg_ModalityRequired"><value>Modality is required.</value></data>
+  <data name="Reg_EntryRequired"><value>Entry time is required.</value></data>
+  <data name="Reg_ExitRequired"><value>Exit time is required.</value></data>
+  <data name="Reg_ExitAfterEntry"><value>Exit must be after entry.</value></data>
+  <data name="Reg_AtLeastOneShift"><value>You must enter at least one entry time in AM or PM shift.</value></data>
+  <data name="Reg_ClientRequired"><value>Client is required.</value></data>
+  <data name="Reg_ProjectRequired"><value>Project is required.</value></data>
+  <data name="Reg_ResourceRequired"><value>Resource is required.</value></data>
+  <data name="Reg_DescriptionRequired"><value>Description is required.</value></data>
+  <data name="Reg_PlaceRequired"><value>Place is required.</value></data>
+  <data name="Reg_DayData"><value>Day data</value></data>
+  <data name="Reg_ErrorSave"><value>Could not save the shift. Please check the data and try again.</value></data>
+  <data name="Reg_ErrorSaveGeneral"><value>An error occurred while saving the shift.</value></data>
+
+  <!-- === MY RECORDS === -->
+  <data name="Hist_Title"><value>My Records</value></data>
+  <data name="Hist_Subtitle"><value>Reported hours history.</value></data>
+  <data name="Hist_NoRecords"><value>You have no records yet.</value></data>
+  <data name="Hist_NoRecordsHint"><value>Start by registering today's hours.</value></data>
+  <data name="Hist_DeleteTitle"><value>Delete record</value></data>
+  <data name="Hist_DeleteConfirm"><value>Delete record for</value></data>
+  <data name="Hist_DeleteCannotUndo"><value>This action cannot be undone.</value></data>
+  <data name="Hist_DeletedMsg"><value>Record for {0} deleted.</value></data>
+  <data name="Hist_EditDescription"><value>Edit description</value></data>
+  <data name="Hist_DescUpdated"><value>Description updated successfully.</value></data>
+  <data name="Hist_ErrorLoad"><value>Could not load records. Please try again.</value></data>
+  <data name="Hist_ErrorDelete"><value>Could not delete the record. Please try again.</value></data>
+  <data name="Hist_ErrorUpdate"><value>Could not update the description. Please try again.</value></data>
+
+  <!-- === DASHBOARD === -->
+  <data name="Dash_Title"><value>Dashboard</value></data>
+  <data name="Dash_TeamStatusTitle"><value>Team Status</value></data>
+  <data name="Dash_TeamStatusSubtitle"><value>Today's records by collaborator.</value></data>
+  <data name="Dash_Total"><value>Total</value></data>
+  <data name="Dash_Complete"><value>Complete</value></data>
+  <data name="Dash_Partial"><value>Partial</value></data>
+  <data name="Dash_Pending"><value>Pending</value></data>
+  <data name="Dash_CriticalPending"><value>Critical Pending</value></data>
+  <data name="Dash_CriticalPendingSubtitle"><value>Collaborators with {0}+ business days without record.</value></data>
+  <data name="Dash_NoCritical"><value>No critical pending.</value></data>
+  <data name="Dash_HoursDistTitle"><value>Hours Distribution</value></data>
+  <data name="Dash_HoursDistSubtitle"><value>Total hours by collaborator in the period.</value></data>
+  <data name="Dash_GerencialTitle"><value>Managerial Dashboard</value></data>
+  <data name="Dash_ByClient"><value>By Client</value></data>
+  <data name="Dash_ByProject"><value>By Project</value></data>
+  <data name="Dash_ColCollaborator"><value>Collaborator</value></data>
+  <data name="Dash_ColHours"><value>Hours</value></data>
+  <data name="Dash_ColClient"><value>Client</value></data>
+  <data name="Dash_ColProject"><value>Project</value></data>
+  <data name="Dash_NoData"><value>No data available.</value></data>
+  <data name="Dash_ErrorLoad"><value>Could not load dashboard.</value></data>
+  <data name="Dash_StatusComplete"><value>Complete</value></data>
+  <data name="Dash_StatusPartial"><value>Partial</value></data>
+  <data name="Dash_StatusPending"><value>Pending</value></data>
+  <data name="Dash_ColEmail"><value>Email</value></data>
+
+  <!-- === REPORTS === -->
+  <data name="Rep_Title"><value>Hours Report</value></data>
+  <data name="Rep_Subtitle"><value>Query and filter team hours records.</value></data>
+  <data name="Rep_FilterEmployee"><value>Filter by employee</value></data>
+  <data name="Rep_FilterClient"><value>Filter by start of client name</value></data>
+  <data name="Rep_FilterProject"><value>Filter by start of project name</value></data>
+  <data name="Rep_NoResults"><value>No results for the selected filters. Adjust filters and try again.</value></data>
+  <data name="Rep_ErrorLoad"><value>Error generating the report. Please try again.</value></data>
+  <data name="Rep_IndividualTimesheet"><value>Individual Timesheet</value></data>
+  <data name="Rep_IndividualSubtitle"><value>Download a collaborator's monthly timesheet in KPG format.</value></data>
+  <data name="Rep_ColDate"><value>Date</value></data>
+  <data name="Rep_ColEmployee"><value>Employee</value></data>
+  <data name="Rep_ColShift"><value>Shift</value></data>
+  <data name="Rep_ColEntry"><value>Entry</value></data>
+  <data name="Rep_ColExit"><value>Exit</value></data>
+  <data name="Rep_ColHours"><value>Hours</value></data>
+  <data name="Rep_ColClient"><value>Client</value></data>
+  <data name="Rep_ColProject"><value>Project</value></data>
+  <data name="Rep_ColDescription"><value>Description</value></data>
+
+  <!-- === NOTIFICATIONS === -->
+  <data name="Notif_Title"><value>Notification History</value></data>
+  <data name="Notif_Subtitle"><value>Reminder emails sent to collaborators.</value></data>
+  <data name="Notif_NoRecords"><value>No notifications for the selected period.</value></data>
+  <data name="Notif_ErrorLoad"><value>Could not load notifications.</value></data>
+
+  <!-- === AUDIT LOG === -->
+  <data name="Bit_Title"><value>Audit Log</value></data>
+  <data name="Bit_TitleAdmin"><value>General Audit Log</value></data>
+  <data name="Bit_Subtitle"><value>System event history.</value></data>
+  <data name="Bit_NoRecords"><value>No audit records for the selected filters.</value></data>
+  <data name="Bit_ErrorLoad"><value>Could not load the audit log.</value></data>
+
+  <!-- === ADMIN: USERS === -->
+  <data name="Users_Title"><value>User Management</value></data>
+  <data name="Users_Subtitle"><value>Manage system user accounts.</value></data>
+  <data name="Users_NewUser"><value>New User</value></data>
+  <data name="Users_NewTitle"><value>New User</value></data>
+  <data name="Users_EditTitle"><value>Edit User</value></data>
+  <data name="Users_ColEmail"><value>Email</value></data>
+  <data name="Users_ColName"><value>Name</value></data>
+  <data name="Users_ColRole"><value>Role</value></data>
+  <data name="Users_ColStatus"><value>Status</value></data>
+  <data name="Users_ColDeactivated"><value>Deactivated</value></data>
+  <data name="Users_DeactivateConfirm"><value>Deactivate "{0}"? They will not be able to log in.</value></data>
+  <data name="Users_ActivateConfirm"><value>Reactivate "{0}"?</value></data>
+  <data name="Users_SavedOk"><value>User saved successfully.</value></data>
+  <data name="Users_ErrorSave"><value>Could not save the user. Please try again.</value></data>
+  <data name="Users_ErrorLoad"><value>Could not load users.</value></data>
+  <data name="Users_ChangeRole"><value>Change Role</value></data>
+  <data name="Users_RoleChanged"><value>Role updated successfully.</value></data>
+  <data name="Users_PasswordHint"><value>Minimum 6 characters with uppercase, lowercase, number and symbol. Ex: Employee1234!</value></data>
+
+  <!-- === ADMIN: RESOURCES === -->
+  <data name="Resources_Title"><value>Resource Management</value></data>
+  <data name="Resources_Subtitle"><value>Resources available for assignment in time records.</value></data>
+  <data name="Resources_NewResource"><value>New Resource</value></data>
+  <data name="Resources_NewTitle"><value>New Resource</value></data>
+  <data name="Resources_EditTitle"><value>Edit Resource</value></data>
+  <data name="Resources_ColName"><value>Name</value></data>
+  <data name="Resources_ColStatus"><value>Status</value></data>
+  <data name="Resources_DeactivateConfirm"><value>Deactivate "{0}"? It will not appear in new records.</value></data>
+  <data name="Resources_SavedOk"><value>Resource saved successfully.</value></data>
+  <data name="Resources_ErrorSave"><value>Could not save the resource. Please try again.</value></data>
+  <data name="Resources_ErrorLoad"><value>Could not load resources.</value></data>
+
+  <!-- === ADMIN: CLIENTS === -->
+  <data name="Clients_Title"><value>Client Management</value></data>
+  <data name="Clients_Subtitle"><value>Clients and projects available for time records.</value></data>
+  <data name="Clients_NewClient"><value>New Client</value></data>
+  <data name="Clients_NewClientTitle"><value>New Client</value></data>
+  <data name="Clients_EditClientTitle"><value>Edit Client</value></data>
+  <data name="Clients_NewProject"><value>New Project</value></data>
+  <data name="Clients_NewProjectTitle"><value>New Project</value></data>
+  <data name="Clients_EditProjectTitle"><value>Edit Project</value></data>
+  <data name="Clients_ColClient"><value>Client</value></data>
+  <data name="Clients_ColProjects"><value>Projects</value></data>
+  <data name="Clients_NoProjects"><value>No projects</value></data>
+  <data name="Clients_SavedOk"><value>saved successfully.</value></data>
+  <data name="Clients_ErrorSave"><value>Could not save. Please try again.</value></data>
+  <data name="Clients_ErrorLoad"><value>Could not load clients.</value></data>
+
+  <!-- === ADMIN: PROJECTS === -->
+  <data name="Proj_NoProjects"><value>No projects registered for this client.</value></data>
+  <data name="Proj_NewProject"><value>New Project</value></data>
+  <data name="Proj_EditProject"><value>Edit Project</value></data>
+  <data name="Proj_DeactivateConfirm"><value>Deactivate project "{0}"?</value></data>
+  <data name="Proj_ActivateConfirm"><value>Activate project "{0}"?</value></data>
+  <data name="Proj_SavedOk"><value>Project saved successfully.</value></data>
+  <data name="Proj_ErrorLoad"><value>Could not load projects.</value></data>
+  <data name="Proj_ErrorSave"><value>Could not save the project.</value></data>
+
+  <!-- === ADMIN: EXCEPTION REQUESTS === -->
+  <data name="Exc_Title"><value>Exception Requests</value></data>
+  <data name="Exc_Subtitle"><value>Registration requests outside the retroactivity window.</value></data>
+  <data name="Exc_ColEmployee"><value>Employee</value></data>
+  <data name="Exc_ColDate"><value>Requested Date</value></data>
+  <data name="Exc_ColJustification"><value>Justification</value></data>
+  <data name="Exc_ColSubmitted"><value>Submitted Date</value></data>
+  <data name="Exc_ColStatus"><value>Status</value></data>
+  <data name="Exc_ApprovedMsg"><value>Request approved successfully.</value></data>
+  <data name="Exc_RejectedMsg"><value>Request rejected successfully.</value></data>
+  <data name="Exc_ErrorLoad"><value>Could not load requests.</value></data>
+  <data name="Exc_ErrorAction"><value>Could not process the request. Please try again.</value></data>
+  <data name="Exc_NoRequests"><value>No requests registered.</value></data>
+  <data name="Exc_ColAge"><value>Age</value></data>
+  <data name="Exc_DayAgo"><value>{0} day ago</value></data>
+  <data name="Exc_DaysAgo"><value>{0} days ago</value></data>
+  <data name="Exc_ApproveConfirm"><value>Approve the request from {0} for {1}?</value></data>
+  <data name="Exc_RejectConfirm"><value>Reject the request from {0} for {1}?</value></data>
+  <data name="Exc_BtnApprove"><value>Approve request</value></data>
+  <data name="Exc_BtnReject"><value>Reject request</value></data>
+  <data name="Exc_RequestAuth"><value>Request authorization</value></data>
+  <data name="Exc_OutOfWindowMsg"><value>This date is outside the allowed registration window. Describe the reason so an administrator can approve it.</value></data>
+  <data name="Exc_ErrorSend"><value>Could not send the exception request. Please try again.</value></data>
+
+  <!-- === ADMIN: PARAMETERS === -->
+  <data name="Params_Title"><value>System Parameters</value></data>
+  <data name="Params_Subtitle"><value>System operational configuration.</value></data>
+  <data name="Params_RetroWindow"><value>Retroactivity Window</value></data>
+  <data name="Params_RetroWindowDesc"><value>Business days back an employee can register without exception.</value></data>
+  <data name="Params_NotifThreshold"><value>Notification Threshold</value></data>
+  <data name="Params_NotifThresholdDesc"><value>Business days without record before sending automatic reminder.</value></data>
+  <data name="Params_SavedOk"><value>Parameter updated successfully.</value></data>
+  <data name="Params_ErrorSave"><value>Could not save the parameter. Please try again.</value></data>
+  <data name="Params_ErrorLoad"><value>Could not load parameters.</value></data>
+
+  <!-- === ADMIN: MODALITIES === -->
+  <data name="Mod_Title"><value>Work Modalities</value></data>
+  <data name="Mod_Subtitle"><value>Modalities available for selection in time records.</value></data>
+  <data name="Mod_NewModality"><value>New Modality</value></data>
+  <data name="Mod_NewTitle"><value>New Modality</value></data>
+  <data name="Mod_EditTitle"><value>Edit Modality</value></data>
+  <data name="Mod_DeactivateConfirm"><value>Deactivate "{0}"? It will not appear in new records.</value></data>
+  <data name="Mod_SavedOk"><value>Modality saved successfully.</value></data>
+  <data name="Mod_ErrorSave"><value>Could not save the modality. Please try again.</value></data>
+  <data name="Mod_ErrorLoad"><value>Could not load modalities.</value></data>
+
+  <!-- === ADMIN: WORK PLACES === -->
+  <data name="WP_Title"><value>Work Places</value></data>
+  <data name="WP_Subtitle"><value>Places available for selection in time records.</value></data>
+  <data name="WP_NewPlace"><value>New Place</value></data>
+  <data name="WP_NewTitle"><value>New Work Place</value></data>
+  <data name="WP_EditTitle"><value>Edit Work Place</value></data>
+  <data name="WP_DeactivateConfirm"><value>Deactivate "{0}"? It will not appear in new records.</value></data>
+  <data name="WP_SavedOk"><value>Work place saved successfully.</value></data>
+  <data name="WP_ErrorSave"><value>Could not save the place. Please try again.</value></data>
+  <data name="WP_ErrorLoad"><value>Could not load work places.</value></data>
+
+  <!-- === DASHBOARD EXTRAS === -->
+  <data name="Dash_Subtitle"><value>Daily team status</value></data>
+  <data name="Dash_TotalEmployees"><value>Total employees</value></data>
+  <data name="Dash_TeamTotal"><value>Team total:</value></data>
+  <data name="Dash_AdminMetrics"><value>Global metrics</value></data>
+  <data name="Dash_ActiveClients"><value>Active clients</value></data>
+  <data name="Dash_ActiveUsers"><value>Active users</value></data>
+  <data name="Dash_TotalRecords"><value>Total records</value></data>
+  <data name="Dash_TotalHours"><value>Total hours</value></data>
+  <data name="Dash_PendingToday"><value>Not registered today</value></data>
+  <data name="Dash_TopClient"><value>Top client</value></data>
+  <data name="Dash_Tendency"><value>Records trend</value></data>
+  <data name="Dash_NoTeamMembers"><value>No team members registered.</value></data>
+  <data name="Dash_NoHoursInPeriod"><value>No time records in the selected period.</value></data>
+  <data name="Dash_GerencialSubtitle"><value>Managerial view</value></data>
+  <data name="Dash_NoDaysWithout"><value>No records</value></data>
+  <data name="Dash_DaysWithout"><value>{0} d without record</value></data>
+
+  <!-- === REPORTS EXTRAS === -->
+  <data name="Rep_Period"><value>Period</value></data>
+  <data name="Rep_Records"><value>records</value></data>
+  <data name="Rep_TotalHours"><value>total hours</value></data>
+  <data name="Rep_ColEntAM"><value>Ent. AM</value></data>
+  <data name="Rep_ColSalAM"><value>Sal. AM</value></data>
+  <data name="Rep_ColEntPM"><value>Ent. PM</value></data>
+  <data name="Rep_ColSalPM"><value>Sal. PM</value></data>
+  <data name="Rep_ColModality"><value>Modality</value></data>
+  <data name="Rep_ColPlace"><value>Place</value></data>
+  <data name="Rep_NoResults2"><value>No records match the selected filters. Try widening the period or adjusting criteria.</value></data>
+  <data name="Rep_TimesheetSubtitle"><value>Generate the monthly timesheet Excel with the official KPG format for an employee.</value></data>
+  <data name="Rep_GenerateTimesheet"><value>Generate Timesheet</value></data>
+
+  <!-- === NOTIFICATIONS EXTRAS === -->
+  <data name="Notif_LabelFrom"><value>From</value></data>
+  <data name="Notif_LabelTo"><value>To</value></data>
+  <data name="Notif_ColSentDate"><value>Sent date</value></data>
+  <data name="Notif_ColDaysWithout"><value>Days without record</value></data>
+  <data name="Notif_ColRefDate"><value>Ref. date</value></data>
+  <data name="Notif_All"><value>All</value></data>
+  <data name="Notif_SuccessOnly"><value>Successful only</value></data>
+  <data name="Notif_ErrorsOnly"><value>Errors only</value></data>
+  <data name="Notif_Sent"><value>Sent</value></data>
+  <data name="Notif_TotalChip"><value>notifications</value></data>
+  <data name="Notif_NoResults"><value>No notifications match the selected filters.</value></data>
+
+  <!-- === AUDIT LOG EXTRAS === -->
+  <data name="Bit_LabelFrom"><value>From</value></data>
+  <data name="Bit_LabelTo"><value>To</value></data>
+  <data name="Bit_ColDateTime"><value>Date &amp; time</value></data>
+  <data name="Bit_ColEventType"><value>Event type</value></data>
+  <data name="Bit_ColActor"><value>Actor</value></data>
+  <data name="Bit_ColEntity"><value>Entity</value></data>
+  <data name="Bit_ColEntityId"><value>Entity ID</value></data>
+  <data name="Bit_ColMetadata"><value>Metadata</value></data>
+  <data name="Bit_TotalEvents"><value>event</value></data>
+  <data name="Bit_TotalEventsPlural"><value>events</value></data>
+  <data name="Bit_NoEvents"><value>No events match the selected filters.</value></data>
+  <data name="Bit_Subtitle2"><value>Query and filter sensitive events recorded in the system.</value></data>
+  <data name="Bit_Subtitle3"><value>Query and filter events within your role scope.</value></data>
+
+  <!-- === COMMON SEARCH === -->
+  <data name="Btn_Search"><value>Search</value></data>
+  <data name="Label_FilterEventType"><value>Event type</value></data>
+
+  <!-- === PROFILE === -->
+  <data name="Nav_Profile"><value>My profile</value></data>
+  <data name="Profile_Title"><value>My profile</value></data>
+  <data name="Profile_Subtitle"><value>Manage your account information and security.</value></data>
+  <data name="Profile_SectionInfo"><value>Account information</value></data>
+  <data name="Profile_SectionPassword"><value>Change password</value></data>
+  <data name="Profile_LabelEmail"><value>Email address</value></data>
+  <data name="Profile_LabelRoles"><value>Assigned roles</value></data>
+  <data name="Profile_CurrentPassword"><value>Current password</value></data>
+  <data name="Profile_NewPassword"><value>New password</value></data>
+  <data name="Profile_ConfirmPassword"><value>Confirm new password</value></data>
+  <data name="Profile_BtnChangePassword"><value>Change password</value></data>
+  <data name="Profile_PasswordChanged"><value>Password updated successfully.</value></data>
+  <data name="Profile_PasswordMismatch"><value>New password and confirmation do not match.</value></data>
+  <data name="Profile_ErrorChange"><value>Could not change the password.</value></data>
+
+  <!-- === FORGOT / RESET PASSWORD === -->
+  <data name="Login_ForgotPassword"><value>Forgot your password?</value></data>
+  <data name="FP_Title"><value>Recover password</value></data>
+  <data name="FP_Subtitle"><value>Enter your email and we'll send you a link to reset your password.</value></data>
+  <data name="FP_SendLink"><value>Send link</value></data>
+  <data name="FP_Sent"><value>If the email is registered, you'll receive a link within the next few minutes. Check your spam folder too.</value></data>
+  <data name="FP_BackToLogin"><value>Back to login</value></data>
+  <data name="RP_Title"><value>New password</value></data>
+  <data name="RP_Submit"><value>Reset password</value></data>
+  <data name="RP_Success"><value>Password reset successfully. You can now sign in.</value></data>
+  <data name="RP_InvalidLink"><value>The link has expired or is invalid. Please request a new one.</value></data>
+  <data name="RP_RequestNew"><value>Request new link</value></data>
+
+  <!-- === MINI CALENDAR === -->
+  <data name="Cal_HasRecord"><value>Has record</value></data>
+  <data name="Cal_WithRecord"><value>With record</value></data>
+  <data name="Cal_WithoutRecord"><value>Without record</value></data>
+
+  <!-- === GENERAL === -->
+  <data name="Loading"><value>Loading...</value></data>
+  <data name="Error_Unexpected"><value>An unexpected error occurred.</value></data>
+  <data name="Error_Retry"><value>Please try again.</value></data>
+  <data name="Error_Server"><value>Error communicating with the server.</value></data>
+  <data name="Error_SessionExpired"><value>Your session expired. Please sign in again.</value></data>
+  <data name="Reload"><value>Reload</value></data>
+</root>

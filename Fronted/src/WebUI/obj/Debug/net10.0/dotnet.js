@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "KPG.Timesheet.WebUI",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-blYjwH5eLJunUpiuXpK+sXaQIhlM6EG0Jjl0ot+oTO0=",
+    "hash": "sha256-mpJ0OTVvgHKGazxVcZ1e6Qi0Yo+NDuhXMva7ZH7DqLE=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.rjbmzc4jpg.js"
@@ -25,21 +25,9 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
     ],
     "icu": [
       {
-        "virtualPath": "icudt_CJK.dat",
-        "name": "icudt_CJK.tjcz0u77k5.dat",
-        "hash": "sha256-SZLtQnRc0JkwqHab0VUVP7T3uBPSeYzxzDnpxPpUnHk=",
-        "cache": "force-cache"
-      },
-      {
-        "virtualPath": "icudt_EFIGS.dat",
-        "name": "icudt_EFIGS.tptq2av103.dat",
-        "hash": "sha256-8fItetYY8kQ0ww6oxwTLiT3oXlBwHKumbeP2pRF4yTc=",
-        "cache": "force-cache"
-      },
-      {
-        "virtualPath": "icudt_no_CJK.dat",
-        "name": "icudt_no_CJK.lfu7j35m59.dat",
-        "hash": "sha256-L7sV7NEYP37/Qr2FPCePo5cJqRgTXRwGHuwF5Q+0Nfs=",
+        "virtualPath": "icudt.dat",
+        "name": "icudt.oh1zvcfom8.dat",
+        "hash": "sha256-tO5O5YzMTVSaKBboxAqezOQL9ewmupzV2JrB5Rkc8a4=",
         "cache": "force-cache"
       }
     ],
@@ -1278,19 +1266,29 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "KPG.Timesheet.WebUI.wasm",
-        "name": "KPG.Timesheet.WebUI.6d2vprrs01.wasm",
-        "hash": "sha256-utL/k+nCLNB0cESyyjtrXsk4wI87/vIop4pL7ATk574=",
+        "name": "KPG.Timesheet.WebUI.y5q25h06to.wasm",
+        "hash": "sha256-9nn5jhj/7lEKKLk8icYd5gJsnU2N9+voI2/ANgeU7ts=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "KPG.Timesheet.WebUI.pdb",
-        "name": "KPG.Timesheet.WebUI.wtz57xi2ra.pdb",
-        "hash": "sha256-XJBKtYleB+q51KXvPtxBA3c5PXHWZT7Int6YiOtwMYg=",
+        "name": "KPG.Timesheet.WebUI.foj4px2x11.pdb",
+        "hash": "sha256-YYbTR7OHyODr/GhkziSabmco25pj4BlGNLLHKyk9JbU=",
         "cache": "force-cache"
       }
     ],
+    "satelliteResources": {
+      "en": [
+        {
+          "virtualPath": "KPG.Timesheet.WebUI.resources.wasm",
+          "name": "KPG.Timesheet.WebUI.resources.cuh7lti7ga.wasm",
+          "hash": "sha256-FP9+vgolHU4CgcpCp9t3K/vRj2cMB9HMHvjiZsQnY3Y=",
+          "cache": "force-cache"
+        }
+      ]
+    },
     "libraryInitializers": [
       {
         "name": "_framework/Microsoft.DotNet.HotReload.WebAssembly.Browser.99zm1jdh75.lib.module.js"
@@ -1307,7 +1305,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
     "../appsettings.Development.json",
     "../appsettings.json"
   ],
-  "globalizationMode": "sharded",
+  "globalizationMode": "all",
   "extensions": {
     "blazor": {}
   },

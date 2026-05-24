@@ -10,6 +10,10 @@ public interface IReportesRepository
         string? userId = null,
         string? cliente = null,
         string? proyecto = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default);
 
     Task<(byte[] Contenido, string ContentType, string FileName)?> ExportarAsync(

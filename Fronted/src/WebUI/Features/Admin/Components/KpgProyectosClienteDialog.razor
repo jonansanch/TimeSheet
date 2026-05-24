@@ -1,11 +1,12 @@
 @inject IClienteRepository Repo
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
 
 <MudDialog>
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" />
-            <MudText Typo="Typo.h6" Style="font-weight:600;">Proyectos — @Cliente.Nombre</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Label_Projects"] — @Cliente.Nombre</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
@@ -16,7 +17,7 @@
             }
             @if (!string.IsNullOrWhiteSpace(_errorMessage))
             {
-                <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
             }
 
             @if (_isLoading)
@@ -25,7 +26,7 @@
             }
             else if (_proyectos.Count == 0)
             {
-                <MudAlert Severity="Severity.Info">No hay proyectos registrados para este cliente.</MudAlert>
+                <MudAlert Severity="Severity.Info">@L["Proj_NoProjects"]</MudAlert>
             }
             else
             {
@@ -39,14 +40,14 @@
                                     <MudChip T="string"
                                              Size="Size.Small"
                                              Color="@(proyecto.Activo ? Color.Success : Color.Default)">
-                                        @(proyecto.Activo ? "Activo" : "Inactivo")
+                                        @(proyecto.Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value)
                                     </MudChip>
                                 </MudStack>
                                 <MudStack Row="true" Spacing="0">
                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                    Color="Color.Primary"
                                                    Size="Size.Small"
-                                                   aria-label="Editar proyecto"
+                                                   aria-label="@L["Btn_Edit"]"
                                                    Disabled="_isProcesando"
                                                    OnClick="@(() => AbrirEditarProyectoAsync(proyecto))" />
                                     @if (proyecto.Activo)
@@ -54,7 +55,7 @@
                                         <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
                                                        Color="Color.Warning"
                                                        Size="Size.Small"
-                                                       aria-label="Desactivar proyecto"
+                                                       aria-label="@L["Btn_Deactivate"]"
                                                        Disabled="_isProcesando"
                                                        OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
                                     }
@@ -63,7 +64,7 @@
                                         <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
                                                        Color="Color.Success"
                                                        Size="Size.Small"
-                                                       aria-label="Activar proyecto"
+                                                       aria-label="@L["Btn_Activate"]"
                                                        Disabled="_isProcesando"
                                                        OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
                                     }
@@ -74,10 +75,10 @@
                 </MudList>
             }
 
-            <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+            <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
                 <MessageContent>@_msgBoxContent</MessageContent>
                 <YesButton>
-                    <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+                    <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
                 </YesButton>
             </MudMessageBox>
         </MudStack>
@@ -88,10 +89,10 @@
                    Color="Color.Primary"
                    Disabled="_isProcesando"
                    OnClick="AbrirCrearProyectoAsync">
-            Nuevo Proyecto
+            @L["Proj_NewProject"]
         </MudButton>
         <MudSpacer />
-        <MudButton Variant="Variant.Outlined" OnClick="Cerrar">Cerrar</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cerrar">@L["Btn_Close"]</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -123,7 +124,7 @@
         }
         catch
         {
-            _errorMessage = "No fue posible cargar los proyectos.";
+            _errorMessage = L["Proj_ErrorLoad"];
         }
         finally
         {
@@ -134,7 +135,7 @@
     private async Task AbrirCrearProyectoAsync()
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<KpgProyectoDialog>("Nuevo Proyecto", options);
+        var dialog = await DialogService.ShowAsync<KpgProyectoDialog>(L["Proj_NewProject"], options);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not CreateProyectoRequest request)
             return;
@@ -150,11 +151,11 @@
             {
                 _proyectos.Add(proyecto);
                 _proyectos = [.. _proyectos.OrderBy(p => p.Nombre)];
-                _successMessage = $"Proyecto \"{proyecto.Nombre}\" creado.";
+                _successMessage = L["Proj_SavedOk"];
             }
             else
             {
-                _errorMessage = error ?? "No fue posible crear el proyecto.";
+                _errorMessage = error ?? L["Proj_ErrorSave"];
             }
         }
         finally
@@ -167,7 +168,7 @@
     {
         var parameters = new DialogParameters<KpgProyectoDialog> { { x => x.Proyecto, item } };
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<KpgProyectoDialog>("Editar Proyecto", parameters, options);
+        var dialog = await DialogService.ShowAsync<KpgProyectoDialog>(L["Proj_EditProject"], parameters, options);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not UpdateProyectoRequest request)
             return;
@@ -183,11 +184,11 @@
             {
                 ReemplazarProyecto(item, proyecto);
                 _proyectos = [.. _proyectos.OrderBy(p => p.Nombre)];
-                _successMessage = $"Proyecto actualizado a \"{proyecto.Nombre}\".";
+                _successMessage = L["Proj_SavedOk"];
             }
             else
             {
-                _errorMessage = error ?? "No fue posible actualizar el proyecto.";
+                _errorMessage = error ?? L["Proj_ErrorSave"];
             }
         }
         finally
@@ -199,8 +200,8 @@
     private async Task ConfirmarToggleProyectoAsync(ProyectoResponse item)
     {
         _msgBoxContent = item.Activo
-            ? $"Desactivar proyecto \"{item.Nombre}\"?"
-            : $"Activar proyecto \"{item.Nombre}\"?";
+            ? string.Format(L["Proj_DeactivateConfirm"], item.Nombre)
+            : string.Format(L["Proj_ActivateConfirm"], item.Nombre);
         _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
         StateHasChanged();
 
@@ -217,13 +218,11 @@
             if (ok && proyecto is not null)
             {
                 ReemplazarProyecto(item, proyecto);
-                _successMessage = proyecto.Activo
-                    ? $"\"{proyecto.Nombre}\" activado."
-                    : $"\"{proyecto.Nombre}\" desactivado.";
+                _successMessage = L["Proj_SavedOk"];
             }
             else
             {
-                _errorMessage = error ?? "No fue posible cambiar el estado del proyecto.";
+                _errorMessage = error ?? L["Proj_ErrorSave"];
             }
         }
         finally

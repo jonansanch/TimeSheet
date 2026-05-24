@@ -1,0 +1,45 @@
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject IStringLocalizer<SharedResource> L
+@using System.Globalization
+
+@{
+    var isEn = CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+}
+
+<MudButton Variant="Variant.Text"
+           Color="Color.Inherit"
+           Size="Size.Small"
+           Style="min-width:56px; font-weight:600; letter-spacing:0.5px; gap:6px; padding:4px 8px;"
+           OnClick="ToggleLanguage"
+           title="@L["Lang_Switch"]">
+    @if (isEn)
+    {
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="24" height="14" style="border-radius:2px; flex-shrink:0; display:block;">
+            <rect width="60" height="30" fill="#012169"/>
+            <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+            <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" stroke-width="4"/>
+            <path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="10"/>
+            <path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/>
+        </svg>
+        <span>EN</span>
+    }
+    else
+    {
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2" width="24" height="16" style="border-radius:2px; flex-shrink:0; display:block;">
+            <rect width="3" height="2" fill="#c60b1e"/>
+            <rect y="0.5" width="3" height="1" fill="#ffc400"/>
+        </svg>
+        <span>ES</span>
+    }
+</MudButton>
+
+@code {
+    private async Task ToggleLanguage()
+    {
+        var current = await JS.InvokeAsync<string>("blazorCulture.get");
+        var next = current == "en" ? "es" : "en";
+        await JS.InvokeVoidAsync("blazorCulture.set", next);
+        Nav.NavigateTo(Nav.Uri, forceLoad: true);
+    }
+}

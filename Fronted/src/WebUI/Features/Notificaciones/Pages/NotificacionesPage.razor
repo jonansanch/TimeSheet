@@ -2,21 +2,23 @@
 @attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @inject INotificacionesRepository Repo
 @inject IUserAdminRepository UsuariosRepo
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Notificaciones - KPG Timesheet</PageTitle>
+<PageTitle>@L["Notif_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
 
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Notificaciones</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Historial de correos automáticos enviados por días sin registro.</MudText>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Notif_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Notif_Subtitle"]</MudText>
     </div>
 
     <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
         <MudGrid Spacing="2">
 
             <MudItem xs="12" sm="6" md="3">
-                <MudDatePicker Label="Desde"
+                <MudDatePicker Label="@L["Notif_LabelFrom"]"
                                Date="_filtroDesdeDate"
                                DateChanged="d => _filtroDesde = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
                                MaxDate="DateTime.Today"
@@ -25,11 +27,11 @@
                                Variant="Variant.Outlined"
                                Margin="Margin.Dense"
                                Clearable="true"
-                               aria-label="Fecha desde" />
+                               aria-label="@L["Notif_LabelFrom"]" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
-                <MudDatePicker Label="Hasta"
+                <MudDatePicker Label="@L["Notif_LabelTo"]"
                                Date="_filtroHastaDate"
                                DateChanged="d => _filtroHasta = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
                                MaxDate="DateTime.Today"
@@ -38,18 +40,18 @@
                                Variant="Variant.Outlined"
                                Margin="Margin.Dense"
                                Clearable="true"
-                               aria-label="Fecha hasta" />
+                               aria-label="@L["Notif_LabelTo"]" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
                 <MudSelect T="string"
-                           Label="Empleado"
+                           Label="@L["Label_Employee"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
                            Value="_filtroUserId"
                            ValueChanged="v => _filtroUserId = v"
-                           aria-label="Filtrar por empleado">
+                           aria-label="@L["Label_Employee"]">
                     @foreach (var u in _usuarios)
                     {
                         <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
@@ -59,15 +61,15 @@
 
             <MudItem xs="12" sm="6" md="3">
                 <MudSelect T="bool?"
-                           Label="Estado"
+                           Label="@L["Label_Status"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Value="_filtroSoloErrores"
                            ValueChanged="v => _filtroSoloErrores = v"
-                           aria-label="Filtrar por estado de envío">
-                    <MudSelectItem T="bool?" Value="@((bool?)null)">Todos</MudSelectItem>
-                    <MudSelectItem T="bool?" Value="@((bool?)false)">Solo exitosos</MudSelectItem>
-                    <MudSelectItem T="bool?" Value="@((bool?)true)">Solo errores</MudSelectItem>
+                           aria-label="@L["Label_Status"]">
+                    <MudSelectItem T="bool?" Value="@((bool?)null)">@L["Notif_All"]</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)false)">@L["Notif_SuccessOnly"]</MudSelectItem>
+                    <MudSelectItem T="bool?" Value="@((bool?)true)">@L["Notif_ErrorsOnly"]</MudSelectItem>
                 </MudSelect>
             </MudItem>
 
@@ -77,7 +79,7 @@
                            StartIcon="@Icons.Material.Filled.Search"
                            OnClick="BuscarAsync"
                            Disabled="_isLoading">
-                    Buscar
+                    @L["Btn_Search"]
                 </MudButton>
             </MudItem>
 
@@ -96,14 +98,14 @@
     {
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudChip T="string" Color="Color.Primary" Size="Size.Small">
-                @_historial.Total notificaciones
+                @_historial.Total @L["Notif_TotalChip"]
             </MudChip>
         </MudStack>
 
         @if (_historial.Items.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.NotificationsOff">
-                No hay notificaciones que coincidan con los filtros seleccionados.
+                @L["Notif_NoResults"]
             </MudAlert>
         }
         else
@@ -116,29 +118,29 @@
                          RowsPerPage="5"
                          Style="border-radius:12px;overflow:hidden;">
                 <Columns>
-                    <TemplateColumn Title="Fecha envío" Sortable="true">
+                    <TemplateColumn Title="@L["Notif_ColSentDate"]" Sortable="true">
                         <CellTemplate>
                             <MudText Typo="Typo.body2" Style="white-space:nowrap;">
                                 @context.Item.FechaEnvio.LocalDateTime.ToString("dd/MM/yyyy HH:mm")
                             </MudText>
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Property="x => x.Nombre" Title="Empleado" />
-                    <PropertyColumn Property="x => x.Email" Title="Email" />
-                    <TemplateColumn Title="Días sin registro" Sortable="true">
+                    <PropertyColumn Property="x => x.Nombre" Title="@L["Label_Employee"]" />
+                    <PropertyColumn Property="x => x.Email" Title="@L["Label_Email"]" />
+                    <TemplateColumn Title="@L["Notif_ColDaysWithout"]" Sortable="true">
                         <CellTemplate>
-                            @(context.Item.DiasAcumulados >= 999 ? "Sin registros" : $"{context.Item.DiasAcumulados} d")
+                            @(context.Item.DiasAcumulados >= 999 ? L["Dash_NoDaysWithout"].Value : $"{context.Item.DiasAcumulados} d")
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Ref. fecha" Sortable="false">
+                    <TemplateColumn Title="@L["Notif_ColRefDate"]" Sortable="false">
                         <CellTemplate>@context.Item.FechaReferencia.ToString("dd/MM/yyyy")</CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Estado" Sortable="true">
+                    <TemplateColumn Title="@L["Label_Status"]" Sortable="true">
                         <CellTemplate>
                             @if (context.Item.Exitoso)
                             {
                                 <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">
-                                    Enviado
+                                    @L["Notif_Sent"]
                                 </MudChip>
                             }
                             else
@@ -153,7 +155,7 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="NotificacionItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="NotificacionItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
@@ -162,6 +164,11 @@
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Notifications"].Value, null, disabled: true)
+    ];
+
     private HistorialNotificacionesResponse? _historial;
     private bool _isLoading = false;
     private string _errorMessage = string.Empty;
@@ -199,9 +206,9 @@
         {
             _historial = await Repo.GetHistorialAsync(_filtroDesde, _filtroHasta, _filtroUserId, _filtroSoloErrores);
             if (_historial is null)
-                _errorMessage = "No se pudo obtener el historial de notificaciones.";
+                _errorMessage = L["Notif_ErrorLoad"];
         }
-        catch { _errorMessage = "Error al comunicarse con el servidor."; }
+        catch { _errorMessage = L["Error_Server"]; }
         finally { _isLoading = false; }
     }
 }

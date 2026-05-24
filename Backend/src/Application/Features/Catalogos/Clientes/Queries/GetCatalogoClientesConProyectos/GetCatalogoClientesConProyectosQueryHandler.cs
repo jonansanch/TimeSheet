@@ -17,25 +17,22 @@ public class GetCatalogoClientesConProyectosQueryHandler
     public async Task<List<ClienteConProyectosDto>> Handle(
         GetCatalogoClientesConProyectosQuery request, CancellationToken cancellationToken)
     {
-        var clientes = await _context.Clientes
-            .Where(c => c.Activo)
-            .OrderBy(c => c.Nombre)
-            .ToListAsync(cancellationToken);
+        var flat = await (
+            from c in _context.Clientes
+            where c.Activo
+            join p in _context.Proyectos.Where(p => p.Activo)
+                on c.Id equals p.ClienteId into ps
+            from p in ps.DefaultIfEmpty()
+            select new { ClienteId = c.Id, ClienteNombre = c.Nombre, ProyectoNombre = (string?)p.Nombre }
+        ).OrderBy(x => x.ClienteNombre).ThenBy(x => x.ProyectoNombre)
+         .ToListAsync(cancellationToken);
 
-        var clienteIds = clientes.Select(c => c.Id).ToList();
-
-        var proyectos = await _context.Proyectos
-            .Where(p => clienteIds.Contains(p.ClienteId) && p.Activo)
-            .OrderBy(p => p.Nombre)
-            .ToListAsync(cancellationToken);
-
-        return clientes.Select(c => new ClienteConProyectosDto(
-            c.Id,
-            c.Nombre,
-            proyectos
-                .Where(p => p.ClienteId == c.Id)
-                .Select(p => p.Nombre)
-                .ToList()
-        )).ToList();
+        return flat
+            .GroupBy(x => new { x.ClienteId, x.ClienteNombre })
+            .Select(g => new ClienteConProyectosDto(
+                g.Key.ClienteId,
+                g.Key.ClienteNombre,
+                g.Where(x => x.ProyectoNombre != null).Select(x => x.ProyectoNombre!).ToList()))
+            .ToList();
     }
 }

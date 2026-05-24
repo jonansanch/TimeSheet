@@ -23,15 +23,20 @@ public class ReportesRepository : IReportesRepository
         string? userId = null,
         string? cliente = null,
         string? proyecto = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
             throw new UnauthorizedAccessException("No hay token de acceso activo.");
 
-        var sb = new StringBuilder($"api/reportes/horas?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}");
+        var sb = new StringBuilder($"api/reportes/horas?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}&pageNumber={pageNumber}&pageSize={pageSize}&sortDescending={sortDescending}");
         if (!string.IsNullOrWhiteSpace(userId))   sb.Append($"&userId={Uri.EscapeDataString(userId)}");
         if (!string.IsNullOrWhiteSpace(cliente))  sb.Append($"&cliente={Uri.EscapeDataString(cliente)}");
         if (!string.IsNullOrWhiteSpace(proyecto)) sb.Append($"&proyecto={Uri.EscapeDataString(proyecto)}");
+        if (!string.IsNullOrWhiteSpace(sortBy))   sb.Append($"&sortBy={Uri.EscapeDataString(sortBy)}");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, sb.ToString());
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);

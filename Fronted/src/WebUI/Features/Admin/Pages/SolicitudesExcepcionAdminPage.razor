@@ -1,16 +1,19 @@
 @page "/solicitudes-excepcion"
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject ISolicitudExcepcionAdminRepository Repo
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Solicitudes de excepción - KPG Timesheet</PageTitle>
+<PageTitle>@L["Exc_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
         <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-            Solicitudes de excepción
+            @L["Exc_Title"]
         </MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary">
-            Autoriza o rechaza solicitudes de registro fuera de la ventana permitida.
+            @L["Exc_Subtitle"]
         </MudText>
     </div>
 
@@ -24,15 +27,10 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_successMessage))
-        {
-            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
-        }
-
         @if (_solicitudes.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.CheckCircle">
-                No hay solicitudes registradas.
+                @L["Exc_NoRequests"]
             </MudAlert>
         }
         else
@@ -44,20 +42,20 @@
                          SortMode="SortMode.Single"
                          RowsPerPage="5">
                 <Columns>
-                    <PropertyColumn Property="x => x.SolicitanteEmail" Title="Solicitante" />
-                    <TemplateColumn Title="Fecha solicitada" Sortable="true">
+                    <PropertyColumn Property="x => x.SolicitanteEmail" Title="@L["Exc_ColEmployee"]" />
+                    <TemplateColumn Title="@L["Exc_ColDate"]" Sortable="true">
                         <CellTemplate>
                             @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Antigüedad" Sortable="false">
+                    <TemplateColumn Title="@L["Exc_ColAge"]" Sortable="false">
                         <CellTemplate>
                             @{ var dias = (int)(DateTimeOffset.UtcNow - context.Item.Created).TotalDays; }
-                            hace @dias día@(dias == 1 ? "" : "s")
+                            @(string.Format(dias == 1 ? L["Exc_DayAgo"].Value : L["Exc_DaysAgo"].Value, dias))
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Property="x => x.Justificacion" Title="Justificación" Sortable="false" />
-                    <TemplateColumn Title="Estado" Sortable="false">
+                    <PropertyColumn Property="x => x.Justificacion" Title="@L["Exc_ColJustification"]" Sortable="false" />
+                    <TemplateColumn Title="@L["Exc_ColStatus"]" Sortable="false">
                         <CellTemplate>
                             <MudChip T="string"
                                      Size="Size.Small"
@@ -66,44 +64,49 @@
                             </MudChip>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Acciones" Sortable="false">
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
                             <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                            Color="Color.Success"
                                            Size="Size.Small"
-                                           aria-label="Aprobar solicitud"
+                                           aria-label="@L["Exc_BtnApprove"]"
                                            Disabled="@(context.Item.Estado != "Pendiente" || _isProcesando)"
                                            OnClick="@(() => ConfirmarAprobarAsync(context.Item))" />
                             <MudIconButton Icon="@Icons.Material.Filled.Cancel"
                                            Color="Color.Error"
                                            Size="Size.Small"
-                                           aria-label="Rechazar solicitud"
+                                           aria-label="@L["Exc_BtnReject"]"
                                            Disabled="@(context.Item.Estado != "Pendiente" || _isProcesando)"
                                            OnClick="@(() => ConfirmarRechazarAsync(context.Item))" />
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="SolicitudExcepcionAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="SolicitudExcepcionAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
     }
 
-    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+    <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
         <MessageContent>@_msgBoxContent</MessageContent>
         <YesButton>
-            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
         </YesButton>
     </MudMessageBox>
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_ExceptionRequests"].Value, null, disabled: true)
+    ];
+
     private List<SolicitudExcepcionAdminResponse> _solicitudes = [];
     private bool _isLoading = true;
     private bool _isProcesando;
     private string? _errorMessage;
-    private string? _successMessage;
     private MudMessageBox? _msgBox;
     private string _msgBoxContent = string.Empty;
     private Color _msgBoxColor = Color.Primary;
@@ -116,7 +119,7 @@
         }
         catch
         {
-            _errorMessage = "No fue posible cargar las solicitudes. Intente nuevamente.";
+            _errorMessage = L["Exc_ErrorLoad"];
         }
         finally
         {
@@ -126,7 +129,7 @@
 
     private async Task ConfirmarAprobarAsync(SolicitudExcepcionAdminResponse item)
     {
-        _msgBoxContent = $"¿Aprobar la solicitud de {item.SolicitanteEmail} para el {item.FechaRegistro:dd/MM/yyyy}?";
+        _msgBoxContent = string.Format(L["Exc_ApproveConfirm"], item.SolicitanteEmail, item.FechaRegistro.ToString("dd/MM/yyyy"));
         _msgBoxColor = Color.Success;
         StateHasChanged();
 
@@ -138,7 +141,7 @@
 
     private async Task ConfirmarRechazarAsync(SolicitudExcepcionAdminResponse item)
     {
-        _msgBoxContent = $"¿Rechazar la solicitud de {item.SolicitanteEmail} para el {item.FechaRegistro:dd/MM/yyyy}?";
+        _msgBoxContent = string.Format(L["Exc_RejectConfirm"], item.SolicitanteEmail, item.FechaRegistro.ToString("dd/MM/yyyy"));
         _msgBoxColor = Color.Error;
         StateHasChanged();
 
@@ -151,8 +154,6 @@
     private async Task ProcesarAsync(SolicitudExcepcionAdminResponse item, bool aprobar)
     {
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
 
         try
         {
@@ -167,18 +168,16 @@
                 if (idx >= 0)
                     _solicitudes[idx] = item with { Estado = nuevoEstado };
 
-                _successMessage = aprobar
-                    ? $"Solicitud de {item.SolicitanteEmail} aprobada."
-                    : $"Solicitud de {item.SolicitanteEmail} rechazada.";
+                Snackbar.Add(aprobar ? L["Exc_ApprovedMsg"].Value : L["Exc_RejectedMsg"].Value, Severity.Success);
             }
             else
             {
-                _errorMessage = "No fue posible procesar la solicitud. Intente nuevamente.";
+                Snackbar.Add(L["Exc_ErrorAction"].Value, Severity.Error);
             }
         }
         catch
         {
-            _errorMessage = "Ocurrió un error al procesar la solicitud.";
+            Snackbar.Add(L["Exc_ErrorAction"].Value, Severity.Error);
         }
         finally
         {

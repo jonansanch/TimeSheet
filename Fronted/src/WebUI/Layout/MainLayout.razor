@@ -1,9 +1,15 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject KpgAuthStateProvider AuthProvider
+@inject SessionTimeoutService SessionTimeout
 @inject NavigationManager Navigation
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary" Dense="false" Style="height:64px;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
         <MudText Typo="Typo.h6" Style="font-family:'Poppins',sans-serif; font-weight:600; letter-spacing:0.5px;">
             KPG Timesheet
         </MudText>
@@ -13,6 +19,7 @@
                 <MudText Typo="Typo.body2" Class="me-3 d-none d-sm-block" Style="opacity:0.85;">
                     @(context.User.FindFirst("email")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? context.User.Identity?.Name)
                 </MudText>
+                <KpgLanguageSelector />
                 <MudIconButton Icon="@Icons.Material.Filled.Logout"
                                Color="Color.Inherit"
                                title="Cerrar sesión"
@@ -21,13 +28,13 @@
         </AuthorizeView>
     </MudAppBar>
 
-    <MudDrawer Open="true" Variant="DrawerVariant.Persistent" Elevation="0"
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md"
+               Elevation="0"
                Style="background-color:#0D3B5E; border-right:none;">
-        <MudDrawerHeader Style="height:64px; display:flex; align-items:center; padding:0 16px;">
-            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color:#5BB8D4; margin-right:8px;" />
-            <MudText Typo="Typo.subtitle1" Style="color:white; font-family:'Poppins',sans-serif; font-weight:600;">
-                Menú
-            </MudText>
+        <MudDrawerHeader Style="height:64px; display:flex; align-items:center; justify-content:center; padding:0 16px;">
+            <img src="images/kpg-logo.jpg" alt="KPG" style="width:100%; max-height:90px; object-fit:contain; mix-blend-mode:lighten;" />
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
@@ -39,10 +46,67 @@
     </MudMainContent>
 </MudLayout>
 
+<KpgSessionWarningDialog Visible="_showWarning"
+                         ExpiresAt="_expiresAt"
+                         OnContinueClicked="HandleSessionContinue"
+                         OnLogoutClicked="HandleLogout" />
+
 @code {
+    private bool _drawerOpen = true;
+    private bool _showWarning;
+    private DateTime _expiresAt;
+
+    protected override void OnInitialized()
+    {
+        SessionTimeout.OnWarning += HandleWarningAsync;
+        SessionTimeout.OnExpired += HandleExpiredAsync;
+    }
+
+    private async Task HandleWarningAsync()
+    {
+        await InvokeAsync(() =>
+        {
+            _showWarning = true;
+            _expiresAt = SessionTimeout.ExpiresAt ?? DateTime.UtcNow.AddMinutes(1);
+            StateHasChanged();
+        });
+    }
+
+    private async Task HandleExpiredAsync()
+    {
+        await InvokeAsync(async () =>
+        {
+            _showWarning = false;
+            Navigation.NavigateTo("/login", replace: true);
+            await AuthProvider.LogoutAsync();
+        });
+    }
+
+    private async Task HandleSessionContinue()
+    {
+        var ok = await AuthProvider.RefreshSessionAsync();
+        if (ok)
+            _showWarning = false;
+        else
+        {
+            _showWarning = false;
+            Navigation.NavigateTo("/login", replace: true);
+            await AuthProvider.LogoutAsync();
+        }
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
     private async Task HandleLogout()
     {
+        _showWarning = false;
         Navigation.NavigateTo("/login", replace: true);
         await AuthProvider.LogoutAsync();
+    }
+
+    public void Dispose()
+    {
+        SessionTimeout.OnWarning -= HandleWarningAsync;
+        SessionTimeout.OnExpired -= HandleExpiredAsync;
     }
 }

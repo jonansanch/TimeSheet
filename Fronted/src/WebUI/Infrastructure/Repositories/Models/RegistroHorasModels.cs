@@ -39,6 +39,8 @@ public record RegistroRecienteResponse(
 
 public record UpdateDescripcionRegistroRequest(string Descripcion);
 
+public record HistorialPaginadoResponse(int TotalCount, List<HistorialRegistroResponse> Items);
+
 public record HistorialRegistroResponse(
     int       Id,
     DateOnly  FechaRegistro,

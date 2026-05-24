@@ -3,6 +3,8 @@ namespace KPG.Timesheet.Application.Features.Reportes.Queries.GetReporteHoras;
 public record ReporteHorasResponse(
     DateOnly Desde,
     DateOnly Hasta,
+    int PageNumber,
+    int PageSize,
     int TotalRegistros,
     decimal TotalHoras,
     List<ReporteHorasItemDto> Items);

@@ -33,21 +33,24 @@ public class RegistroHoras : IEndpointGroup
         groupBuilder.MapPatch("{id}/descripcion", UpdateDescripcion).RequireAuthorization(supervisorAdmin);
     }
 
-    [EndpointSummary("Obtener historial de registros del usuario autenticado")]
-    [EndpointDescription("Retorna registros del usuario autenticado en el rango indicado, ordenados por fecha descendente. Por defecto retorna el mes en curso.")]
-    [ProducesResponseType<IEnumerable<MisRegistrosItemDto>>(StatusCodes.Status200OK)]
+    [EndpointSummary("Obtener historial paginado de registros del usuario autenticado")]
+    [EndpointDescription("Retorna registros del usuario autenticado en el rango indicado, ordenados por fecha descendente. Por defecto retorna el mes en curso, página 1, 20 registros por página.")]
+    [ProducesResponseType<MisRegistrosPaginadosResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public static async Task<IResult> GetMisRegistros(
         ISender sender,
         CancellationToken cancellationToken,
-        [FromQuery] DateOnly? desde = null,
-        [FromQuery] DateOnly? hasta = null)
+        [FromQuery] DateOnly? desde    = null,
+        [FromQuery] DateOnly? hasta    = null,
+        [FromQuery] int       page     = 1,
+        [FromQuery] int       pageSize = 20)
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var desdeEfectivo = desde ?? new DateOnly(hoy.Year, hoy.Month, 1);
         var hastaEfectivo = hasta ?? hoy;
 
-        var result = await sender.Send(new GetMisRegistrosQuery(desdeEfectivo, hastaEfectivo), cancellationToken);
+        var result = await sender.Send(
+            new GetMisRegistrosQuery(desdeEfectivo, hastaEfectivo, page, pageSize), cancellationToken);
         return Results.Ok(result);
     }
 

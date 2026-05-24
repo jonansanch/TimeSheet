@@ -4,17 +4,20 @@
 @using Color = MudBlazor.Color
 @using Size = MudBlazor.Size
 @inject IDashboardRepository Repo
+@inject CurrentUserService CurrentUser
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Dashboard - KPG Timesheet</PageTitle>
+<PageTitle>@L["Dash_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
 
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
         <div>
-            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Dashboard</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Estado diario del equipo</MudText>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Dash_Title"]</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_Subtitle"]</MudText>
         </div>
-        <MudDatePicker Label="Fecha"
+        <MudDatePicker Label="@L["Label_Date"]"
                        Date="_fechaDate"
                        DateChanged="OnFechaChangedAsync"
                        MaxDate="DateTime.Today"
@@ -45,26 +48,26 @@
     {
         <MudGrid>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Total empleados" Value="_estado.TotalEmpleados"
+                <KpgStatCard Label="@L["Dash_TotalEmployees"]" Value="_estado.TotalEmpleados"
                              Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Completo" Value="_estado.TotalCompletos"
+                <KpgStatCard Label="@L["Dash_Complete"]" Value="_estado.TotalCompletos"
                              Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Parcial" Value="_estado.TotalParciales"
+                <KpgStatCard Label="@L["Dash_Partial"]" Value="_estado.TotalParciales"
                              Icon="@Icons.Material.Filled.Pending" Color="Color.Warning" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="Pendiente" Value="_estado.TotalPendientes"
+                <KpgStatCard Label="@L["Dash_Pending"]" Value="_estado.TotalPendientes"
                              Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Default" />
             </MudItem>
         </MudGrid>
 
         @if (_estado.Equipo.Count == 0)
         {
-            <MudAlert Severity="Severity.Info">No hay miembros del equipo registrados.</MudAlert>
+            <MudAlert Severity="Severity.Info">@L["Dash_NoTeamMembers"]</MudAlert>
         }
         else
         {
@@ -97,12 +100,12 @@
                 <TitleContent>
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                         <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
-                        <MudText Style="font-weight:600;">Pendientes críticos</MudText>
+                        <MudText Style="font-weight:600;">@L["Dash_CriticalPending"]</MudText>
                         <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
                             @_criticos.Pendientes.Count
                         </MudChip>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">
-                            sin registrar hace más de @_criticos.Umbral días hábiles
+                            @string.Format(L["Dash_CriticalPendingSubtitle"], _criticos.Umbral)
                         </MudText>
                     </MudStack>
                 </TitleContent>
@@ -118,7 +121,7 @@
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">@p.Email</MudText>
                                     <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
                                              Color="@(p.DiasSinRegistro >= 999 ? Color.Error : Color.Warning)">
-                                        @(p.DiasSinRegistro >= 999 ? "Sin registros" : $"{p.DiasSinRegistro} d sin registro")
+                                        @(p.DiasSinRegistro >= 999 ? L["Dash_NoDaysWithout"].Value : string.Format(L["Dash_DaysWithout"], p.DiasSinRegistro))
                                     </MudChip>
                                 </MudStack>
                             </MudListItem>
@@ -133,17 +136,17 @@
 
     <MudStack Spacing="2">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
-            <MudText Typo="Typo.h6" Style="font-weight:600;">Distribución de horas</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Dash_HoursDistTitle"]</MudText>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
                 <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" OverrideStyles="false">
                     <MudButton Color="@(_periodo == Periodo.Hoy ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Hoy))">Hoy</MudButton>
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Hoy))">@L["Status_Today"]</MudButton>
                     <MudButton Color="@(_periodo == Periodo.Semana ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Semana))">Esta semana</MudButton>
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Semana))">@L["Status_ThisWeek"]</MudButton>
                     <MudButton Color="@(_periodo == Periodo.Mes ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Mes))">Este mes</MudButton>
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Mes))">@L["Status_ThisMonth"]</MudButton>
                     <MudButton Color="@(_periodo == Periodo.Personalizado ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Personalizado))">Personalizado</MudButton>
+                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Personalizado))">@L["Status_Custom"]</MudButton>
                 </MudButtonGroup>
                 @if (_periodo == Periodo.Personalizado)
                 {
@@ -172,14 +175,14 @@
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                 <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Size="Size.Small" />
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Total equipo: <strong>@_distribucion.TotalHorasEquipo.ToString("F1") h</strong>
+                    @L["Dash_TeamTotal"] <strong>@_distribucion.TotalHorasEquipo.ToString("F1") h</strong>
                     (@_distribucion.Desde.ToString("dd/MM") – @_distribucion.Hasta.ToString("dd/MM/yyyy"))
                 </MudText>
             </MudStack>
 
             @if (_distribucion.Consultores.Count == 0)
             {
-                <MudAlert Severity="Severity.Info">No hay registros de horas en el período seleccionado.</MudAlert>
+                <MudAlert Severity="Severity.Info">@L["Dash_NoHoursInPeriod"]</MudAlert>
             }
             else
             {
@@ -190,7 +193,7 @@
                                Height="@Math.Max(200, _distribucion.Consultores.Count * 48)">
                         <ApexPointSeries TItem="DistribucionConsultorDto"
                                          Items="_distribucion.Consultores"
-                                         Name="Horas"
+                                         Name="@L["Label_Hours"]"
                                          XValue="@(e => e.Nombre)"
                                          YValue="@(e => e.TotalHoras)"
                                          SeriesType="SeriesType.Bar" />
@@ -207,10 +210,10 @@
                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                         <MudIcon Icon="@Icons.Material.Filled.Insights" Color="Color.Primary" />
-                        <MudText Typo="Typo.h6" Style="font-weight:600;">Vista gerencial</MudText>
+                        <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Dash_GerencialSubtitle"]</MudText>
                     </MudStack>
                     <MudText Typo="Typo.caption" Color="Color.Secondary">
-                        Período: @_distribucion?.Desde.ToString("dd/MM") – @_distribucion?.Hasta.ToString("dd/MM/yyyy")
+                        @L["Label_Period"]: @_distribucion?.Desde.ToString("dd/MM") – @_distribucion?.Hasta.ToString("dd/MM/yyyy")
                     </MudText>
                 </MudStack>
 
@@ -235,7 +238,7 @@
                         <MudItem xs="12" sm="6" md="3">
                             <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
                                 <MudStack Spacing="1">
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total horas</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TotalHours"]</MudText>
                                     <MudText Typo="Typo.h4" Style="font-weight:700;">@_gerencial.TotalHoras.ToString("F1") h</MudText>
                                 </MudStack>
                             </MudPaper>
@@ -243,7 +246,7 @@
                         <MudItem xs="12" sm="6" md="3">
                             <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
                                 <MudStack Spacing="1">
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Clientes activos</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_ActiveClients"]</MudText>
                                     <MudText Typo="Typo.h4" Style="font-weight:700;">@_gerencial.TotalClientes</MudText>
                                 </MudStack>
                             </MudPaper>
@@ -253,7 +256,7 @@
                             <MudItem xs="12" sm="12" md="6">
                                 <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
                                     <MudStack Spacing="1">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">Top cliente</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TopClient"]</MudText>
                                         <MudText Typo="Typo.h6" Style="font-weight:600;">@_gerencial.PorCliente[0].Cliente</MudText>
                                         <MudText Typo="Typo.caption" Color="Color.Secondary">@_gerencial.PorCliente[0].TotalHoras.ToString("F1") h</MudText>
                                     </MudStack>
@@ -264,20 +267,20 @@
 
                     @if (_gerencial.PorCliente.Count == 0)
                     {
-                        <MudAlert Severity="Severity.Info">No hay registros de horas en el período seleccionado.</MudAlert>
+                        <MudAlert Severity="Severity.Info">@L["Dash_NoHoursInPeriod"]</MudAlert>
                     }
                     else
                     {
                         <MudGrid>
                             <MudItem xs="12" md="5">
                                 <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
-                                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">Horas por cliente</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">@L["Dash_ByClient"]</MudText>
                                     <ApexChart TItem="HorasPorClienteDto"
                                                Options="_donutOptions"
                                                Height="280">
                                         <ApexPointSeries TItem="HorasPorClienteDto"
                                                          Items="_gerencial.PorCliente"
-                                                         Name="Horas"
+                                                         Name="@L["Label_Hours"]"
                                                          XValue="@(e => e.Cliente)"
                                                          YValue="@(e => e.TotalHoras)"
                                                          SeriesType="SeriesType.Donut" />
@@ -286,13 +289,13 @@
                             </MudItem>
                             <MudItem xs="12" md="7">
                                 <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
-                                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">Horas por proyecto</MudText>
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">@L["Dash_ByProject"]</MudText>
                                     <ApexChart TItem="HorasPorProyectoDto"
                                                Options="_barProyectoOptions"
                                                Height="@Math.Max(200, _gerencial.PorProyecto.Count * 40)">
                                         <ApexPointSeries TItem="HorasPorProyectoDto"
                                                          Items="_gerencial.PorProyecto"
-                                                         Name="Horas"
+                                                         Name="@L["Label_Hours"]"
                                                          XValue="@(e => e.Proyecto)"
                                                          YValue="@(e => e.TotalHoras)"
                                                          SeriesType="SeriesType.Bar" />
@@ -312,7 +315,7 @@
             <MudStack Spacing="2">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                     <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6" Style="font-weight:600;">Métricas globales</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Dash_AdminMetrics"]</MudText>
                 </MudStack>
 
                 @if (_isLoadingAdmin)
@@ -335,7 +338,7 @@
                 {
                     <MudGrid>
                         <MudItem xs="12" sm="6" md="3">
-                            <KpgStatCard Label="Total registros"
+                            <KpgStatCard Label="@L["Dash_TotalRecords"]"
                                          Value="_metricas.TotalRegistros"
                                          Icon="@Icons.Material.Filled.Assignment"
                                          Color="Color.Primary" />
@@ -345,20 +348,20 @@
                                 <MudStack Spacing="1">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                         <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Success" Size="Size.Medium" />
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total horas</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TotalHours"]</MudText>
                                     </MudStack>
                                     <MudText Typo="Typo.h4" Style="font-weight:700;">@_metricas.TotalHoras.ToString("F1") h</MudText>
                                 </MudStack>
                             </MudPaper>
                         </MudItem>
                         <MudItem xs="12" sm="6" md="3">
-                            <KpgStatCard Label="Usuarios activos"
+                            <KpgStatCard Label="@L["Dash_ActiveUsers"]"
                                          Value="_metricas.UsuariosActivos"
                                          Icon="@Icons.Material.Filled.People"
                                          Color="Color.Info" />
                         </MudItem>
                         <MudItem xs="12" sm="6" md="3">
-                            <KpgStatCard Label="Sin registrar hoy"
+                            <KpgStatCard Label="@L["Dash_PendingToday"]"
                                          Value="_metricas.PendientesHoy"
                                          Icon="@Icons.Material.Filled.Warning"
                                          Color="@(_metricas.PendientesHoy > 0 ? Color.Warning : Color.Success)" />
@@ -369,7 +372,7 @@
                     {
                         <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
                             <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">
-                                Tendencia de registros (@_metricas.Desde.ToString("dd/MM") – @_metricas.Hasta.ToString("dd/MM/yyyy"))
+                                @L["Dash_Tendency"] (@_metricas.Desde.ToString("dd/MM") – @_metricas.Hasta.ToString("dd/MM/yyyy"))
                             </MudText>
                             <ApexChart TItem="TendenciaDiaDto"
                                        Options="_lineOptions"
@@ -382,7 +385,7 @@
                                                  SeriesType="SeriesType.Line" />
                                 <ApexPointSeries TItem="TendenciaDiaDto"
                                                  Items="_metricas.Tendencia"
-                                                 Name="Horas"
+                                                 Name="@L["Label_Hours"]"
                                                  XValue="@(e => e.Fecha.ToString("dd/MM"))"
                                                  YValue="@(e => e.TotalHoras)"
                                                  SeriesType="SeriesType.Line" />
@@ -391,7 +394,7 @@
                     }
                     else
                     {
-                        <MudAlert Severity="Severity.Info">No hay registros en el período seleccionado.</MudAlert>
+                        <MudAlert Severity="Severity.Info">@L["Dash_NoHoursInPeriod"]</MudAlert>
                     }
                 }
             </MudStack>
@@ -401,6 +404,11 @@
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Dashboard"].Value, null, disabled: true)
+    ];
+
     // ── Estado diario ────────────────────────────────────────────────
     private EstadoEquipoResponse? _estado;
     private bool _isLoadingEstado = true;
@@ -419,10 +427,12 @@
     private DashboardGerencialResponse? _gerencial;
     private bool _isLoadingGerencial = true;
     private string _errorGerencial = string.Empty;
+    private bool _puedeVerGerencial;
     // ── Métricas globales (Admin) ────────────────────────────────────
     private MetricasGlobalesResponse? _metricas;
     private bool _isLoadingAdmin = true;
     private string _errorAdmin = string.Empty;
+    private bool _puedeVerAdmin;
     private bool _isLoadingDistribucion = true;
     private string _errorDistribucion = string.Empty;
     private Periodo _periodo = Periodo.Semana;
@@ -467,40 +477,81 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarEstadoAsync(), CargarCriticosAsync(), CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
+        await CargarPermisosAsync();
+
+        var cargas = new List<Task>
+        {
+            CargarEstadoAsync(),
+            CargarCriticosAsync(),
+            CargarDistribucionAsync()
+        };
+
+        if (_puedeVerGerencial)
+            cargas.Add(CargarGerencialAsync());
+        else
+            _isLoadingGerencial = false;
+
+        if (_puedeVerAdmin)
+            cargas.Add(CargarAdminAsync());
+        else
+            _isLoadingAdmin = false;
+
+        await Task.WhenAll(cargas);
     }
 
     private async Task OnFechaChangedAsync(DateTime? date)
     {
         if (date is null) return;
         _fecha = DateOnly.FromDateTime(date.Value);
-        await CargarEstadoAsync();
+        var carga = CargarEstadoAsync();
+        StateHasChanged();
+        await carga;
     }
 
     private async Task CambiarPeriodoAsync(Periodo periodo)
     {
         _periodo = periodo;
-        await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
+        await CargarDatosPeriodoAsync();
     }
 
     private async Task OnRangoPersonalizadoChangedAsync(DateRange rango)
     {
         _rangoPersonalizado = rango;
         if (rango.Start.HasValue && rango.End.HasValue)
-            await Task.WhenAll(CargarDistribucionAsync(), CargarGerencialAsync(), CargarAdminAsync());
+            await CargarDatosPeriodoAsync();
+    }
+
+    private async Task CargarPermisosAsync()
+    {
+        var roles = await CurrentUser.GetRolesAsync();
+        _puedeVerAdmin = roles.Contains(Roles.Admin);
+        _puedeVerGerencial = _puedeVerAdmin || roles.Contains(Roles.Gerente);
+    }
+
+    private async Task CargarDatosPeriodoAsync()
+    {
+        var cargas = new List<Task> { CargarDistribucionAsync() };
+
+        if (_puedeVerGerencial)
+            cargas.Add(CargarGerencialAsync());
+
+        if (_puedeVerAdmin)
+            cargas.Add(CargarAdminAsync());
+
+        StateHasChanged();
+        await Task.WhenAll(cargas);
     }
 
     private async Task CargarCriticosAsync()
     {
         _isLoadingCriticos = true;
         _errorCriticos = string.Empty;
-        StateHasChanged();
         try
         {
             _criticos = await Repo.GetPendientesCriticosAsync();
-            if (_criticos is null) _errorCriticos = "No se pudo obtener los pendientes críticos.";
+            if (_criticos is null) _errorCriticos = L["Dash_ErrorLoad"];
         }
-        catch { _errorCriticos = "Error al comunicarse con el servidor."; }
+        catch { _errorCriticos = L["Error_Server"]; }
         finally { _isLoadingCriticos = false; }
     }
 
@@ -508,13 +559,12 @@
     {
         _isLoadingEstado = true;
         _errorEstado = string.Empty;
-        StateHasChanged();
         try
         {
             _estado = await Repo.GetEstadoEquipoAsync(_fecha);
-            if (_estado is null) _errorEstado = "No se pudo obtener el estado del equipo.";
+            if (_estado is null) _errorEstado = L["Dash_ErrorLoad"];
         }
-        catch { _errorEstado = "Error al comunicarse con el servidor."; }
+        catch { _errorEstado = L["Error_Server"]; }
         finally { _isLoadingEstado = false; }
     }
 
@@ -522,14 +572,13 @@
     {
         _isLoadingDistribucion = true;
         _errorDistribucion = string.Empty;
-        StateHasChanged();
         try
         {
             var (desde, hasta) = ObtenerRango();
             _distribucion = await Repo.GetDistribucionHorasAsync(desde, hasta);
-            if (_distribucion is null) _errorDistribucion = "No se pudo obtener la distribución de horas.";
+            if (_distribucion is null) _errorDistribucion = L["Dash_ErrorLoad"];
         }
-        catch { _errorDistribucion = "Error al comunicarse con el servidor."; }
+        catch { _errorDistribucion = L["Error_Server"]; }
         finally { _isLoadingDistribucion = false; }
     }
 
@@ -552,14 +601,13 @@
     {
         _isLoadingGerencial = true;
         _errorGerencial = string.Empty;
-        StateHasChanged();
         try
         {
             var (desde, hasta) = ObtenerRango();
             _gerencial = await Repo.GetDashboardGerencialAsync(desde, hasta);
-            if (_gerencial is null) _errorGerencial = "No se pudo obtener el dashboard gerencial.";
+            if (_gerencial is null) _errorGerencial = L["Dash_ErrorLoad"];
         }
-        catch { _errorGerencial = "Error al comunicarse con el servidor."; }
+        catch { _errorGerencial = L["Error_Server"]; }
         finally { _isLoadingGerencial = false; }
     }
 
@@ -567,14 +615,13 @@
     {
         _isLoadingAdmin = true;
         _errorAdmin = string.Empty;
-        StateHasChanged();
         try
         {
             var (desde, hasta) = ObtenerRango();
             _metricas = await Repo.GetMetricasGlobalesAsync(desde, hasta);
-            if (_metricas is null) _errorAdmin = "No se pudo obtener las métricas globales.";
+            if (_metricas is null) _errorAdmin = L["Dash_ErrorLoad"];
         }
-        catch { _errorAdmin = "Error al comunicarse con el servidor."; }
+        catch { _errorAdmin = L["Error_Server"]; }
         finally { _isLoadingAdmin = false; }
     }
 

@@ -1,3 +1,5 @@
+using System.Data;
+using Dapper;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Application.Features.Users.Queries.GetUsers;
@@ -10,10 +12,12 @@ namespace KPG.Timesheet.Infrastructure.Identity;
 public class IdentityService : IIdentityService
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IDbConnection _db;
 
-    public IdentityService(UserManager<ApplicationUser> userManager)
+    public IdentityService(UserManager<ApplicationUser> userManager, IDbConnection db)
     {
         _userManager = userManager;
+        _db = db;
     }
 
     public async Task<string?> GetUserNameAsync(string userId)
@@ -41,48 +45,48 @@ public class IdentityService : IIdentityService
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        // 1 query: all users
-        var users = await _userManager.Users.ToListAsync(cancellationToken);
-
-        // 4 queries (one per role) — O(roles) instead of O(2N+1)
-        var allRoles = new[] { Roles.Admin, Roles.Gerente, Roles.Supervisor, Roles.Empleado };
-        var userRoleMap = new Dictionary<string, string>(users.Count);
-        foreach (var roleName in allRoles)
+        var orderBy = (sortBy?.ToLowerInvariant(), sortDescending) switch
         {
-            var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
-            foreach (var u in usersInRole)
-                userRoleMap.TryAdd(u.Id, roleName);
-        }
-
-        var items = users.Select(u => new UserAdminDto(
-            u.Id,
-            u.Email ?? string.Empty,
-            u.NombreCompleto,
-            u.IsActive,
-            userRoleMap.GetValueOrDefault(u.Id, string.Empty),
-            u.Created,
-            u.DeactivatedAt)).ToList();
-
-        var ordered = (sortBy?.ToLowerInvariant()) switch
-        {
-            "estado" or "isactive" => sortDescending
-                ? items.OrderByDescending(u => u.IsActive).ThenBy(u => u.Email)
-                : items.OrderBy(u => u.IsActive).ThenBy(u => u.Email),
-            "rol" or "role" => sortDescending
-                ? items.OrderByDescending(u => u.Role).ThenBy(u => u.Email)
-                : items.OrderBy(u => u.Role).ThenBy(u => u.Email),
-            _ => sortDescending
-                ? items.OrderByDescending(u => u.Email)
-                : items.OrderBy(u => u.Email)
+            ("estado" or "isactive", false) => "u.IsActive ASC,  u.Email ASC",
+            ("estado" or "isactive", true)  => "u.IsActive DESC, u.Email ASC",
+            ("rol"    or "role",     false) => "r.Name    ASC,  u.Email ASC",
+            ("rol"    or "role",     true)  => "r.Name    DESC, u.Email ASC",
+            (_,                      false) => "u.Email ASC",
+            (_,                      true)  => "u.Email DESC",
         };
 
-        var total = items.Count;
-        var pageItems = ordered
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
+        var sql = $"""
+            SELECT COUNT(*) FROM AspNetUsers;
 
-        return new UsersPageDto(pageItems, total, pageNumber, pageSize);
+            SELECT Id, Email, NombreCompleto, IsActive, Role, Created, DeactivatedAt
+            FROM (
+                SELECT ROW_NUMBER() OVER (ORDER BY {orderBy}) AS RowNum,
+                       u.Id,
+                       COALESCE(u.Email, '')  AS Email,
+                       u.NombreCompleto,
+                       u.IsActive,
+                       COALESCE(r.Name, '')   AS Role,
+                       u.Created,
+                       u.DeactivatedAt
+                FROM   AspNetUsers      u
+                LEFT   JOIN AspNetUserRoles ur ON u.Id      = ur.UserId
+                LEFT   JOIN AspNetRoles     r  ON ur.RoleId = r.Id
+            ) AS Paged
+            WHERE  RowNum > @Skip AND RowNum <= @Skip + @Take
+            ORDER  BY RowNum;
+            """;
+
+        using var multi = await _db.QueryMultipleAsync(sql, new
+        {
+            Skip = (pageNumber - 1) * pageSize,
+            Take = pageSize
+        });
+
+        var total = await multi.ReadSingleAsync<int>();
+        var rows  = await multi.ReadAsync<UserAdminRow>();
+        var items = rows.Select(r => new UserAdminDto(r.Id, r.Email, r.NombreCompleto, r.IsActive, r.Role, r.Created, r.DeactivatedAt)).ToList();
+
+        return new UsersPageDto(items, total, pageNumber, pageSize);
     }
 
     public async Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role, string? nombreCompleto = null)
@@ -201,6 +205,47 @@ public class IdentityService : IIdentityService
 
         var roles = await _userManager.GetRolesAsync(user);
         return new UserCredentialsResult(user.Id, user.Email!, roles.ToList().AsReadOnly());
+    }
+
+    public async Task<Result> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+            return Result.Failure(["Usuario no encontrado."]);
+
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        return result.ToApplicationResult();
+    }
+
+    public async Task<(bool Found, string? Token, string? Email)> GeneratePasswordResetTokenAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user is null || !user.IsActive)
+            return (false, null, null);
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        return (true, token, user.Email);
+    }
+
+    public async Task<Result> ResetPasswordAsync(string email, string token, string newPassword)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user is null || !user.IsActive)
+            return Result.Failure(["Usuario no encontrado."]);
+
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        return result.ToApplicationResult();
+    }
+
+    private sealed class UserAdminRow
+    {
+        public string Id { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string? NombreCompleto { get; set; }
+        public bool IsActive { get; set; }
+        public string Role { get; set; } = "";
+        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset? DeactivatedAt { get; set; }
     }
 
     private static bool IsValidRole(string role) =>

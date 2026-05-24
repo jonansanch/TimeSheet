@@ -1,11 +1,12 @@
 @page "/"
 @attribute [Authorize]
 @inject CurrentUserService CurrentUser
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Inicio — KPG Timesheet</PageTitle>
+<PageTitle>@L["Nav_Home"] — KPG Timesheet</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-2" Style="font-family: 'Poppins', sans-serif; font-weight: 600;">
-    Bienvenido a KPG Timesheet
+    @L["Home_Welcome"]
 </MudText>
 
 <AuthorizeView>
@@ -23,11 +24,11 @@
                 <MudCard Elevation="2">
                     <MudCardContent>
                         <MudIcon Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Registro</MudText>
-                        <MudText Typo="Typo.body2">Registra tus horas de trabajo.</MudText>
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Register"]</MudText>
+                        <MudText Typo="Typo.body2">@L["Home_CardRegisterDesc"]</MudText>
                     </MudCardContent>
                     <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/registro">Ir a Registro</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/registro">@L["Home_GoToRegister"]</MudButton>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -40,11 +41,11 @@
                 <MudCard Elevation="2">
                     <MudCardContent>
                         <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Dashboard</MudText>
-                        <MudText Typo="Typo.body2">Visualiza el estado del equipo.</MudText>
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Dashboard"]</MudText>
+                        <MudText Typo="Typo.body2">@L["Home_CardDashboardDesc"]</MudText>
                     </MudCardContent>
                     <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/dashboard">Ir a Dashboard</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/dashboard">@L["Home_GoToDashboard"]</MudButton>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -52,11 +53,11 @@
                 <MudCard Elevation="2">
                     <MudCardContent>
                         <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Reportes</MudText>
-                        <MudText Typo="Typo.body2">Genera reportes de horas trabajadas.</MudText>
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Reports"]</MudText>
+                        <MudText Typo="Typo.body2">@L["Home_CardReportsDesc"]</MudText>
                     </MudCardContent>
                     <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/reportes">Ir a Reportes</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/reportes/horas">@L["Home_GoToReports"]</MudButton>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -69,11 +70,11 @@
                 <MudCard Elevation="2">
                     <MudCardContent>
                         <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">Administración</MudText>
-                        <MudText Typo="Typo.body2">Gestiona usuarios y configuración del sistema.</MudText>
+                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Admin"]</MudText>
+                        <MudText Typo="Typo.body2">@L["Home_CardAdminDesc"]</MudText>
                     </MudCardContent>
                     <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Warning" Href="/admin/usuarios">Ir a Administración</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Warning" Href="/admin/usuarios">@L["Home_GoToAdmin"]</MudButton>
                     </MudCardActions>
                 </MudCard>
             </MudItem>

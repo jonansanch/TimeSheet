@@ -60,4 +60,51 @@ public class AuthRepository : IAuthRepository
 
         await _http.SendAsync(request, cancellationToken);
     }
+
+    public async Task<(bool Ok, string? Error)> ChangePasswordAsync(string currentPassword, string newPassword, string accessToken, CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/change-password");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = JsonContent.Create(new ChangePasswordRequest(currentPassword, newPassword));
+
+        HttpResponseMessage response;
+        try { response = await _http.SendAsync(request, cancellationToken); }
+        catch (HttpRequestException) { return (false, null); }
+
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        try
+        {
+            var problem = await response.Content.ReadFromJsonAsync<ProblemDetail>(cancellationToken: cancellationToken);
+            return (false, problem?.Detail);
+        }
+        catch { return (false, null); }
+    }
+
+    public async Task<bool> ForgotPasswordAsync(string email, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/auth/forgot-password", new ForgotPasswordRequest(email), cancellationToken);
+            return response.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    public async Task<(bool Ok, string? Error)> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/auth/reset-password", new ResetPasswordRequest(email, token, newPassword), cancellationToken);
+            if (response.IsSuccessStatusCode)
+                return (true, null);
+
+            var problem = await response.Content.ReadFromJsonAsync<ProblemDetail>(cancellationToken: cancellationToken);
+            return (false, problem?.Detail);
+        }
+        catch { return (false, null); }
+    }
+
+    private sealed record ProblemDetail(string? Detail);
 }

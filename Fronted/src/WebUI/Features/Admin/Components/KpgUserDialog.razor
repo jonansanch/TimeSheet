@@ -1,54 +1,56 @@
+@inject IStringLocalizer<SharedResource> L
+
 <MudDialog>
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" />
-            <MudText Typo="Typo.h6" Style="font-weight:600;">Nuevo usuario</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Users_NewTitle"]</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
             @if (!string.IsNullOrWhiteSpace(ErrorMessage))
             {
-                <MudAlert Severity="Severity.Error" Dense="true">@ErrorMessage</MudAlert>
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@ErrorMessage</MudAlert>
             }
 
             <MudTextField @ref="_emailField"
                           T="string"
-                          Label="Email"
+                          Label="@L["Label_Email"]"
                           Variant="Variant.Outlined"
                           @bind-Value="_email"
                           Required="true"
-                          RequiredError="El email es requerido."
+                          RequiredError="@L["Val_EmailRequired"]"
                           InputType="InputType.Email"
                           autocomplete="off"
-                          aria-label="Email del usuario" />
+                          aria-label="@L["Label_Email"]" />
 
             <MudTextField T="string"
-                          Label="Nombre completo"
+                          Label="@L["Label_FullName"]"
                           Variant="Variant.Outlined"
                           @bind-Value="_nombreCompleto"
-                          Placeholder="Opcional"
+                          Placeholder="@L["Label_Optional"]"
                           autocomplete="off"
-                          aria-label="Nombre completo del usuario" />
+                          aria-label="@L["Label_FullName"]" />
 
             <MudTextField T="string"
-                          Label="Contraseña temporal"
+                          Label="@L["Label_TempPassword"]"
                           Variant="Variant.Outlined"
                           @bind-Value="_password"
                           Required="true"
-                          RequiredError="La contraseña es requerida."
+                          RequiredError="@L["Val_PasswordRequired"]"
                           InputType="InputType.Password"
                           autocomplete="new-password"
-                          HelperText="Minimo 6 caracteres con mayuscula, minuscula, numero y simbolo. Ejemplo: Empleado1234!"
-                          aria-label="Contraseña temporal" />
+                          HelperText="@L["Users_PasswordHint"]"
+                          aria-label="@L["Label_TempPassword"]" />
 
             <MudSelect T="string"
-                       Label="Rol inicial"
+                       Label="@L["Label_InitialRole"]"
                        Variant="Variant.Outlined"
                        @bind-Value="_role"
                        Required="true"
-                       RequiredError="El rol es requerido."
-                       aria-label="Rol inicial">
+                       RequiredError="@L["Val_RoleRequired"]"
+                       aria-label="@L["Label_InitialRole"]">
                 @foreach (var role in RolesDisponibles)
                 {
                     <MudSelectItem Value="@role">@role</MudSelectItem>
@@ -57,12 +59,12 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Disabled="@(!EsValido)"
                    OnClick="Submit">
-            Crear
+            @L["Btn_Create"]
         </MudButton>
     </DialogActions>
 </MudDialog>

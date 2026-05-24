@@ -1,4 +1,5 @@
 @inject IRegistroHorasRepository RegistroHorasRepository
+@inject IStringLocalizer<SharedResource> L
 
 @if (_isLoading)
 {
@@ -7,13 +8,13 @@
 else if (_sugerencias.Count > 0)
 {
     <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="1" Class="mb-2">
-        <MudText Typo="Typo.caption" Color="Color.Secondary">Usados recientemente:</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Reg_RecentlyUsed"]</MudText>
         @foreach (var s in _sugerencias)
         {
             <MudChip T="string"
                      Value="@($"{s.Cliente} — {s.Proyecto}")"
                      OnClick="@(() => OnSuggestionSelected.InvokeAsync(s))"
-                     aria-label="@($"Aplicar: {s.Cliente} - {s.Proyecto}")"
+                     aria-label="@($"{L["Reg_ApplySuggestion"].Value}: {s.Cliente} - {s.Proyecto}")"
                      Color="Color.Default"
                      Variant="Variant.Outlined"
                      Size="Size.Small">

@@ -27,8 +27,8 @@ public class ExportarTimesheetQueryHandler(IDbConnection db)
                r.Descripcion
         FROM   RegistrosHoras r
         WHERE  r.UserId = @UserId
-          AND  MONTH(r.FechaRegistro) = @Mes
-          AND  YEAR(r.FechaRegistro)  = @Anio
+          AND  r.FechaRegistro >= @Desde
+          AND  r.FechaRegistro < @HastaExclusivo
         ORDER  BY r.FechaRegistro
         """;
 
@@ -36,8 +36,11 @@ public class ExportarTimesheetQueryHandler(IDbConnection db)
         ExportarTimesheetQuery request,
         CancellationToken cancellationToken)
     {
+        var desde = new DateOnly(request.Anio, request.Mes, 1);
+        var hastaExclusivo = desde.AddMonths(1);
+
         var nombre = await db.ExecuteScalarAsync<string>(SqlNombre, new { request.UserId }) ?? request.UserId;
-        var rows   = (await db.QueryAsync<RawRow>(Sql, new { request.UserId, request.Mes, request.Anio })).ToList();
+        var rows   = (await db.QueryAsync<RawRow>(Sql, new { request.UserId, Desde = desde, HastaExclusivo = hastaExclusivo })).ToList();
 
         var bytes    = GenerarExcel(nombre, request.Mes, request.Anio, rows);
         var cultura  = new CultureInfo("es-ES");

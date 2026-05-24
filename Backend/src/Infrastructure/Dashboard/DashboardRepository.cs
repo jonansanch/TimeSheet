@@ -69,41 +69,50 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         """;
 
     private const string SqlMetricas = """
+        -- CTE 1: agrega TotalRegistros, TotalHoras y ClientesActivos en una sola pasada
+        --        sobre RegistrosHoras para el período, usando IX_RegistrosHoras_FechaRegistro.
+        WITH PeriodoStats AS (
+            SELECT
+                COUNT(*)                                                              AS TotalRegistros,
+                ROUND((
+                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaAM, HoraSalidaAM)), 0) +
+                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaPM, HoraSalidaPM)), 0)
+                ) / 60.0, 1)                                                         AS TotalHoras,
+                COUNT(DISTINCT CASE WHEN Cliente <> '' THEN Cliente END)              AS ClientesActivos
+            FROM   RegistrosHoras
+            WHERE  FechaRegistro BETWEEN @Desde AND @Hasta
+        ),
+        -- CTE 2: IDs de empleados y supervisores activos (conjunto pequeño, ≤ 30 filas).
+        EmpleadosSup AS (
+            SELECT DISTINCT u.Id
+            FROM   AspNetUsers u
+            JOIN   AspNetUserRoles ur ON u.Id = ur.UserId
+            JOIN   AspNetRoles ro     ON ur.RoleId = ro.Id
+            WHERE  u.IsActive = 1
+              AND  ro.Name IN ('Empleado', 'Supervisor')
+        ),
+        -- CTE 3: cuenta empleados sin registro hoy usando LEFT JOIN en lugar de NOT IN.
+        PendientesHoy AS (
+            SELECT COUNT(*) AS Total
+            FROM   EmpleadosSup e
+            LEFT   JOIN RegistrosHoras r ON r.UserId = e.Id AND r.FechaRegistro = @Hoy
+            WHERE  r.UserId IS NULL
+        )
         SELECT
-            (SELECT COUNT(*)
-             FROM   RegistrosHoras
-             WHERE  FechaRegistro BETWEEN @Desde AND @Hasta)                       AS TotalRegistros,
-            ISNULL(
-              (SELECT ROUND((
-                   ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaAM, HoraSalidaAM)), 0) +
-                   ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaPM, HoraSalidaPM)), 0)
-               ) / 60.0, 1)
-               FROM   RegistrosHoras
-               WHERE  FechaRegistro BETWEEN @Desde AND @Hasta), 0)                 AS TotalHoras,
-            (SELECT COUNT(*)
-             FROM   AspNetUsers
-             WHERE  IsActive = 1)                                                   AS UsuariosActivos,
-            (SELECT COUNT(DISTINCT r.Cliente)
-             FROM   RegistrosHoras r
-             WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
-               AND  r.Cliente <> '')                                                AS ClientesActivos,
-            (SELECT COUNT(*)
-             FROM   AspNetUsers u
-             JOIN   AspNetUserRoles ur ON u.Id = ur.UserId
-             JOIN   AspNetRoles ro     ON ur.RoleId = ro.Id
-             WHERE  u.IsActive = 1
-               AND  ro.Name IN ('Empleado', 'Supervisor')
-               AND  u.Id NOT IN (
-                        SELECT UserId
-                        FROM   RegistrosHoras
-                        WHERE  FechaRegistro = @Hoy))                              AS PendientesHoy;
+            ps.TotalRegistros,
+            ISNULL(ps.TotalHoras, 0)                                                  AS TotalHoras,
+            (SELECT COUNT(*) FROM AspNetUsers WHERE IsActive = 1)                     AS UsuariosActivos,
+            ps.ClientesActivos,
+            ph.Total                                                                   AS PendientesHoy
+        FROM   PeriodoStats  ps
+        CROSS  JOIN PendientesHoy ph;
 
-        SELECT r.FechaRegistro                                                      AS Fecha,
-               COUNT(*)                                                             AS TotalRegistros,
+        SELECT r.FechaRegistro                                                        AS Fecha,
+               COUNT(*)                                                               AS TotalRegistros,
                ROUND((
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
-               ) / 60.0, 1)                                                         AS TotalHoras
+               ) / 60.0, 1)                                                           AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
         GROUP  BY r.FechaRegistro
@@ -124,7 +133,9 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         FROM   AspNetUsers u
         JOIN   AspNetUserRoles ur ON u.Id = ur.UserId
         JOIN   AspNetRoles ro     ON ur.RoleId = ro.Id
-        LEFT   JOIN RegistrosHoras r ON r.UserId = u.Id
+        LEFT   JOIN RegistrosHoras r
+               ON  r.UserId        = u.Id
+               AND r.FechaRegistro >= @LimiteBusqueda
         WHERE  u.IsActive = 1
           AND  ro.Name IN ('Empleado', 'Supervisor')
         GROUP  BY u.Id, u.NombreCompleto, u.Email
@@ -210,10 +221,10 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
             new { Clave = ParametrosSistema.DiasUmbralNotificacion });
         if (umbral <= 0) umbral = 3;
 
-        var fechaCorte = BusinessDayCalculator.GetEarliestAllowedDate(DateOnly.FromDateTime(DateTime.Today), umbral);
-        var rows = await db.QueryAsync<PendientesRawRow>(SqlPendientes, new { FechaCorte = fechaCorte });
-
-        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var hoy          = DateOnly.FromDateTime(DateTime.Today);
+        var fechaCorte   = BusinessDayCalculator.GetEarliestAllowedDate(hoy, umbral);
+        var limiteBusqueda = hoy.AddDays(-90);
+        var rows = await db.QueryAsync<PendientesRawRow>(SqlPendientes, new { FechaCorte = fechaCorte, LimiteBusqueda = limiteBusqueda });
         var pendientes = rows.Select(r => new PendienteCriticoDto(
             r.UserId, r.Nombre, r.Email,
             r.UltimoRegistro.HasValue ? BusinessDayCalculator.CountBusinessDays(r.UltimoRegistro.Value, hoy) : 999)).ToList();

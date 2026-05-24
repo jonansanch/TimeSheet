@@ -1,6 +1,10 @@
 @inherits LayoutComponentBase
 
 <MudLayout>
+    <MudAppBar Elevation="0" Color="Color.Transparent" Fixed="true">
+        <MudSpacer />
+        <KpgLanguageSelector />
+    </MudAppBar>
     <MudMainContent>
         @Body
     </MudMainContent>

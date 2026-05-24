@@ -1,0 +1,173 @@
+@page "/perfil"
+@attribute [Authorize]
+@inject IAuthRepository AuthRepo
+@inject AuthStateService AuthState
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> L
+@using System.Security.Claims
+
+<PageTitle>@L["Profile_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Profile_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Profile_Subtitle"]</MudText>
+    </div>
+
+    <MudGrid Spacing="4">
+
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+                <MudText Typo="Typo.h6" GutterBottom="true">@L["Profile_SectionInfo"]</MudText>
+                <MudDivider Class="mb-4" />
+
+                <MudStack Spacing="3">
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Profile_LabelEmail"]</MudText>
+                        <MudText Typo="Typo.body1"><strong>@_email</strong></MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Profile_LabelRoles"]</MudText>
+                        <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" Class="mt-1">
+                            @foreach (var role in _roles)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@role</MudChip>
+                            }
+                        </MudStack>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+                <MudText Typo="Typo.h6" GutterBottom="true">@L["Profile_SectionPassword"]</MudText>
+                <MudDivider Class="mb-4" />
+
+                <EditForm Model="_form" OnValidSubmit="CambiarPasswordAsync">
+                    <DataAnnotationsValidator />
+                    <MudStack Spacing="3">
+                        <MudTextField T="string"
+                                      Label="@L["Profile_CurrentPassword"]"
+                                      InputType="@_inputTypeActual"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      @bind-Value="_form.CurrentPassword"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@(_showActual ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                                      OnAdornmentClick="@(() => _showActual = !_showActual)"
+                                      Required="true" />
+
+                        <MudTextField T="string"
+                                      Label="@L["Profile_NewPassword"]"
+                                      InputType="@_inputTypeNueva"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      @bind-Value="_form.NewPassword"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@(_showNueva ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                                      OnAdornmentClick="@(() => _showNueva = !_showNueva)"
+                                      Required="true" />
+
+                        <MudTextField T="string"
+                                      Label="@L["Profile_ConfirmPassword"]"
+                                      InputType="@_inputTypeConfirm"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      @bind-Value="_form.ConfirmPassword"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@(_showConfirm ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                                      OnAdornmentClick="@(() => _showConfirm = !_showConfirm)"
+                                      Required="true" />
+
+                        <div>
+                            <MudButton ButtonType="ButtonType.Submit"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Lock"
+                                       Disabled="@_isSaving">
+                                @if (_isSaving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                                @L["Profile_BtnChangePassword"]
+                            </MudButton>
+                        </div>
+                    </MudStack>
+                </EditForm>
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+</MudStack>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Profile"].Value, null, disabled: true)
+    ];
+
+    private string _email = string.Empty;
+    private List<string> _roles = [];
+    private bool _isSaving;
+
+    private bool _showActual;
+    private bool _showNueva;
+    private bool _showConfirm;
+
+    private InputType _inputTypeActual => _showActual ? InputType.Text : InputType.Password;
+    private InputType _inputTypeNueva  => _showNueva  ? InputType.Text : InputType.Password;
+    private InputType _inputTypeConfirm => _showConfirm ? InputType.Text : InputType.Password;
+
+    private readonly PasswordForm _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+        var user = authState.User;
+        _email = user.FindFirst(ClaimTypes.Email)?.Value
+            ?? user.FindFirst("email")?.Value
+            ?? string.Empty;
+        _roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+    }
+
+    private async Task CambiarPasswordAsync()
+    {
+        if (_form.NewPassword != _form.ConfirmPassword)
+        {
+            Snackbar.Add(L["Profile_PasswordMismatch"].Value, Severity.Warning);
+            return;
+        }
+
+        var token = AuthState.AccessToken;
+        if (string.IsNullOrEmpty(token)) return;
+
+        _isSaving = true;
+        try
+        {
+            var (ok, error) = await AuthRepo.ChangePasswordAsync(_form.CurrentPassword, _form.NewPassword, token);
+            if (ok)
+            {
+                Snackbar.Add(L["Profile_PasswordChanged"].Value, Severity.Success);
+                _form.CurrentPassword = string.Empty;
+                _form.NewPassword = string.Empty;
+                _form.ConfirmPassword = string.Empty;
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["Profile_ErrorChange"].Value, Severity.Error);
+            }
+        }
+        catch { Snackbar.Add(L["Error_Server"].Value, Severity.Error); }
+        finally { _isSaving = false; }
+    }
+
+    private sealed class PasswordForm
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

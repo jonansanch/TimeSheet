@@ -26,7 +26,7 @@ public class Reportes : IEndpointGroup
     }
 
     [EndpointSummary("Reporte de horas con filtros")]
-    [EndpointDescription("Retorna registros de horas filtrados por período, empleado, cliente y proyecto. Máximo 1000 filas.")]
+    [EndpointDescription("Retorna una página de registros de horas filtrados por período, empleado, cliente y proyecto.")]
     [ProducesResponseType<ReporteHorasResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -38,7 +38,11 @@ public class Reportes : IEndpointGroup
         [FromQuery] DateOnly? hasta = null,
         [FromQuery] string? userId = null,
         [FromQuery] string? cliente = null,
-        [FromQuery] string? proyecto = null)
+        [FromQuery] string? proyecto = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = true)
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var desdeEfectivo = desde ?? new DateOnly(hoy.Year, hoy.Month, 1);
@@ -47,7 +51,22 @@ public class Reportes : IEndpointGroup
         if (desdeEfectivo > hastaEfectivo)
             return Results.BadRequest("'desde' no puede ser posterior a 'hasta'.");
 
-        var query = new GetReporteHorasQuery(desdeEfectivo, hastaEfectivo, userId, cliente, proyecto);
+        if (pageNumber < 1)
+            return Results.BadRequest("'pageNumber' debe ser mayor o igual a 1.");
+
+        if (pageSize < 1 || pageSize > 100)
+            return Results.BadRequest("'pageSize' debe estar entre 1 y 100.");
+
+        var query = new GetReporteHorasQuery(
+            desdeEfectivo,
+            hastaEfectivo,
+            userId,
+            cliente,
+            proyecto,
+            pageNumber,
+            pageSize,
+            sortBy,
+            sortDescending);
         var result = await sender.Send(query, cancellationToken);
         return Results.Ok(result);
     }

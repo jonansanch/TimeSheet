@@ -1,5 +1,6 @@
 @inject KpgAuthStateProvider AuthProvider
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
 <MudNavMenu Class="kpg-nav" Style="padding:8px 0;">
 
@@ -9,7 +10,7 @@
                         Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Home"
                         IconColor="Color.Secondary">
-                Inicio
+                @L["Nav_Home"]
             </MudNavLink>
         </Authorized>
     </AuthorizeView>
@@ -19,12 +20,22 @@
             <MudNavLink Href="/registro"
                         Icon="@Icons.Material.Filled.EditCalendar"
                         IconColor="Color.Secondary">
-                Registro
+                @L["Nav_Register"]
             </MudNavLink>
             <MudNavLink Href="/mis-registros"
                         Icon="@Icons.Material.Filled.History"
                         IconColor="Color.Secondary">
-                Mis Registros
+                @L["Nav_MyRecords"]
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="/perfil"
+                        Icon="@Icons.Material.Filled.AccountCircle"
+                        IconColor="Color.Secondary">
+                @L["Nav_Profile"]
             </MudNavLink>
         </Authorized>
     </AuthorizeView>
@@ -34,24 +45,24 @@
             <MudNavLink Href="/dashboard"
                         Icon="@Icons.Material.Filled.Dashboard"
                         IconColor="Color.Secondary">
-                Dashboard
+                @L["Nav_Dashboard"]
             </MudNavLink>
 
-            <MudNavGroup Title="Reportes"
+            <MudNavGroup Title="@L["Nav_Reports"]"
                          Icon="@Icons.Material.Filled.BarChart"
                          @bind-Expanded="_reportesExpanded">
                 <MudNavLink Href="/reportes/horas" Class="kpg-nav-child">
-                    Reporte de Horas
+                    @L["Nav_ReporteHoras"]
                 </MudNavLink>
                 <MudNavLink Href="/reportes/timesheet" Class="kpg-nav-child">
-                    Timesheet Individual
+                    @L["Nav_Timesheet"]
                 </MudNavLink>
             </MudNavGroup>
 
             <MudNavLink Href="/notificaciones"
                         Icon="@Icons.Material.Filled.Notifications"
                         IconColor="Color.Secondary">
-                Notificaciones
+                @L["Nav_Notifications"]
             </MudNavLink>
         </Authorized>
     </AuthorizeView>
@@ -61,44 +72,44 @@
             <MudNavLink Href="/bitacora"
                         Icon="@Icons.Material.Filled.ManageSearch"
                         IconColor="Color.Secondary">
-                Bitácora
+                @L["Nav_Bitacora"]
             </MudNavLink>
         </Authorized>
     </AuthorizeView>
 
     <AuthorizeView Roles="@Roles.Admin">
         <Authorized>
-            <MudNavGroup Title="Administración"
+            <MudNavGroup Title="@L["Nav_Admin"]"
                          Icon="@Icons.Material.Filled.AdminPanelSettings"
                          @bind-Expanded="_adminExpanded">
                 <MudNavLink Href="/admin/usuarios" Class="kpg-nav-child">
-                    Usuarios
+                    @L["Nav_Users"]
                 </MudNavLink>
                 <MudNavLink Href="/admin/empleados" Class="kpg-nav-child">
-                    Recursos
+                    @L["Nav_Resources"]
                 </MudNavLink>
                 <MudNavLink Href="/admin/clientes" Class="kpg-nav-child">
-                    Clientes y Proyectos
+                    @L["Nav_ClientsProjects"]
                 </MudNavLink>
                 <MudNavLink Href="/solicitudes-excepcion" Class="kpg-nav-child">
-                    Solicitudes de Excepción
+                    @L["Nav_ExceptionRequests"]
                 </MudNavLink>
                 <MudNavLink Href="/admin/bitacora" Class="kpg-nav-child">
-                    Bitácora
+                    @L["Nav_AdminBitacora"]
                 </MudNavLink>
             </MudNavGroup>
 
-            <MudNavGroup Title="Parámetros"
+            <MudNavGroup Title="@L["Nav_Params"]"
                          Icon="@Icons.Material.Filled.Settings"
                          @bind-Expanded="_parametrosExpanded">
                 <MudNavLink Href="/admin/parametros/configuracion" Class="kpg-nav-child">
-                    Configuración General
+                    @L["Nav_GeneralConfig"]
                 </MudNavLink>
                 <MudNavLink Href="/admin/parametros/modalidades" Class="kpg-nav-child">
-                    Modalidades
+                    @L["Nav_Modalities"]
                 </MudNavLink>
                 <MudNavLink Href="/admin/parametros/lugares" Class="kpg-nav-child">
-                    Lugares de Trabajo
+                    @L["Nav_WorkPlaces"]
                 </MudNavLink>
             </MudNavGroup>
         </Authorized>

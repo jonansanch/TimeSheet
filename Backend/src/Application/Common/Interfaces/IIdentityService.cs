@@ -32,6 +32,12 @@ public interface IIdentityService
     Task<UserCredentialsResult?> ValidateCredentialsAsync(string email, string password);
 
     Task<UserCredentialsResult?> ValidateCredentialsByIdAsync(string userId);
+
+    Task<Result> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
+
+    Task<(bool Found, string? Token, string? Email)> GeneratePasswordResetTokenAsync(string email);
+
+    Task<Result> ResetPasswordAsync(string email, string token, string newPassword);
 }
 
 public record UserCredentialsResult(string UserId, string Email, IReadOnlyList<string> Roles);

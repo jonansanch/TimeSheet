@@ -3,21 +3,24 @@
 @inject IBitacoraAdminRepository Repo
 @inject IUserAdminRepository UsuariosRepo
 @inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Bitácora - KPG Timesheet</PageTitle>
+<PageTitle>@L["Bit_TitleAdmin"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
 
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Bitácora de auditoría</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Consulta y filtra eventos sensibles registrados en el sistema.</MudText>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Bit_TitleAdmin"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Bit_Subtitle2"]</MudText>
     </div>
 
     <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
         <MudGrid Spacing="2">
 
             <MudItem xs="12" sm="6" md="3">
-                <MudDatePicker Label="Desde"
+                <MudDatePicker Label="@L["Bit_LabelFrom"]"
                                Date="_filtroDesdeDate"
                                DateChanged="d => _filtroDesde = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
                                MaxDate="DateTime.Today"
@@ -25,11 +28,11 @@
                                Variant="Variant.Outlined"
                                Margin="Margin.Dense"
                                Clearable="true"
-                               aria-label="Fecha desde" />
+                               aria-label="@L["Bit_LabelFrom"]" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
-                <MudDatePicker Label="Hasta"
+                <MudDatePicker Label="@L["Bit_LabelTo"]"
                                Date="_filtroHastaDate"
                                DateChanged="d => _filtroHasta = d.HasValue ? DateOnly.FromDateTime(d.Value) : null"
                                MaxDate="DateTime.Today"
@@ -37,18 +40,18 @@
                                Variant="Variant.Outlined"
                                Margin="Margin.Dense"
                                Clearable="true"
-                               aria-label="Fecha hasta" />
+                               aria-label="@L["Bit_LabelTo"]" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
                 <MudSelect T="string"
-                           Label="Usuario"
+                           Label="@L["Label_User"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
                            Value="_filtroActorId"
                            ValueChanged="v => _filtroActorId = v"
-                           aria-label="Filtrar por usuario">
+                           aria-label="@L["Label_User"]">
                     @foreach (var u in _usuarios)
                     {
                         <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
@@ -58,13 +61,13 @@
 
             <MudItem xs="12" sm="6" md="3">
                 <MudSelect T="string"
-                           Label="Tipo de evento"
+                           Label="@L["Label_FilterEventType"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
                            Value="_filtroTipoEvento"
                            ValueChanged="v => _filtroTipoEvento = v"
-                           aria-label="Filtrar por tipo de evento">
+                           aria-label="@L["Label_FilterEventType"]">
                     @foreach (var tipo in _tiposEvento)
                     {
                         <MudSelectItem Value="@tipo">@tipo</MudSelectItem>
@@ -79,14 +82,14 @@
                                StartIcon="@Icons.Material.Filled.Search"
                                OnClick="BuscarAsync"
                                Disabled="_isLoading">
-                        Buscar
+                        @L["Btn_Search"]
                     </MudButton>
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Secondary"
                                StartIcon="@Icons.Material.Filled.Download"
                                OnClick="ExportarExcelAsync"
                                Disabled="@(_bitacora is null || _bitacora.Items.Count == 0 || _isExporting)"
-                               aria-label="Exportar bitácora a Excel">
+                               aria-label="@L["Btn_ExportExcel"]">
                         @if (_isExporting)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -98,11 +101,6 @@
 
         </MudGrid>
     </MudPaper>
-
-    @if (!string.IsNullOrWhiteSpace(_errorExport))
-    {
-        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorExport</MudAlert>
-    }
 
     @if (_isLoading)
     {
@@ -116,14 +114,14 @@
     {
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudChip T="string" Color="Color.Primary" Size="Size.Small">
-                @_bitacora.Total evento@(_bitacora.Total == 1 ? "" : "s")
+                @_bitacora.Total @(_bitacora.Total == 1 ? L["Bit_TotalEvents"].Value : L["Bit_TotalEventsPlural"].Value)
             </MudChip>
         </MudStack>
 
         @if (_bitacora.Items.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SearchOff">
-                No hay eventos que coincidan con los filtros seleccionados.
+                @L["Bit_NoEvents"]
             </MudAlert>
         }
         else
@@ -138,14 +136,14 @@
                          RowsPerPage="5"
                          Style="border-radius:12px;overflow:hidden;">
                 <Columns>
-                    <TemplateColumn Title="Fecha y hora" Sortable="true" CellStyle="white-space:nowrap;">
+                    <TemplateColumn Title="@L["Bit_ColDateTime"]" Sortable="true" CellStyle="white-space:nowrap;">
                         <CellTemplate>
                             <MudText Typo="Typo.body2">
                                 @context.Item.Timestamp.LocalDateTime.ToString("dd/MM/yyyy HH:mm")
                             </MudText>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Tipo de evento" Sortable="true">
+                    <TemplateColumn Title="@L["Bit_ColEventType"]" Sortable="true">
                         <CellTemplate>
                             <MudChip T="string"
                                      Size="Size.Small"
@@ -156,15 +154,15 @@
                             </MudChip>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Actor" Sortable="false">
+                    <TemplateColumn Title="@L["Bit_ColActor"]" Sortable="false">
                         <CellTemplate>
                             <MudText Typo="Typo.body2">
                                 @(context.Item.ActorNombre ?? context.Item.ActorEmail ?? context.Item.ActorId)
                             </MudText>
                         </CellTemplate>
                     </TemplateColumn>
-                    <PropertyColumn Property="x => x.EntidadAfectada" Title="Entidad" />
-                    <TemplateColumn Title="ID entidad" Sortable="false">
+                    <PropertyColumn Property="x => x.EntidadAfectada" Title="@L["Bit_ColEntity"]" />
+                    <TemplateColumn Title="@L["Bit_ColEntityId"]" Sortable="false">
                         <CellTemplate>
                             @if (!string.IsNullOrWhiteSpace(context.Item.EntidadId))
                             {
@@ -179,7 +177,7 @@
                             }
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Metadata" Sortable="false">
+                    <TemplateColumn Title="@L["Bit_ColMetadata"]" Sortable="false">
                         <CellTemplate>
                             @if (!string.IsNullOrWhiteSpace(context.Item.MetadataJson))
                             {
@@ -196,7 +194,7 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="BitacoraItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="BitacoraItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
@@ -205,11 +203,16 @@
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_AdminBitacora"].Value, null, disabled: true)
+    ];
+
     private BitacoraResponse? _bitacora;
     private bool _isLoading;
     private string _errorMessage = string.Empty;
     private bool _isExporting;
-    private string _errorExport = string.Empty;
 
     private List<UserAdminResponse> _usuarios = [];
     private string? _filtroActorId;
@@ -251,29 +254,28 @@
         {
             _bitacora = await Repo.GetBitacoraAsync(_filtroDesde, _filtroHasta, _filtroActorId, _filtroTipoEvento);
             if (_bitacora is null)
-                _errorMessage = "No se pudo obtener la bitácora.";
+                _errorMessage = L["Bit_ErrorLoad"];
         }
-        catch { _errorMessage = "Error al comunicarse con el servidor."; }
+        catch { _errorMessage = L["Error_Server"]; }
         finally { _isLoading = false; }
     }
 
     private async Task ExportarExcelAsync()
     {
         _isExporting = true;
-        _errorExport = string.Empty;
         StateHasChanged();
         try
         {
             var result = await Repo.ExportarExcelAsync(_filtroDesde, _filtroHasta, _filtroActorId, _filtroTipoEvento);
             if (result is null)
             {
-                _errorExport = "No se pudo generar el archivo de exportación.";
+                Snackbar.Add(L["Bit_ErrorLoad"].Value, Severity.Error);
                 return;
             }
             var (bytes, contentType, fileName) = result.Value;
             await JS.InvokeVoidAsync("downloadFile", fileName, contentType, Convert.ToBase64String(bytes));
         }
-        catch { _errorExport = "Error al generar la exportación."; }
+        catch { Snackbar.Add(L["Error_Server"].Value, Severity.Error); }
         finally { _isExporting = false; }
     }
 

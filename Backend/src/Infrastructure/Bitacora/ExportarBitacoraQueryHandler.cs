@@ -21,8 +21,8 @@ public class ExportarBitacoraQueryHandler(IDbConnection db)
                b.MetadataJson
         FROM   BitacoraAuditoria b
         LEFT   JOIN AspNetUsers u ON u.Id = b.ActorId
-        WHERE  (@Desde      IS NULL OR CAST(b.Timestamp AS date) >= @Desde)
-          AND  (@Hasta      IS NULL OR CAST(b.Timestamp AS date) <= @Hasta)
+        WHERE  (@DesdeUtc           IS NULL OR b.Timestamp >= @DesdeUtc)
+          AND  (@HastaExclusivoUtc  IS NULL OR b.Timestamp < @HastaExclusivoUtc)
           AND  (@ActorId    IS NULL OR b.ActorId = @ActorId)
           AND  (@TipoEvento IS NULL OR b.TipoEvento = @TipoEvento)
         ORDER  BY b.Timestamp DESC
@@ -33,12 +33,13 @@ public class ExportarBitacoraQueryHandler(IDbConnection db)
         ExportarBitacoraQuery request,
         CancellationToken cancellationToken)
     {
+        var (desdeUtc, hastaExclusivoUtc) = BuildUtcRange(request.Desde, request.Hasta);
         var rows = (await db.QueryAsync<RawRow>(Sql, new
         {
-            Desde      = request.Desde,
-            Hasta      = request.Hasta,
-            ActorId    = request.ActorId,
-            TipoEvento = request.TipoEvento
+            DesdeUtc          = desdeUtc,
+            HastaExclusivoUtc = hastaExclusivoUtc,
+            ActorId           = request.ActorId,
+            TipoEvento        = request.TipoEvento
         })).ToList();
 
         var exportRows = rows.Select(r => new
@@ -63,6 +64,19 @@ public class ExportarBitacoraQueryHandler(IDbConnection db)
             ms.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             fileName);
+    }
+
+    private static (DateTimeOffset? DesdeUtc, DateTimeOffset? HastaExclusivoUtc) BuildUtcRange(DateOnly? desde, DateOnly? hasta)
+    {
+        var desdeUtc = desde.HasValue
+            ? new DateTimeOffset(desde.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+            : (DateTimeOffset?)null;
+
+        var hastaExclusivoUtc = hasta.HasValue
+            ? new DateTimeOffset(hasta.Value.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+            : (DateTimeOffset?)null;
+
+        return (desdeUtc, hastaExclusivoUtc);
     }
 
     private sealed record RawRow(

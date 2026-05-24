@@ -1,4 +1,6 @@
+using System.Globalization;
 using ApexCharts;
+using Microsoft.JSInterop;
 using KPG.Timesheet.WebUI;
 using KPG.Timesheet.WebUI.Infrastructure.Repositories;
 using KPG.Timesheet.WebUI.Shared.Services;
@@ -19,6 +21,7 @@ builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUr
 builder.Services.AddMudServices();
 builder.Services.AddApexCharts();
 builder.Services.AddAuthorizationCore();
+builder.Services.AddLocalization();
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IRegistroHorasRepository, RegistroHorasRepository>();
@@ -36,9 +39,19 @@ builder.Services.AddScoped<INotificacionesRepository, NotificacionesRepository>(
 builder.Services.AddScoped<IBitacoraAdminRepository, BitacoraAdminRepository>();
 builder.Services.AddScoped<IBitacoraRepository, BitacoraRepository>();
 builder.Services.AddSingleton<AuthStateService>();
+builder.Services.AddScoped<CatalogosCacheService>();
+builder.Services.AddSingleton<SessionTimeoutService>();
 builder.Services.AddScoped<KpgAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(
     sp => sp.GetRequiredService<KpgAuthStateProvider>());
 builder.Services.AddScoped<CurrentUserService>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+var js = host.Services.GetRequiredService<IJSRuntime>();
+var cultureName = await js.InvokeAsync<string>("blazorCulture.get") ?? "es";
+var culture = new CultureInfo(cultureName);
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+await host.RunAsync();

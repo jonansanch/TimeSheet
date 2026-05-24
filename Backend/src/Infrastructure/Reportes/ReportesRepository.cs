@@ -7,7 +7,25 @@ namespace KPG.Timesheet.Infrastructure.Reportes;
 
 public class ReportesRepository(IDbConnection db) : IReportesRepository
 {
-    private const string Sql = """
+    private const string SqlBase = """
+        FROM   RegistrosHoras r
+        JOIN   AspNetUsers u ON r.UserId = u.Id
+        WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
+          AND  (@UserId  IS NULL OR r.UserId  = @UserId)
+          AND  (@ClientePattern IS NULL OR r.Cliente LIKE @ClientePattern ESCAPE '\')
+          AND  (@ProyectoPattern IS NULL OR r.Proyecto LIKE @ProyectoPattern ESCAPE '\')
+        """;
+
+    private const string SqlResumen = $"""
+        SELECT COUNT(*) AS TotalRegistros,
+               ISNULL(ROUND((
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+               ) / 60.0, 1), 0) AS TotalHoras
+        {SqlBase};
+        """;
+
+    private const string SqlItems = """
         SELECT r.UserId,
                ISNULL(u.NombreCompleto, u.Email)                          AS NombreEmpleado,
                u.Email,
@@ -25,26 +43,46 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
                r.Modalidad,
                r.Lugar,
                r.Descripcion
-        FROM   RegistrosHoras r
-        JOIN   AspNetUsers u ON r.UserId = u.Id
-        WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
-          AND  (@UserId  IS NULL OR r.UserId  = @UserId)
-          AND  (@Cliente IS NULL OR r.Cliente LIKE '%' + @Cliente + '%')
-          AND  (@Proyecto IS NULL OR r.Proyecto LIKE '%' + @Proyecto + '%')
-        ORDER  BY r.FechaRegistro DESC, NombreEmpleado
-        OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY
         """;
 
-    public async Task<ReporteHorasResponse> GetReporteHorasAsync(DateOnly desde, DateOnly hasta, string? userId, string? cliente, string? proyecto, CancellationToken cancellationToken = default)
+    public async Task<ReporteHorasResponse> GetReporteHorasAsync(
+        DateOnly desde,
+        DateOnly hasta,
+        string? userId,
+        string? cliente,
+        string? proyecto,
+        int pageNumber,
+        int pageSize,
+        string? sortBy,
+        bool sortDescending,
+        CancellationToken cancellationToken = default)
     {
-        var rows = (await db.QueryAsync<RawRow>(Sql, new
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var offset = (pageNumber - 1) * pageSize;
+        var orderBy = BuildOrderBy(sortBy, sortDescending);
+        var sql = $"""
+            {SqlResumen}
+
+            {SqlItems}
+            {SqlBase}
+            ORDER BY {orderBy}
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+            """;
+
+        using var multi = await db.QueryMultipleAsync(new CommandDefinition(sql, new
         {
             Desde    = desde,
             Hasta    = hasta,
             UserId   = string.IsNullOrWhiteSpace(userId)   ? null : userId,
-            Cliente  = string.IsNullOrWhiteSpace(cliente)  ? null : cliente.Trim(),
-            Proyecto = string.IsNullOrWhiteSpace(proyecto) ? null : proyecto.Trim()
-        })).ToList();
+            ClientePattern  = BuildPrefixLikePattern(cliente),
+            ProyectoPattern = BuildPrefixLikePattern(proyecto),
+            Offset   = offset,
+            PageSize = pageSize
+        }, cancellationToken: cancellationToken));
+
+        var resumen = await multi.ReadSingleAsync<ResumenRow>();
+        var rows = (await multi.ReadAsync<RawRow>()).ToList();
 
         var items = rows.Select(r => new ReporteHorasItemDto(
             r.UserId,
@@ -66,10 +104,48 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
         return new ReporteHorasResponse(
             Desde:          desde,
             Hasta:          hasta,
-            TotalRegistros: items.Count,
-            TotalHoras:     Math.Round(items.Sum(i => i.Horas), 1),
+            PageNumber:     pageNumber,
+            PageSize:       pageSize,
+            TotalRegistros: resumen.TotalRegistros,
+            TotalHoras:     resumen.TotalHoras,
             Items:          items);
     }
+
+    private static string BuildOrderBy(string? sortBy, bool descending)
+    {
+        var direction = descending ? "DESC" : "ASC";
+        var column = sortBy?.Trim().ToLowerInvariant() switch
+        {
+            "fecharegistro"  => "r.FechaRegistro",
+            "nombreempleado" => "NombreEmpleado",
+            "email"          => "u.Email",
+            "horas"          => "Horas",
+            "cliente"        => "r.Cliente",
+            "proyecto"       => "r.Proyecto",
+            "modalidad"      => "r.Modalidad",
+            "lugar"          => "r.Lugar",
+            _                => "r.FechaRegistro"
+        };
+
+        return $"{column} {direction}, NombreEmpleado ASC, r.Id ASC";
+    }
+
+    private static string? BuildPrefixLikePattern(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return EscapeLikePattern(value.Trim()) + "%";
+    }
+
+    private static string EscapeLikePattern(string value)
+        => value
+            .Replace(@"\", @"\\")
+            .Replace("%", @"\%")
+            .Replace("_", @"\_")
+            .Replace("[", @"\[");
+
+    private sealed record ResumenRow(int TotalRegistros, decimal TotalHoras);
 
     private sealed record RawRow(
         string    UserId,

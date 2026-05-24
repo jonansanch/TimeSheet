@@ -2,8 +2,9 @@
 @layout LoginLayout
 @inject KpgAuthStateProvider AuthProvider
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Iniciar sesión — KPG Timesheet</PageTitle>
+<PageTitle>@L["Login_Title"] — KPG Timesheet</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 100vh;">
     <MudPaper Class="pa-8" Elevation="4" Style="width: 100%; max-width: 420px;">
@@ -13,22 +14,22 @@
                 KPG Timesheet
             </MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
-                Sistema de registro de horas
+                @L["Login_Subtitle"]
             </MudText>
         </div>
 
         @if (!string.IsNullOrEmpty(_errorMessage))
         {
-            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@_errorMessage</MudAlert>
+            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
         }
 
         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
             <MudTextField T="string"
-                          Label="Correo electrónico"
+                          Label="@L["Label_Email"]"
                           @bind-Value="_email"
                           InputType="InputType.Email"
                           Required="true"
-                          RequiredError="El correo electrónico es requerido."
+                          RequiredError="@L["Label_Email"]"
                           Class="mb-3"
                           Variant="Variant.Outlined"
                           ShrinkLabel="true"
@@ -36,11 +37,11 @@
                           AdornmentIcon="@Icons.Material.Filled.Email" />
 
             <MudTextField T="string"
-                          Label="Contraseña"
+                          Label="@L["Label_Password"]"
                           @bind-Value="_password"
                           InputType="@_passwordInputType"
                           Required="true"
-                          RequiredError="La contraseña es requerida."
+                          RequiredError="@L["Label_Password"]"
                           Class="mb-4"
                           Variant="Variant.Outlined"
                           ShrinkLabel="true"
@@ -58,28 +59,31 @@
                 @if (_isLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Iniciando sesión...</span>
+                    <span>@L["Login_Loading"]</span>
                 }
                 else
                 {
-                    <span>Iniciar sesión</span>
+                    <span>@L["Login_Button"]</span>
                 }
             </MudButton>
         </MudForm>
 
+        <MudStack Spacing="1" AlignItems="AlignItems.Center" Class="mt-1">
+            <MudLink Href="/forgot-password" Typo="Typo.body2" Color="Color.Primary">
+                @L["Login_ForgotPassword"]
+            </MudLink>
+        </MudStack>
+
         <MudDivider Class="my-2" />
 
         <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-3" Color="Color.Secondary">
-            ¿Problemas para acceder? Contacte al Administrador del sistema.
+            @L["Login_ContactAdmin"]
         </MudText>
 
     </MudPaper>
 </MudContainer>
 
 @code {
-    [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
-
     private MudForm _form = default!;
     private string _email = string.Empty;
     private string _password = string.Empty;
@@ -107,16 +111,15 @@
         {
             await AuthProvider.LoginAsync(_email, _password);
 
-            var destination = string.IsNullOrEmpty(ReturnUrl) ? "/" : ReturnUrl;
-            Navigation.NavigateTo(destination);
+            Navigation.NavigateTo("/");
         }
         catch (UnauthorizedAccessException)
         {
-            _errorMessage = "Usuario o contraseña incorrectos. Verifique sus credenciales.";
+            _errorMessage = L["Login_Error"];
         }
         catch
         {
-            _errorMessage = "No fue posible conectar con el servidor. Intente nuevamente.";
+            _errorMessage = L["Error_Server"];
         }
         finally
         {

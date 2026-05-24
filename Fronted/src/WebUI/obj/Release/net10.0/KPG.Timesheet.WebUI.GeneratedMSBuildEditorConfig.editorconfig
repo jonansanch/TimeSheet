@@ -68,12 +68,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cQ29tcG9uZW50c1xLcGdVc2VyUm9sZURpYWxvZy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/BitacoraAdminPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcQml0YWNvcmFBZG1pblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ClientesAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcQ2xpZW50ZXNBZG1pblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/EmpleadosAdminPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcRW1wbGVhZG9zQWRtaW5QYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/LugaresTrabajoAdminPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcTHVnYXJlc1RyYWJham9BZG1pblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ModalidadesAdminPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQWRtaW5cUGFnZXNcTW9kYWxpZGFkZXNBZG1pblBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor]
@@ -92,8 +104,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxMYXlvdXRcTG9naW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/ForgotPasswordPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxQYWdlc1xGb3Jnb3RQYXNzd29yZFBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxQYWdlc1xMb2dpblBhZ2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/PerfilPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxQYWdlc1xQZXJmaWxQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Auth/Pages/ResetPasswordPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQXV0aFxQYWdlc1xSZXNldFBhc3N3b3JkUGFnZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Bitacora/Pages/BitacoraPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcQml0YWNvcmFcUGFnZXNcQml0YWNvcmFQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Dashboard/Components/KpgTeamStatusCard.razor]
@@ -120,6 +148,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdFeGNlcHRpb25EaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgMiniCalendario.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdNaW5pQ2FsZW5kYXJpby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Registro/Components/KpgRecentSuggestions.razor]
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVnaXN0cm9cQ29tcG9uZW50c1xLcGdSZWNlbnRTdWdnZXN0aW9ucy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -140,6 +172,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVwb3J0ZXNcUGFnZXNcUmVwb3J0ZXNQYWdlLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Features/Reportes/Pages/TimesheetPage.razor]
+build_metadata.AdditionalFiles.TargetPath = RmVhdHVyZXNcUmVwb3J0ZXNcUGFnZXNcVGltZXNoZWV0UGFnZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -156,8 +192,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcV2VhdGhlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgLanguageSelector.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcS3BnTGFuZ3VhZ2VTZWxlY3Rvci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgSaveConfirmationBanner.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcS3BnU2F2ZUNvbmZpcm1hdGlvbkJhbm5lci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgSessionWarningDialog.razor]
+build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcS3BnU2Vzc2lvbldhcm5pbmdEaWFsb2cucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/ProyectosIA/Timesheet/Fronted/src/WebUI/Shared/Components/KpgStatCard.razor]

@@ -3,6 +3,8 @@ namespace KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
 public record ReporteHorasResponse(
     DateOnly Desde,
     DateOnly Hasta,
+    int PageNumber,
+    int PageSize,
     int TotalRegistros,
     decimal TotalHoras,
     List<ReporteHorasItemDto> Items);

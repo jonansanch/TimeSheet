@@ -2,27 +2,26 @@
 @inject IParametroSistemaRepository ParametroSistemaRepository
 @inject IDialogService DialogService
 @inject ISolicitudExcepcionRepository SolicitudExcepcionRepository
-@inject IEmpleadoRepository EmpleadoRepository
 @inject IClienteRepository ClienteRepository
-@inject IModalidadRepository ModalidadRepository
-@inject ILugarTrabajoRepository LugarTrabajoRepository
+@inject CatalogosCacheService CatalogosCache
+@inject IStringLocalizer<SharedResource> L
 
 <MudPaper Elevation="1" Class="pa-6">
     <MudStack Spacing="4">
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+            <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
         }
 
         @if (_guardado)
         {
             <MudAlert Severity="Severity.Success" role="status" Icon="@Icons.Material.Filled.EventAvailable">
-                <MudText Typo="Typo.body1"><b>Jornada guardada</b> — @_fecha?.ToString("dd/MM/yyyy")</MudText>
-                <MudText Typo="Typo.body2">Total: @TotalHorasFormateado horas</MudText>
+                <MudText Typo="Typo.body1"><b>@L["Reg_SavedTitle"]</b> — @_fecha?.ToString("dd/MM/yyyy")</MudText>
+                <MudText Typo="Typo.body2">@L["Reg_TotalHours"] @TotalHorasFormateado @L["Reg_TotalHoursSuffix"]</MudText>
             </MudAlert>
         }
 
-        <KpgDatePicker Label="Fecha"
+        <KpgDatePicker Label="@L["Label_Date"]"
                        WindowDays="@_windowDays"
                        Date="@_fecha"
                        OnDateSelected="HandleDateSelected"
@@ -31,11 +30,11 @@
         @if (_dateAvailability == DateAvailability.OutOfWindow && _fecha.HasValue)
         {
             <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
-                Esta fecha está fuera de la ventana de registro permitida (@_windowDays días hábiles).
+                @string.Format(L["Reg_ExceptionWarning"], _windowDays)
                 <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small"
                            OnClick="@(() => HandleExceptionRequested(DateOnly.FromDateTime(_fecha!.Value)))"
                            Class="ml-2">
-                    Solicitar excepción
+                    @L["Btn_RequestException"]
                 </MudButton>
             </MudAlert>
         }
@@ -43,7 +42,7 @@
         @if (_excepcionEnviada)
         {
             <MudAlert Severity="Severity.Success" Dense="true" Class="mt-1">
-                Solicitud de excepción enviada para @_excepcionFecha.ToString("dd/MM/yyyy").
+                @L["Reg_ExceptionSent"] @_excepcionFecha.ToString("dd/MM/yyyy").
             </MudAlert>
         }
 
@@ -52,90 +51,90 @@
         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
 
             @* ── Turno AM ──────────────────────────────────── *@
-            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-2" Color="Color.Primary">Turno AM</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-2" Color="Color.Primary">@L["Reg_ShiftAM"]</MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
                     <MudTextField T="string"
-                                  Label="Entrada"
+                                  Label="@L["Label_Entry"]"
                                   Variant="Variant.Outlined"
                                   InputType="InputType.Time"
                                   Value="@TsToStr(_model.HoraEntradaAM)"
                                   ValueChanged="@(v => _model.HoraEntradaAM = ParseTs(v))"
-                                  aria-label="Hora entrada turno AM" />
+                                  aria-label="@($"{L["Label_Entry"].Value} {L["Reg_ShiftAM"].Value}")" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField T="string"
-                                  Label="Salida"
+                                  Label="@L["Label_Exit"]"
                                   Variant="Variant.Outlined"
                                   InputType="InputType.Time"
                                   Value="@TsToStr(_model.HoraSalidaAM)"
                                   ValueChanged="@(v => _model.HoraSalidaAM = ParseTs(v))"
                                   Error="@IsInvalidAM()"
-                                  ErrorText="La salida debe ser mayor que la entrada."
-                                  aria-label="Hora salida turno AM" />
+                                  ErrorText="@L["Reg_ExitAfterEntry"]"
+                                  aria-label="@($"{L["Label_Exit"].Value} {L["Reg_ShiftAM"].Value}")" />
                 </MudItem>
             </MudGrid>
 
             @* ── Turno PM ──────────────────────────────────── *@
-            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">Turno PM</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">@L["Reg_ShiftPM"]</MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
                     <MudTextField T="string"
-                                  Label="Entrada"
+                                  Label="@L["Label_Entry"]"
                                   Variant="Variant.Outlined"
                                   InputType="InputType.Time"
                                   Value="@TsToStr(_model.HoraEntradaPM)"
                                   ValueChanged="@(v => _model.HoraEntradaPM = ParseTs(v))"
-                                  aria-label="Hora entrada turno PM" />
+                                  aria-label="@($"{L["Label_Entry"].Value} {L["Reg_ShiftPM"].Value}")" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudTextField T="string"
-                                  Label="Salida"
+                                  Label="@L["Label_Exit"]"
                                   Variant="Variant.Outlined"
                                   InputType="InputType.Time"
                                   Value="@TsToStr(_model.HoraSalidaPM)"
                                   ValueChanged="@(v => _model.HoraSalidaPM = ParseTs(v))"
                                   Error="@IsInvalidPM()"
-                                  ErrorText="La salida debe ser mayor que la entrada."
-                                  aria-label="Hora salida turno PM" />
+                                  ErrorText="@L["Reg_ExitAfterEntry"]"
+                                  aria-label="@($"{L["Label_Exit"].Value} {L["Reg_ShiftPM"].Value}")" />
                 </MudItem>
             </MudGrid>
 
             @if (_sinTurno)
             {
                 <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
-                    Debe ingresar al menos una hora de entrada en el turno AM o PM.
+                    @L["Reg_AtLeastOneShift"]
                 </MudAlert>
             }
 
             @* ── Datos del día ──────────────────────────────── *@
-            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">Datos del día</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">@L["Reg_DayData"]</MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
                     <MudAutocomplete T="string"
-                                     Label="Cliente"
+                                     Label="@L["Label_Client"]"
                                      Variant="Variant.Outlined"
                                      Value="@_model.Cliente"
                                      ValueChanged="@(v => HandleClienteChanged(v))"
                                      SearchFunc="@SearchClientesAsync"
                                      Required="true"
-                                     RequiredError="El cliente es requerido."
+                                     RequiredError="@L["Reg_ClientRequired"]"
                                      CoerceValue="true"
                                      Immediate="false" />
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudAutocomplete T="string"
-                                     Label="Proyecto"
+                                     Label="@L["Label_Project"]"
                                      Variant="Variant.Outlined"
                                      @bind-Value="_model.Proyecto"
                                      SearchFunc="@SearchProyectosAsync"
                                      Required="true"
-                                     RequiredError="El proyecto es requerido."
+                                     RequiredError="@L["Reg_ProjectRequired"]"
                                      CoerceValue="true"
                                      Immediate="false" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudText id="modalidad-label" Typo="Typo.body2" Class="mb-1">Modalidad *</MudText>
+                    <MudText id="modalidad-label" Typo="Typo.body2" Class="mb-1">@L["Label_Modality"] *</MudText>
                     <div role="radiogroup" aria-labelledby="modalidad-label"
                          style="display:flex;gap:6px;flex-wrap:wrap;">
                         @foreach (var m in _modalidades)
@@ -157,12 +156,12 @@
                     </div>
                     @if (string.IsNullOrWhiteSpace(_model.Modalidad) && _touchedModalidad)
                     {
-                        <MudText Typo="Typo.caption" Color="Color.Error">La modalidad es requerida.</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Error">@L["Reg_ModalityRequired"]</MudText>
                     }
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudSelect T="string" Label="Recurso" Variant="Variant.Outlined"
-                               @bind-Value="_model.Recurso" Required="true" RequiredError="El recurso es requerido.">
+                    <MudSelect T="string" Label="@L["Label_Resource"]" Variant="Variant.Outlined"
+                               @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]">
                         @foreach (var r in _recursos)
                         {
                             <MudSelectItem Value="@r">@r</MudSelectItem>
@@ -170,8 +169,8 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudSelect T="string" Label="Lugar" Variant="Variant.Outlined"
-                               @bind-Value="_model.Lugar" Required="true" RequiredError="El lugar es requerido.">
+                    <MudSelect T="string" Label="@L["Label_Place"]" Variant="Variant.Outlined"
+                               @bind-Value="_model.Lugar" Required="true" RequiredError="@L["Reg_PlaceRequired"]">
                         @foreach (var l in _lugares)
                         {
                             <MudSelectItem Value="@l">@l</MudSelectItem>
@@ -179,9 +178,9 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudTextField T="string" Label="Descripcion" Variant="Variant.Outlined"
+                    <MudTextField T="string" Label="@L["Label_Description"]" Variant="Variant.Outlined"
                                   Lines="3" @bind-Value="_model.Descripcion"
-                                  Required="true" RequiredError="La descripcion es requerida." />
+                                  Required="true" RequiredError="@L["Reg_DescriptionRequired"]" />
                 </MudItem>
             </MudGrid>
 
@@ -194,11 +193,11 @@
                 @if (_isSaving)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Guardando...</span>
+                    <span>@L["Reg_Saving"]</span>
                 }
                 else
                 {
-                    <span>Guardar jornada</span>
+                    <span>@L["Reg_SaveShift"]</span>
                 }
             </MudButton>
         </MudForm>
@@ -206,6 +205,8 @@
 </MudPaper>
 
 @code {
+    [Parameter] public EventCallback<DateOnly> OnGuardado { get; set; }
+
     private MudForm _form = default!;
 
     private DateTime? _fecha = DateTime.Today;
@@ -257,7 +258,7 @@
 
         try
         {
-            var activos = await EmpleadoRepository.GetActivosAsync();
+            var activos = await CatalogosCache.GetEmpleadosActivosAsync();
             _recursos = activos.Select(e => e.Nombre).ToList();
             if (_recursos.Count == 0) _recursos = [.. RecursosFallback];
         }
@@ -267,14 +268,14 @@
 
         try
         {
-            var mods = await ModalidadRepository.GetActivasAsync();
+            var mods = await CatalogosCache.GetModalidadesActivasAsync();
             if (mods.Count > 0) _modalidades = mods.Select(m => m.Nombre).ToList();
         }
         catch { }
 
         try
         {
-            var lugares = await LugarTrabajoRepository.GetActivosAsync();
+            var lugares = await CatalogosCache.GetLugaresTrabajoActivosAsync();
             if (lugares.Count > 0) _lugares = lugares.Select(l => l.Nombre).ToList();
         }
         catch { }
@@ -399,7 +400,7 @@
                 _excepcionEnviada = true;
                 _excepcionFecha   = fecha;
             }
-            catch { _errorMessage = "No fue posible enviar la solicitud de excepción. Intente nuevamente."; }
+            catch { _errorMessage = L["Exc_ErrorSend"]; }
         }
     }
 
@@ -409,7 +410,6 @@
         await _form.Validate();
         _sinTurno = false;
 
-        // Validaciones propias
         if (!TieneAlMenosUnTurno())       { _sinTurno = true; return; }
         if (IsInvalidAM() || IsInvalidPM()) return;
         if (!_form.IsValid) return;
@@ -438,14 +438,28 @@
             _response = await RegistroHorasRepository.CreateAsync(request);
             if (_response is null)
             {
-                _errorMessage = "No fue posible guardar la jornada. Revise los datos e intente nuevamente.";
+                _errorMessage = L["Reg_ErrorSave"];
                 return;
             }
             _guardado = true;
+            if (_fecha.HasValue)
+                await OnGuardado.InvokeAsync(DateOnly.FromDateTime(_fecha.Value));
         }
-        catch (UnauthorizedAccessException) { _errorMessage = "Su sesión expiró. Inicie sesión nuevamente."; }
-        catch { _errorMessage = "Ocurrió un error guardando la jornada."; }
+        catch (UnauthorizedAccessException) { _errorMessage = L["Error_SessionExpired"]; }
+        catch { _errorMessage = L["Reg_ErrorSaveGeneral"]; }
         finally { _isSaving = false; }
+    }
+
+    public void SetFecha(DateOnly fecha)
+    {
+        _fecha    = fecha.ToDateTime(TimeOnly.MinValue);
+        var today   = DateOnly.FromDateTime(DateTime.Today);
+        var earliest = BusinessDayCalculator.GetEarliestAllowedDate(today, _windowDays);
+        _dateAvailability = BusinessDayCalculator.GetAvailability(fecha, today, earliest);
+        _guardado         = false;
+        _errorMessage     = null;
+        _excepcionEnviada = false;
+        StateHasChanged();
     }
 
     private sealed class DayFormModel

@@ -6,4 +6,5 @@ public record LoginResponseDto(
     DateTime ExpiresAt,
     string UserId,
     string Email,
-    IReadOnlyList<string> Roles);
+    IReadOnlyList<string> Roles,
+    int WarningMinutes);

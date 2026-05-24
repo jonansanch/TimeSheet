@@ -7,4 +7,5 @@ public class JwtSettings
     public string Audience { get; init; } = string.Empty;
     public int ExpirationMinutes { get; init; } = 60;
     public int RefreshExpirationHours { get; init; } = 8;
+    public int SessionWarningMinutes { get; init; } = 5;
 }

@@ -2,17 +2,20 @@
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IEmpleadoRepository Repo
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Recursos - KPG Timesheet</PageTitle>
+<PageTitle>@L["Resources_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
         <div>
             <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-                Recursos
+                @L["Resources_Title"]
             </MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Catálogo de recursos disponibles para el registro de horas.
+                @L["Resources_Subtitle"]
             </MudText>
         </div>
         <MudButton Variant="Variant.Filled"
@@ -20,7 +23,7 @@
                    StartIcon="@Icons.Material.Filled.PersonAdd"
                    Disabled="_isProcesando"
                    OnClick="AbrirCrearAsync">
-            Nuevo Recurso
+            @L["Resources_NewResource"]
         </MudButton>
     </MudStack>
 
@@ -34,15 +37,10 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_successMessage))
-        {
-            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
-        }
-
         @if (_empleados.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.People">
-                No hay recursos registrados.
+                @L["Resources_ErrorLoad"]
             </MudAlert>
         }
         else
@@ -57,7 +55,7 @@
                 <ToolBarContent>
                     <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
-                                  Placeholder="Buscar por nombre..."
+                                  Placeholder="@($"{L["Label_Name"].Value}...")"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
                                   IconSize="Size.Small"
@@ -65,22 +63,22 @@
                                   Style="max-width:280px;" />
                 </ToolBarContent>
                 <Columns>
-                    <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
-                    <TemplateColumn Title="Estado" Sortable="true">
+                    <PropertyColumn Property="x => x.Nombre" Title="@L["Resources_ColName"]" />
+                    <TemplateColumn Title="@L["Resources_ColStatus"]" Sortable="true">
                         <CellTemplate>
                             <MudChip T="string"
                                      Size="Size.Small"
                                      Color="@(context.Item.Activo ? Color.Success : Color.Default)">
-                                @(context.Item.Activo ? "Activo" : "Inactivo")
+                                @(context.Item.Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value)
                             </MudChip>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Acciones" Sortable="false">
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary"
                                            Size="Size.Small"
-                                           aria-label="Editar recurso"
+                                           aria-label="@L["Btn_Edit"]"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => AbrirEditarAsync(context.Item))" />
                             @if (context.Item.Activo)
@@ -88,7 +86,7 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
                                                Color="Color.Warning"
                                                Size="Size.Small"
-                                               aria-label="Desactivar recurso"
+                                               aria-label="@L["Btn_Deactivate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -97,7 +95,7 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
                                                Color="Color.Success"
                                                Size="Size.Small"
-                                               aria-label="Activar recurso"
+                                               aria-label="@L["Btn_Activate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -105,26 +103,31 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="EmpleadoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="EmpleadoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
     }
 
-    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+    <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
         <MessageContent>@_msgBoxContent</MessageContent>
         <YesButton>
-            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
         </YesButton>
     </MudMessageBox>
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_Resources"].Value, null, disabled: true)
+    ];
+
     private List<EmpleadoResponse> _empleados = [];
     private bool _isLoading = true;
     private bool _isProcesando;
     private string? _errorMessage;
-    private string? _successMessage;
     private MudMessageBox? _msgBox;
     private string _msgBoxContent = string.Empty;
     private Color _msgBoxColor = Color.Primary;
@@ -134,47 +137,25 @@
         e => string.IsNullOrWhiteSpace(_searchText)
             || e.Nombre.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
 
-    protected override async Task OnInitializedAsync()
-    {
-        await CargarAsync();
-    }
+    protected override async Task OnInitializedAsync() => await CargarAsync();
 
     private async Task CargarAsync()
     {
         _isLoading = true;
         _errorMessage = null;
-
-        try
-        {
-            _empleados = await Repo.GetAllAsync();
-        }
-        catch
-        {
-            _errorMessage = "No fue posible cargar los empleados. Intente nuevamente.";
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        try { _empleados = await Repo.GetAllAsync(); }
+        catch { _errorMessage = L["Resources_ErrorLoad"]; }
+        finally { _isLoading = false; }
     }
 
     private async Task AbrirCrearAsync()
     {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true,
-            CloseOnEscapeKey = true
-        };
-        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Nuevo Recurso", options);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>(L["Resources_NewTitle"], options);
         var result = await dialog.Result;
-        if (result?.Canceled != false || result.Data is not CreateEmpleadoRequest request)
-            return;
+        if (result?.Canceled != false || result.Data is not CreateEmpleadoRequest request) return;
 
         _isProcesando = true;
-        _errorMessage = null;
-        _successMessage = null;
-
         try
         {
             var (ok, empleado, error) = await Repo.CreateAsync(request);
@@ -182,100 +163,62 @@
             {
                 _empleados.Add(empleado);
                 _empleados = [.. _empleados.OrderBy(e => e.Nombre)];
-                _successMessage = $"Recurso \"{empleado.Nombre}\" creado.";
+                Snackbar.Add(L["Resources_SavedOk"].Value, Severity.Success);
             }
-            else
-            {
-                _errorMessage = error ?? "No fue posible crear el recurso.";
-            }
+            else Snackbar.Add(error ?? L["Resources_ErrorSave"].Value, Severity.Error);
         }
-        finally
-        {
-            _isProcesando = false;
-        }
+        finally { _isProcesando = false; }
     }
 
     private async Task AbrirEditarAsync(EmpleadoResponse item)
     {
-        var parameters = new DialogParameters<KpgEmpleadoDialog>
-        {
-            { x => x.Empleado, item }
-        };
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true,
-            CloseOnEscapeKey = true
-        };
-        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>("Editar Recurso", parameters, options);
+        var parameters = new DialogParameters<KpgEmpleadoDialog> { { x => x.Empleado, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgEmpleadoDialog>(L["Resources_EditTitle"], parameters, options);
         var result = await dialog.Result;
-        if (result?.Canceled != false || result.Data is not UpdateEmpleadoRequest request)
-            return;
+        if (result?.Canceled != false || result.Data is not UpdateEmpleadoRequest request) return;
 
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
-
         try
         {
             var (ok, empleado, error) = await Repo.UpdateAsync(item.Id, request);
             if (ok && empleado is not null)
             {
-                ReemplazarEmpleado(item, empleado);
+                Reemplazar(item, empleado);
                 _empleados = [.. _empleados.OrderBy(e => e.Nombre)];
-                _successMessage = $"Recurso actualizado a \"{empleado.Nombre}\".";
+                Snackbar.Add(L["Resources_SavedOk"].Value, Severity.Success);
             }
-            else
-            {
-                _errorMessage = error ?? "No fue posible actualizar el recurso.";
-            }
+            else Snackbar.Add(error ?? L["Resources_ErrorSave"].Value, Severity.Error);
         }
-        finally
-        {
-            _isProcesando = false;
-        }
+        finally { _isProcesando = false; }
     }
 
     private async Task ConfirmarToggleAsync(EmpleadoResponse item)
     {
         _msgBoxContent = item.Activo
-            ? $"¿Desactivar \"{item.Nombre}\"? No aparecerá en nuevos registros."
-            : $"¿Activar \"{item.Nombre}\"?";
+            ? string.Format(L["Resources_DeactivateConfirm"], item.Nombre)
+            : string.Format(L["Users_ActivateConfirm"], item.Nombre);
         _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
         StateHasChanged();
-
-        var confirmed = await _msgBox!.ShowAsync();
-        if (confirmed != true) return;
+        if (await _msgBox!.ShowAsync() != true) return;
 
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
-
         try
         {
             var (ok, empleado, error) = await Repo.ToggleActivoAsync(item.Id);
             if (ok && empleado is not null)
             {
-                ReemplazarEmpleado(item, empleado);
-                _successMessage = empleado.Activo
-                    ? $"\"{empleado.Nombre}\" activado."
-                    : $"\"{empleado.Nombre}\" desactivado.";
+                Reemplazar(item, empleado);
+                Snackbar.Add(L["Resources_SavedOk"].Value, Severity.Success);
             }
-            else
-            {
-                _errorMessage = error ?? "No fue posible cambiar el estado del recurso.";
-            }
+            else Snackbar.Add(error ?? L["Resources_ErrorSave"].Value, Severity.Error);
         }
-        finally
-        {
-            _isProcesando = false;
-        }
+        finally { _isProcesando = false; }
     }
 
-    private void ReemplazarEmpleado(EmpleadoResponse oldItem, EmpleadoResponse newItem)
+    private void Reemplazar(EmpleadoResponse viejo, EmpleadoResponse nuevo)
     {
-        var idx = _empleados.IndexOf(oldItem);
-        if (idx >= 0)
-            _empleados[idx] = newItem;
+        var idx = _empleados.IndexOf(viejo);
+        if (idx >= 0) _empleados[idx] = nuevo;
     }
 }

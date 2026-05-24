@@ -1,17 +1,97 @@
 @page "/registro"
 @attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject IRegistroHorasRepository RegistroRepo
+@inject IParametroSistemaRepository ParametroSistemaRepo
+@inject IStringLocalizer<SharedResource> L
 
-<PageTitle>Registro de horas - KPG Timesheet</PageTitle>
+<PageTitle>@L["Reg_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
         <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-            Registro de horas
+            @L["Reg_Title"]
         </MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary">
-            Registra tu turno AM o PM para la fecha seleccionada.
+            @L["Reg_Subtitle"]
         </MudText>
     </div>
 
-    <KpgShiftForm />
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4">
+            <KpgMiniCalendario PrimerDiaMes="@_primerDiaMes"
+                               DiasConRegistro="@_diasConRegistro"
+                               FechaSeleccionada="@_fechaSeleccionada"
+                               VentanaDias="@_ventanaDias"
+                               IsLoading="@_loadingCalendario"
+                               OnMesAnterior="@IrMesAnterior"
+                               OnMesSiguiente="@IrMesSiguiente"
+                               OnDiaSeleccionado="@HandleDiaSeleccionado" />
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado" />
+        </MudItem>
+    </MudGrid>
 </MudStack>
+
+@code {
+    private KpgShiftForm _shiftForm = default!;
+
+    private DateOnly _primerDiaMes = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private List<DateOnly> _diasConRegistro = [];
+    private DateOnly? _fechaSeleccionada;
+    private int _ventanaDias = 3;
+    private bool _loadingCalendario = true;
+
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Register"].Value, null, disabled: true)
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarVentanaAsync(), CargarCalendarioAsync());
+    }
+
+    private async Task CargarVentanaAsync()
+    {
+        try { _ventanaDias = await ParametroSistemaRepo.GetVentanaRetroactividadAsync(); } catch { }
+    }
+
+    private async Task CargarCalendarioAsync()
+    {
+        _loadingCalendario = true;
+        try
+        {
+            _diasConRegistro = await RegistroRepo.GetDiasConRegistroAsync(_primerDiaMes.Month, _primerDiaMes.Year);
+        }
+        catch { _diasConRegistro = []; }
+        finally { _loadingCalendario = false; }
+    }
+
+    private async Task IrMesAnterior()
+    {
+        _primerDiaMes = _primerDiaMes.AddMonths(-1);
+        await CargarCalendarioAsync();
+    }
+
+    private async Task IrMesSiguiente()
+    {
+        _primerDiaMes = _primerDiaMes.AddMonths(1);
+        await CargarCalendarioAsync();
+    }
+
+    private void HandleDiaSeleccionado(DateOnly fecha)
+    {
+        _fechaSeleccionada = fecha;
+        _shiftForm.SetFecha(fecha);
+    }
+
+    private async Task HandleRegistroGuardado(DateOnly fecha)
+    {
+        if (!_diasConRegistro.Contains(fecha))
+            _diasConRegistro = [.. _diasConRegistro, fecha];
+        _fechaSeleccionada = fecha;
+        await Task.CompletedTask;
+    }
+}

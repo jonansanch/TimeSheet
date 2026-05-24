@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "KPG.Timesheet.WebUI",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-IeKO2wJyqISWNqiBTqKFmNM8gg/6lFlgq3aJ6q2IAqc=",
+    "hash": "sha256-4P2+R1diNT3If19BZk4n1REJI1PGDw6eMqnpthLtOFQ=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.rjbmzc4jpg.js"
@@ -25,21 +25,9 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
     ],
     "icu": [
       {
-        "virtualPath": "icudt_CJK.dat",
-        "name": "icudt_CJK.tjcz0u77k5.dat",
-        "hash": "sha256-SZLtQnRc0JkwqHab0VUVP7T3uBPSeYzxzDnpxPpUnHk=",
-        "cache": "force-cache"
-      },
-      {
-        "virtualPath": "icudt_EFIGS.dat",
-        "name": "icudt_EFIGS.tptq2av103.dat",
-        "hash": "sha256-8fItetYY8kQ0ww6oxwTLiT3oXlBwHKumbeP2pRF4yTc=",
-        "cache": "force-cache"
-      },
-      {
-        "virtualPath": "icudt_no_CJK.dat",
-        "name": "icudt_no_CJK.lfu7j35m59.dat",
-        "hash": "sha256-L7sV7NEYP37/Qr2FPCePo5cJqRgTXRwGHuwF5Q+0Nfs=",
+        "virtualPath": "icudt.dat",
+        "name": "icudt.oh1zvcfom8.dat",
+        "hash": "sha256-tO5O5YzMTVSaKBboxAqezOQL9ewmupzV2JrB5Rkc8a4=",
         "cache": "force-cache"
       }
     ],
@@ -1272,26 +1260,36 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "KPG.Timesheet.WebUI.wasm",
-        "name": "KPG.Timesheet.WebUI.c8rbjlop3v.wasm",
-        "hash": "sha256-nIWrV8s5CDMx76+Jf+tvULaWK+4Ttp8kXlsN98CZpgs=",
+        "name": "KPG.Timesheet.WebUI.foa1e554pi.wasm",
+        "hash": "sha256-Tz5y0tUEPXMGDP7YU3jnp+v2DzuC2XQK1op5zXpvjBk=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "KPG.Timesheet.WebUI.pdb",
-        "name": "KPG.Timesheet.WebUI.z76gl51kzn.pdb",
-        "hash": "sha256-gQNaAduCy9v3me4JWfaEejtbjLuvEQdELcKeLYDixCc=",
+        "name": "KPG.Timesheet.WebUI.78anefqobb.pdb",
+        "hash": "sha256-h52bQF66tXQaodhLL/5rOkOfs5euUNMcXbELvVT+fjA=",
         "cache": "force-cache"
       }
-    ]
+    ],
+    "satelliteResources": {
+      "en": [
+        {
+          "virtualPath": "KPG.Timesheet.WebUI.resources.wasm",
+          "name": "KPG.Timesheet.WebUI.resources.rb9wxbdr9m.wasm",
+          "hash": "sha256-N1Sv0ETbg6JZ22FctAvAS44NPTfzewZqw3aUCI2yH4I=",
+          "cache": "force-cache"
+        }
+      ]
+    }
   },
   "debugLevel": -1,
   "appsettings": [
     "../appsettings.Development.json",
     "../appsettings.json"
   ],
-  "globalizationMode": "sharded",
+  "globalizationMode": "all",
   "extensions": {
     "blazor": {}
   },

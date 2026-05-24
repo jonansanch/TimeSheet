@@ -4,135 +4,137 @@
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject CurrentUserService CurrentUserService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Mis Registros - KPG Timesheet</PageTitle>
+<PageTitle>@L["Hist_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
         <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-            Mis Registros
+            @L["Hist_Title"]
         </MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary">
-            Historial de horas reportadas.
+            @L["Hist_Subtitle"]
         </MudText>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
 
-    @if (_isLoading)
-    {
-        <MudProgressLinear Indeterminate="true" Size="Size.Small" />
-    }
-    else if (!string.IsNullOrWhiteSpace(_errorMessage))
-    {
-        <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
-    }
-    else if (_registros.Count == 0)
-    {
-        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EventBusy">
-            <MudText Typo="Typo.body1">Aún no tienes registros.</MudText>
-            <MudText Typo="Typo.body2" Class="mb-2">Empieza registrando las horas de hoy.</MudText>
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       Size="Size.Small"
-                       OnClick="@(() => Navigation.NavigateTo("/registro"))">
-                Registrar horas
-            </MudButton>
-        </MudAlert>
-    }
-    else
-    {
-        <MudDataGrid T="HistorialRegistroResponse"
-                     Items="_registros"
-                     Dense="true"
-                     Filterable="false"
-                     SortMode="SortMode.Single"
-                     RowsPerPage="5">
-            <Columns>
-                <PropertyColumn Property="x => x.FechaRegistro"
-                                Title="Fecha"
-                                Sortable="true"
-                                InitialDirection="SortDirection.Descending">
-                    <CellTemplate>
-                        @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
-                    </CellTemplate>
-                </PropertyColumn>
-                <TemplateColumn Title="AM" Sortable="false" CellStyle="white-space:nowrap;">
-                    <CellTemplate>
-                        @if (context.Item.HoraEntradaAM.HasValue && context.Item.HoraSalidaAM.HasValue)
-                        {
-                            @($"{context.Item.HoraEntradaAM.Value:HH\\:mm} – {context.Item.HoraSalidaAM.Value:HH\\:mm}")
-                        }
-                        else
-                        {
-                            <MudText Color="Color.Secondary">—</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="PM" Sortable="false" CellStyle="white-space:nowrap;">
-                    <CellTemplate>
-                        @if (context.Item.HoraEntradaPM.HasValue && context.Item.HoraSalidaPM.HasValue)
-                        {
-                            @($"{context.Item.HoraEntradaPM.Value:HH\\:mm} – {context.Item.HoraSalidaPM.Value:HH\\:mm}")
-                        }
-                        else
-                        {
-                            <MudText Color="Color.Secondary">—</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.Cliente" Title="Cliente" />
-                <PropertyColumn Property="x => x.Proyecto" Title="Proyecto" />
-                <PropertyColumn Property="x => x.Modalidad" Title="Modalidad" Sortable="false" />
-                <PropertyColumn Property="x => x.Descripcion" Title="Descripción" Sortable="false" />
-                <TemplateColumn Title="" Sortable="false">
-                    <CellTemplate>
-                        @if (_puedeEditar)
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           aria-label="Editar descripción"
-                                           Disabled="_isEditing"
-                                           OnClick="@(() => AbrirEditarDescripcionAsync(context.Item))" />
-                        }
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error"
+    <MudDataGrid @ref="_grid"
+                 T="HistorialRegistroResponse"
+                 ServerData="CargarDatosAsync"
+                 Dense="true"
+                 Filterable="false"
+                 SortMode="SortMode.None"
+                 RowsPerPage="20">
+        <NoRecordsContent>
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EventBusy" Class="ma-4">
+                <MudText Typo="Typo.body1">@L["Hist_NoRecords"]</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">@L["Hist_NoRecordsHint"]</MudText>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="@(() => Navigation.NavigateTo("/registro"))">
+                    @L["Btn_RegisterHours"]
+                </MudButton>
+            </MudAlert>
+        </NoRecordsContent>
+        <Columns>
+            <PropertyColumn Property="x => x.FechaRegistro" Title="@L["Label_Date"]" Sortable="false">
+                <CellTemplate>
+                    @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
+                </CellTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="AM" Sortable="false" CellStyle="white-space:nowrap;">
+                <CellTemplate>
+                    @if (context.Item.HoraEntradaAM.HasValue && context.Item.HoraSalidaAM.HasValue)
+                    {
+                        @($"{context.Item.HoraEntradaAM.Value:HH\\:mm} – {context.Item.HoraSalidaAM.Value:HH\\:mm}")
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary">—</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="PM" Sortable="false" CellStyle="white-space:nowrap;">
+                <CellTemplate>
+                    @if (context.Item.HoraEntradaPM.HasValue && context.Item.HoraSalidaPM.HasValue)
+                    {
+                        @($"{context.Item.HoraEntradaPM.Value:HH\\:mm} – {context.Item.HoraSalidaPM.Value:HH\\:mm}")
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary">—</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Cliente" Title="@L["Label_Client"]" />
+            <PropertyColumn Property="x => x.Proyecto" Title="@L["Label_Project"]" />
+            <PropertyColumn Property="x => x.Modalidad" Title="@L["Label_Modality"]" Sortable="false" />
+            <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    @if (_puedeEditar)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Color="Color.Primary"
                                        Size="Size.Small"
-                                       aria-label="Eliminar registro"
-                                       Disabled="_isDeleting"
-                                       OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="HistorialRegistroResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
-            </PagerContent>
-        </MudDataGrid>
+                                       aria-label="@L["Btn_Edit"]"
+                                       Disabled="_isEditing"
+                                       OnClick="@(() => AbrirEditarDescripcionAsync(context.Item))" />
+                    }
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   aria-label="@L["Btn_Delete"]"
+                                   Disabled="_isDeleting"
+                                   OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="HistorialRegistroResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+        </PagerContent>
+    </MudDataGrid>
+
+    @if (_totalCount > 0)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
+                @_totalCount @L["Rep_Records"]
+            </MudChip>
+        </MudStack>
     }
 
     <MudMessageBox @ref="_msgBox"
-                   Title="Eliminar registro"
-                   CancelText="Cancelar">
+                   Title="@L["Hist_DeleteTitle"]"
+                   CancelText="@L["Btn_Cancel"]">
         <MessageContent>
-            ¿Eliminar el registro del
+            @L["Hist_DeleteConfirm"]
             <b>@_pendiente?.FechaRegistro.ToString("dd/MM/yyyy")</b>?
-            Esta acción no se puede deshacer.
+            @L["Hist_DeleteCannotUndo"]
         </MessageContent>
         <YesButton>
-            <MudButton Color="Color.Error" Variant="Variant.Filled">Eliminar</MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled">@L["Btn_Delete"]</MudButton>
         </YesButton>
     </MudMessageBox>
 </MudStack>
 
 @code {
-    private List<HistorialRegistroResponse> _registros = [];
-    private bool _isLoading = true;
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_MyRecords"].Value, null, disabled: true)
+    ];
+
+    private MudDataGrid<HistorialRegistroResponse>? _grid;
+    private int _totalCount;
     private string? _errorMessage;
-    private string? _successMessage;
     private bool _isDeleting;
     private bool _isEditing;
     private bool _puedeEditar;
@@ -141,19 +143,25 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _puedeEditar = await CurrentUserService.IsInRoleAsync(Roles.Supervisor)
+                    || await CurrentUserService.IsInRoleAsync(Roles.Admin);
+    }
+
+    private async Task<GridData<HistorialRegistroResponse>> CargarDatosAsync(GridState<HistorialRegistroResponse> state)
+    {
+        _errorMessage = null;
         try
         {
-            _registros = await RegistroHorasRepository.GetHistorialAsync();
-            _puedeEditar = await CurrentUserService.IsInRoleAsync(Roles.Supervisor)
-                        || await CurrentUserService.IsInRoleAsync(Roles.Admin);
+            var resp = await RegistroHorasRepository.GetHistorialAsync(
+                page: state.Page + 1,
+                pageSize: state.PageSize);
+            _totalCount = resp.TotalCount;
+            return new GridData<HistorialRegistroResponse> { Items = resp.Items, TotalItems = resp.TotalCount };
         }
         catch
         {
-            _errorMessage = "No fue posible cargar el historial. Intente nuevamente.";
-        }
-        finally
-        {
-            _isLoading = false;
+            _errorMessage = L["Hist_ErrorLoad"];
+            return new GridData<HistorialRegistroResponse> { Items = [], TotalItems = 0 };
         }
     }
 
@@ -170,7 +178,7 @@
             CloseOnEscapeKey = true
         };
         var dialog = await DialogService.ShowAsync<KpgEditDescripcionDialog>(
-            "Editar descripción", parameters, options);
+            L["Hist_EditDescription"], parameters, options);
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string nuevaDescripcion })
             await GuardarDescripcionAsync(item, nuevaDescripcion);
@@ -179,26 +187,22 @@
     private async Task GuardarDescripcionAsync(HistorialRegistroResponse item, string nuevaDescripcion)
     {
         _isEditing = true;
-        _successMessage = null;
-        _errorMessage = null;
         try
         {
             var ok = await RegistroHorasRepository.UpdateDescripcionAsync(item.Id, nuevaDescripcion);
             if (ok)
             {
-                var idx = _registros.IndexOf(item);
-                if (idx >= 0)
-                    _registros[idx] = item with { Descripcion = nuevaDescripcion };
-                _successMessage = "Descripción actualizada correctamente.";
+                Snackbar.Add(L["Hist_DescUpdated"].Value, Severity.Success);
+                await _grid!.ReloadServerData();
             }
             else
             {
-                _errorMessage = "No fue posible actualizar la descripción. Intente nuevamente.";
+                Snackbar.Add(L["Hist_ErrorUpdate"].Value, Severity.Error);
             }
         }
         catch
         {
-            _errorMessage = "Ocurrió un error al actualizar la descripción.";
+            Snackbar.Add(L["Hist_ErrorUpdate"].Value, Severity.Error);
         }
         finally
         {
@@ -219,25 +223,22 @@
     private async Task EliminarAsync(HistorialRegistroResponse item)
     {
         _isDeleting = true;
-        _errorMessage = null;
-        _successMessage = null;
-
         try
         {
             var success = await RegistroHorasRepository.DeleteAsync(item.Id);
             if (success)
             {
-                _registros.Remove(item);
-                _successMessage = $"Registro del {item.FechaRegistro:dd/MM/yyyy} eliminado.";
+                Snackbar.Add(string.Format(L["Hist_DeletedMsg"], item.FechaRegistro.ToString("dd/MM/yyyy")), Severity.Success);
+                await _grid!.ReloadServerData();
             }
             else
             {
-                _errorMessage = "No fue posible eliminar el registro. Intente nuevamente.";
+                Snackbar.Add(L["Hist_ErrorDelete"].Value, Severity.Error);
             }
         }
         catch
         {
-            _errorMessage = "Ocurrió un error al eliminar el registro.";
+            Snackbar.Add(L["Hist_ErrorDelete"].Value, Severity.Error);
         }
         finally
         {

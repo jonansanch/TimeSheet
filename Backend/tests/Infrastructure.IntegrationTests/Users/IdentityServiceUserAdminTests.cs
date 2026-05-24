@@ -1,7 +1,9 @@
+using Dapper;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Infrastructure.Data;
 using KPG.Timesheet.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -164,23 +166,28 @@ public class IdentityServiceUserAdminTests
 
     private static ServiceProvider CreateServices()
     {
+        SqlMapper.AddTypeHandler(new DateTimeOffsetTypeHandler());
+        SqlMapper.AddTypeHandler(new NullableDateTimeOffsetTypeHandler());
+
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddAuthorization();
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
         services.AddIdentityCore<ApplicationUser>()
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddClaimsPrincipalFactory<UserClaimsPrincipalFactory<ApplicationUser, IdentityRole>>();
         services.AddTransient<IdentityService>();
+        services.AddSingleton<System.Data.IDbConnection>(connection);
 
         var provider = services.BuildServiceProvider();
         var context = provider.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureCreated();
         foreach (var role in new[] { Roles.Admin, Roles.Gerente, Roles.Supervisor, Roles.Empleado })
-        {
             context.Roles.Add(new IdentityRole(role) { NormalizedName = role.ToUpperInvariant() });
-        }
         context.SaveChanges();
 
         return provider;

@@ -19,8 +19,8 @@ public class BitacoraQueryRepository(IDbConnection db) : IBitacoraQueryRepositor
                b.MetadataJson
         FROM   BitacoraAuditoria b
         LEFT   JOIN AspNetUsers u ON u.Id = b.ActorId
-        WHERE  (@Desde      IS NULL OR CAST(b.Timestamp AS date) >= @Desde)
-          AND  (@Hasta      IS NULL OR CAST(b.Timestamp AS date) <= @Hasta)
+        WHERE  (@DesdeUtc           IS NULL OR b.Timestamp >= @DesdeUtc)
+          AND  (@HastaExclusivoUtc  IS NULL OR b.Timestamp < @HastaExclusivoUtc)
           AND  (@ActorId    IS NULL OR b.ActorId = @ActorId)
           AND  (@TipoEvento IS NULL OR b.TipoEvento = @TipoEvento)
         ORDER  BY b.Timestamp DESC
@@ -45,8 +45,8 @@ public class BitacoraQueryRepository(IDbConnection db) : IBitacoraQueryRepositor
                    JOIN   AspNetRoles r ON r.Id = ur.RoleId
                    WHERE  r.Name IN ('Empleado', 'Supervisor')
                )
-          AND  (@Desde      IS NULL OR CAST(b.Timestamp AS date) >= @Desde)
-          AND  (@Hasta      IS NULL OR CAST(b.Timestamp AS date) <= @Hasta)
+          AND  (@DesdeUtc           IS NULL OR b.Timestamp >= @DesdeUtc)
+          AND  (@HastaExclusivoUtc  IS NULL OR b.Timestamp < @HastaExclusivoUtc)
           AND  (@ActorId    IS NULL OR b.ActorId = @ActorId)
           AND  (@TipoEvento IS NULL OR b.TipoEvento = @TipoEvento)
         ORDER  BY b.Timestamp DESC
@@ -55,14 +55,29 @@ public class BitacoraQueryRepository(IDbConnection db) : IBitacoraQueryRepositor
 
     public async Task<BitacoraResponse> GetAsync(DateOnly? desde, DateOnly? hasta, string? actorId, string? tipoEvento, CancellationToken cancellationToken = default)
     {
-        var rows = (await db.QueryAsync<BitacoraItemDto>(SqlCompleto, new { Desde = desde, Hasta = hasta, ActorId = actorId, TipoEvento = tipoEvento })).ToList();
+        var (desdeUtc, hastaExclusivoUtc) = BuildUtcRange(desde, hasta);
+        var rows = (await db.QueryAsync<BitacoraItemDto>(SqlCompleto, new { DesdeUtc = desdeUtc, HastaExclusivoUtc = hastaExclusivoUtc, ActorId = actorId, TipoEvento = tipoEvento })).ToList();
         return new BitacoraResponse(rows.Count, rows);
     }
 
     public async Task<BitacoraResponse> GetAlcanceAsync(DateOnly? desde, DateOnly? hasta, string? actorId, string? tipoEvento, bool soloEquipo, CancellationToken cancellationToken = default)
     {
         var sql = soloEquipo ? SqlEquipo : SqlCompleto;
-        var rows = (await db.QueryAsync<BitacoraItemDto>(sql, new { Desde = desde, Hasta = hasta, ActorId = actorId, TipoEvento = tipoEvento })).ToList();
+        var (desdeUtc, hastaExclusivoUtc) = BuildUtcRange(desde, hasta);
+        var rows = (await db.QueryAsync<BitacoraItemDto>(sql, new { DesdeUtc = desdeUtc, HastaExclusivoUtc = hastaExclusivoUtc, ActorId = actorId, TipoEvento = tipoEvento })).ToList();
         return new BitacoraResponse(rows.Count, rows);
+    }
+
+    private static (DateTimeOffset? DesdeUtc, DateTimeOffset? HastaExclusivoUtc) BuildUtcRange(DateOnly? desde, DateOnly? hasta)
+    {
+        var desdeUtc = desde.HasValue
+            ? new DateTimeOffset(desde.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+            : (DateTimeOffset?)null;
+
+        var hastaExclusivoUtc = hasta.HasValue
+            ? new DateTimeOffset(hasta.Value.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+            : (DateTimeOffset?)null;
+
+        return (desdeUtc, hastaExclusivoUtc);
     }
 }

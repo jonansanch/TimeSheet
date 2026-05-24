@@ -66,6 +66,6 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new RefreshTokenResponseDto(accessToken, rawNewToken, expiresAt);
+        return new RefreshTokenResponseDto(accessToken, rawNewToken, expiresAt, _jwtSettings.SessionWarningMinutes);
     }
 }

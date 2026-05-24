@@ -2,24 +2,27 @@
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IUserAdminRepository Repo
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Usuarios - KPG Timesheet</PageTitle>
+<PageTitle>@L["Users_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
         <div>
             <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-                Usuarios
+                @L["Users_Title"]
             </MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Administra cuentas, estado de acceso y altas de colaboradores.
+                @L["Users_Subtitle"]
             </MudText>
         </div>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.PersonAdd"
                    OnClick="AbrirCrearAsync">
-            Nuevo
+            @L["Users_NewUser"]
         </MudButton>
     </MudStack>
 
@@ -33,15 +36,10 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_successMessage))
-        {
-            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_successMessage</MudAlert>
-        }
-
         @if (_usuarios.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.People">
-                No hay usuarios registrados.
+                @L["Users_ErrorLoad"]
             </MudAlert>
         }
         else
@@ -56,7 +54,7 @@
                 <ToolBarContent>
                     <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
-                                  Placeholder="Buscar por email..."
+                                  Placeholder="@($"{L["Label_Email"].Value}...")"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
                                   IconSize="Size.Small"
@@ -64,29 +62,29 @@
                                   Style="max-width:280px;" />
                 </ToolBarContent>
                 <Columns>
-                    <PropertyColumn Property="x => x.Email" Title="Email" />
-                    <PropertyColumn Property="x => x.NombreCompleto" Title="Nombre" />
-                    <PropertyColumn Property="x => x.Role" Title="Rol" />
-                    <TemplateColumn Title="Estado" Sortable="true">
+                    <PropertyColumn Property="x => x.Email" Title="@L["Users_ColEmail"]" />
+                    <PropertyColumn Property="x => x.NombreCompleto" Title="@L["Users_ColName"]" />
+                    <PropertyColumn Property="x => x.Role" Title="@L["Users_ColRole"]" />
+                    <TemplateColumn Title="@L["Users_ColStatus"]" Sortable="true">
                         <CellTemplate>
                             <MudChip T="string"
                                      Size="Size.Small"
                                      Color="@(context.Item.IsActive ? Color.Success : Color.Default)">
-                                @(context.Item.IsActive ? "Activo" : "Inactivo")
+                                @(context.Item.IsActive ? L["Label_Active"].Value : L["Label_Inactive"].Value)
                             </MudChip>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Desactivado" Sortable="true">
+                    <TemplateColumn Title="@L["Users_ColDeactivated"]" Sortable="true">
                         <CellTemplate>
                             @(context.Item.DeactivatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Acciones" Sortable="false">
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
                             <MudIconButton Icon="@Icons.Material.Filled.ManageAccounts"
                                            Color="Color.Primary"
                                            Size="Size.Small"
-                                           aria-label="Cambiar rol"
+                                           aria-label="@L["Users_ChangeRole"]"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => AbrirCambiarRolAsync(context.Item))" />
                             @if (context.Item.IsActive)
@@ -94,7 +92,7 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.Block"
                                                Color="Color.Warning"
                                                Size="Size.Small"
-                                               aria-label="Desactivar usuario"
+                                               aria-label="@L["Btn_Deactivate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarDesactivarAsync(context.Item))" />
                             }
@@ -103,40 +101,45 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                                Color="Color.Success"
                                                Size="Size.Small"
-                                               aria-label="Activar usuario"
+                                               aria-label="@L["Btn_Activate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ActivarAsync(context.Item))" />
                             }
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Color="Color.Error"
                                            Size="Size.Small"
-                                           aria-label="Eliminar usuario"
+                                           aria-label="@L["Btn_Delete"]"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="UserAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="UserAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
     }
 
-    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+    <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
         <MessageContent>@_msgBoxContent</MessageContent>
         <YesButton>
-            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
         </YesButton>
     </MudMessageBox>
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_Users"].Value, null, disabled: true)
+    ];
+
     private List<UserAdminResponse> _usuarios = [];
     private bool _isLoading = true;
     private bool _isProcesando;
     private string? _errorMessage;
-    private string? _successMessage;
     private MudMessageBox? _msgBox;
     private string _msgBoxContent = string.Empty;
     private Color _msgBoxColor = Color.Primary;
@@ -163,7 +166,7 @@
         }
         catch
         {
-            _errorMessage = "No fue posible cargar los usuarios. Intente nuevamente.";
+            _errorMessage = L["Users_ErrorLoad"];
         }
         finally
         {
@@ -179,14 +182,12 @@
             FullWidth = true,
             CloseOnEscapeKey = true
         };
-        var dialog = await DialogService.ShowAsync<KpgUserDialog>("Nuevo usuario", options);
+        var dialog = await DialogService.ShowAsync<KpgUserDialog>(L["Users_NewTitle"], options);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not CreateUserRequest request)
             return;
 
         _isProcesando = true;
-        _errorMessage = null;
-        _successMessage = null;
 
         try
         {
@@ -195,11 +196,11 @@
             {
                 _usuarios.Add(user);
                 _usuarios = _usuarios.OrderBy(u => u.Email).ToList();
-                _successMessage = $"Usuario {user.Email} creado.";
+                Snackbar.Add(L["Users_SavedOk"].Value, Severity.Success);
             }
             else
             {
-                _errorMessage = error ?? "No fue posible crear el usuario.";
+                Snackbar.Add(error ?? L["Users_ErrorSave"].Value, Severity.Error);
             }
         }
         finally
@@ -221,14 +222,12 @@
             FullWidth = true,
             CloseOnEscapeKey = true
         };
-        var dialog = await DialogService.ShowAsync<KpgUserRoleDialog>("Cambiar rol", parameters, options);
+        var dialog = await DialogService.ShowAsync<KpgUserRoleDialog>(L["Users_ChangeRole"], parameters, options);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not ChangeUserRoleRequest request)
             return;
 
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
 
         try
         {
@@ -236,11 +235,11 @@
             if (ok && user is not null)
             {
                 ReemplazarUsuario(item, user);
-                _successMessage = $"Rol de {item.Email} actualizado a {user.Role}.";
+                Snackbar.Add(L["Users_RoleChanged"].Value, Severity.Success);
             }
             else
             {
-                _errorMessage = error ?? "No fue posible actualizar el rol.";
+                Snackbar.Add(error ?? L["Users_ErrorSave"].Value, Severity.Error);
             }
         }
         finally
@@ -252,8 +251,6 @@
     private async Task ActivarAsync(UserAdminResponse item)
     {
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
 
         try
         {
@@ -261,11 +258,11 @@
             if (ok && user is not null)
             {
                 ReemplazarUsuario(item, user);
-                _successMessage = $"Usuario {item.Email} activado.";
+                Snackbar.Add(L["Users_SavedOk"].Value, Severity.Success);
             }
             else
             {
-                _errorMessage = "No fue posible activar el usuario.";
+                Snackbar.Add(L["Users_ErrorSave"].Value, Severity.Error);
             }
         }
         finally
@@ -276,7 +273,7 @@
 
     private async Task ConfirmarDesactivarAsync(UserAdminResponse item)
     {
-        _msgBoxContent = $"Desactivar el acceso de {item.Email}?";
+        _msgBoxContent = string.Format(L["Users_DeactivateConfirm"], item.Email);
         _msgBoxColor = Color.Warning;
         StateHasChanged();
 
@@ -284,8 +281,6 @@
         if (confirmed != true) return;
 
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
 
         try
         {
@@ -293,11 +288,11 @@
             if (ok && user is not null)
             {
                 ReemplazarUsuario(item, user);
-                _successMessage = $"Usuario {item.Email} desactivado.";
+                Snackbar.Add(L["Users_SavedOk"].Value, Severity.Success);
             }
             else
             {
-                _errorMessage = "No fue posible desactivar el usuario.";
+                Snackbar.Add(L["Users_ErrorSave"].Value, Severity.Error);
             }
         }
         finally
@@ -308,7 +303,7 @@
 
     private async Task ConfirmarEliminarAsync(UserAdminResponse item)
     {
-        _msgBoxContent = $"Eliminar la cuenta de {item.Email}? Si tiene historia, se conservara inactiva.";
+        _msgBoxContent = string.Format(L["Users_DeactivateConfirm"], item.Email);
         _msgBoxColor = Color.Error;
         StateHasChanged();
 
@@ -316,8 +311,6 @@
         if (confirmed != true) return;
 
         _isProcesando = true;
-        _successMessage = null;
-        _errorMessage = null;
 
         try
         {
@@ -327,17 +320,16 @@
                 if (result.WasHardDeleted)
                 {
                     _usuarios.Remove(item);
-                    _successMessage = $"Usuario {item.Email} eliminado.";
                 }
                 else
                 {
                     ReemplazarUsuario(item, item with { IsActive = false, DeactivatedAt = DateTimeOffset.Now });
-                    _successMessage = $"Usuario {item.Email} conservado como inactivo por trazabilidad.";
                 }
+                Snackbar.Add(L["Users_SavedOk"].Value, Severity.Success);
             }
             else
             {
-                _errorMessage = "No fue posible eliminar el usuario.";
+                Snackbar.Add(L["Users_ErrorSave"].Value, Severity.Error);
             }
         }
         finally

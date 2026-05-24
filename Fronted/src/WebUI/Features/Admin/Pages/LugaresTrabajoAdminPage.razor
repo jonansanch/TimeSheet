@@ -2,33 +2,28 @@
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject ILugarTrabajoRepository LugarRepo
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+@inject CatalogosCacheService CatalogosCache
 
-<PageTitle>Lugares de Trabajo - KPG Timesheet</PageTitle>
+<PageTitle>@L["WP_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Lugares de Trabajo</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Lugares de trabajo disponibles en el sistema.</MudText>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["WP_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["WP_Subtitle"]</MudText>
     </div>
-
-    @if (!string.IsNullOrWhiteSpace(_success))
-    {
-        <MudAlert Severity="Severity.Success" Dense="true" role="status">@_success</MudAlert>
-    }
-    @if (!string.IsNullOrWhiteSpace(_error))
-    {
-        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_error</MudAlert>
-    }
 
     <MudPaper Elevation="1" Class="pa-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
-            <MudText Typo="Typo.h6" Style="font-weight:600;">Lista de Lugares</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["WP_Title"]</MudText>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
                        Disabled="_isProcesando"
                        OnClick="AbrirCrearAsync">
-                Nuevo Lugar
+                @L["WP_NewPlace"]
             </MudButton>
         </MudStack>
 
@@ -39,34 +34,34 @@
         else if (_lugares.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.LocationOn">
-                No hay lugares de trabajo registrados.
+                @L["WP_ErrorLoad"]
             </MudAlert>
         }
         else
         {
             <MudDataGrid T="LugarTrabajoResponse" Items="_lugares" Dense="true" Filterable="false" SortMode="SortMode.None" RowsPerPage="5">
                 <Columns>
-                    <PropertyColumn Property="x => x.Nombre" Title="Nombre" />
-                    <TemplateColumn Title="Estado" Sortable="false">
+                    <PropertyColumn Property="x => x.Nombre" Title="@L["Label_Name"]" />
+                    <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
                         <CellTemplate>
                             <MudChip T="string" Size="Size.Small"
                                      Color="@(context.Item.Activo ? Color.Success : Color.Default)">
-                                @(context.Item.Activo ? "Activo" : "Inactivo")
+                                @(context.Item.Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value)
                             </MudChip>
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Acciones" Sortable="false">
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary" Size="Size.Small"
-                                           aria-label="Editar lugar"
+                                           aria-label="@L["Btn_Edit"]"
                                            Disabled="_isProcesando"
                                            OnClick="@(() => AbrirEditarAsync(context.Item))" />
                             @if (context.Item.Activo)
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
                                                Color="Color.Warning" Size="Size.Small"
-                                               aria-label="Desactivar lugar"
+                                               aria-label="@L["Btn_Deactivate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -74,7 +69,7 @@
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
                                                Color="Color.Success" Size="Size.Small"
-                                               aria-label="Activar lugar"
+                                               aria-label="@L["Btn_Activate"]"
                                                Disabled="_isProcesando"
                                                OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
                             }
@@ -82,26 +77,31 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="LugarTrabajoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
+                    <MudDataGridPager T="LugarTrabajoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
                 </PagerContent>
             </MudDataGrid>
         }
     </MudPaper>
 
-    <MudMessageBox @ref="_msgBox" CancelText="Cancelar">
+    <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
         <MessageContent>@_msgBoxContent</MessageContent>
         <YesButton>
-            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">Confirmar</MudButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
         </YesButton>
     </MudMessageBox>
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_Params"].Value, null, disabled: true),
+        new(L["Nav_WorkPlaces"].Value, null, disabled: true)
+    ];
+
     private bool _isLoading = true;
     private bool _isProcesando;
     private List<LugarTrabajoResponse> _lugares = [];
-    private string? _error;
-    private string? _success;
     private MudMessageBox? _msgBox;
     private string _msgBoxContent = string.Empty;
     private Color  _msgBoxColor   = Color.Primary;
@@ -109,28 +109,29 @@
     protected override async Task OnInitializedAsync()
     {
         try { _lugares = await LugarRepo.GetAllAsync(); }
-        catch { _error = "No fue posible cargar los lugares de trabajo."; }
+        catch { Snackbar.Add(L["WP_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
     }
 
     private async Task AbrirCrearAsync()
     {
         var opts   = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<KpgLugarTrabajoDialog>("Nuevo Lugar de Trabajo", opts);
+        var dialog = await DialogService.ShowAsync<KpgLugarTrabajoDialog>(L["WP_NewTitle"], opts);
         var result = await dialog.Result;
         if (result?.Canceled != false || result.Data is not CreateLugarTrabajoRequest req) return;
 
-        _isProcesando = true; _error = null; _success = null;
+        _isProcesando = true;
         try
         {
             var (ok, l, err) = await LugarRepo.CreateAsync(req);
             if (ok && l is not null)
             {
                 _lugares.Add(l);
-                _lugares  = [.. _lugares.OrderBy(x => x.Nombre)];
-                _success  = $"Lugar \"{l.Nombre}\" creado.";
+                _lugares = [.. _lugares.OrderBy(x => x.Nombre)];
+                CatalogosCache.InvalidarLugaresTrabajo();
+                Snackbar.Add(L["WP_SavedOk"].Value, Severity.Success);
             }
-            else _error = err ?? "No fue posible crear el lugar de trabajo.";
+            else Snackbar.Add(err ?? L["WP_ErrorSave"].Value, Severity.Error);
         }
         finally { _isProcesando = false; }
     }
@@ -139,11 +140,11 @@
     {
         var params_ = new DialogParameters<KpgLugarTrabajoDialog> { { x => x.Lugar, item } };
         var opts    = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog  = await DialogService.ShowAsync<KpgLugarTrabajoDialog>("Editar Lugar de Trabajo", params_, opts);
+        var dialog  = await DialogService.ShowAsync<KpgLugarTrabajoDialog>(L["WP_EditTitle"], params_, opts);
         var result  = await dialog.Result;
         if (result?.Canceled != false || result.Data is not UpdateLugarTrabajoRequest req) return;
 
-        _isProcesando = true; _error = null; _success = null;
+        _isProcesando = true;
         try
         {
             var (ok, l, err) = await LugarRepo.UpdateAsync(item.Id, req);
@@ -151,30 +152,34 @@
             {
                 Reemplazar(item, l);
                 _lugares = [.. _lugares.OrderBy(x => x.Nombre)];
-                _success = $"Lugar actualizado a \"{l.Nombre}\".";
+                CatalogosCache.InvalidarLugaresTrabajo();
+                Snackbar.Add(L["WP_SavedOk"].Value, Severity.Success);
             }
-            else _error = err ?? "No fue posible actualizar el lugar de trabajo.";
+            else Snackbar.Add(err ?? L["WP_ErrorSave"].Value, Severity.Error);
         }
         finally { _isProcesando = false; }
     }
 
     private async Task ConfirmarToggleAsync(LugarTrabajoResponse item)
     {
-        _msgBoxContent = item.Activo ? $"¿Desactivar \"{item.Nombre}\"?" : $"¿Activar \"{item.Nombre}\"?";
-        _msgBoxColor   = item.Activo ? Color.Warning : Color.Success;
+        _msgBoxContent = item.Activo
+            ? string.Format(L["WP_DeactivateConfirm"], item.Nombre)
+            : string.Format(L["Users_ActivateConfirm"], item.Nombre);
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
         StateHasChanged();
         if (await _msgBox!.ShowAsync() != true) return;
 
-        _isProcesando = true; _error = null; _success = null;
+        _isProcesando = true;
         try
         {
             var (ok, l, err) = await LugarRepo.ToggleActivoAsync(item.Id);
             if (ok && l is not null)
             {
                 Reemplazar(item, l);
-                _success = l.Activo ? $"\"{l.Nombre}\" activado." : $"\"{l.Nombre}\" desactivado.";
+                CatalogosCache.InvalidarLugaresTrabajo();
+                Snackbar.Add(L["WP_SavedOk"].Value, Severity.Success);
             }
-            else _error = err ?? "No fue posible cambiar el estado.";
+            else Snackbar.Add(err ?? L["WP_ErrorSave"].Value, Severity.Error);
         }
         finally { _isProcesando = false; }
     }

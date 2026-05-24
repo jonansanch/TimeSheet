@@ -27,5 +27,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        builder.Entity<ApplicationUser>()
+            .HasIndex(u => u.IsActive)
+            .HasDatabaseName("IX_AspNetUsers_IsActive");
     }
 }

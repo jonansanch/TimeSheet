@@ -1,13 +1,16 @@
 @page "/admin/parametros/configuracion"
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IParametroSistemaRepository SistemaRepo
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Configuración General - KPG Timesheet</PageTitle>
+<PageTitle>@L["Nav_GeneralConfig"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Configuración General</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Parámetros globales del sistema.</MudText>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Nav_GeneralConfig"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Params_Subtitle"]</MudText>
     </div>
 
     @if (_isLoading)
@@ -20,21 +23,21 @@
             <MudGrid>
                 <MudItem xs="12" md="4">
                     <MudNumericField T="int"
-                                     Label="Ventana retroactividad (días)"
+                                     Label="@L["Params_RetroWindow"]"
                                      Variant="Variant.Outlined"
                                      @bind-Value="_ventana"
                                      Min="1"
                                      Max="30"
-                                     HelperText="Días hábiles permitidos para registrar en el pasado (1-30)." />
+                                     HelperText="@L["Params_RetroWindowDesc"]" />
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudNumericField T="int"
-                                     Label="Umbral notificaciones (días)"
+                                     Label="@L["Params_NotifThreshold"]"
                                      Variant="Variant.Outlined"
                                      @bind-Value="_umbral"
                                      Min="1"
                                      Max="30"
-                                     HelperText="Días sin registrar para enviar notificación (1-30)." />
+                                     HelperText="@L["Params_NotifThresholdDesc"]" />
                 </MudItem>
                 <MudItem xs="12" md="4" Class="d-flex align-end">
                     <MudButton Variant="Variant.Filled"
@@ -42,29 +45,26 @@
                                Disabled="_isSaving"
                                OnClick="GuardarConfigAsync"
                                StartIcon="@Icons.Material.Filled.Save">
-                        @(_isSaving ? "Guardando..." : "Guardar Configuración")
+                        @(_isSaving ? L["Loading"].Value : L["Btn_Save"].Value)
                     </MudButton>
                 </MudItem>
             </MudGrid>
-            @if (!string.IsNullOrWhiteSpace(_error))
-            {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" aria-live="polite">@_error</MudAlert>
-            }
-            @if (!string.IsNullOrWhiteSpace(_success))
-            {
-                <MudAlert Severity="Severity.Success" Dense="true" Class="mt-2" role="status">@_success</MudAlert>
-            }
         </MudPaper>
     }
 </MudStack>
 
 @code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_Params"].Value, null, disabled: true),
+        new(L["Nav_GeneralConfig"].Value, null, disabled: true)
+    ];
+
     private bool _isLoading = true;
     private bool _isSaving;
     private int  _ventana = 3;
     private int  _umbral  = 3;
-    private string? _error;
-    private string? _success;
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,23 +76,21 @@
             _ventana = await vTask;
             _umbral  = await uTask;
         }
-        catch { _error = "No fue posible cargar la configuración."; }
+        catch { Snackbar.Add(L["Params_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
     }
 
     private async Task GuardarConfigAsync()
     {
         _isSaving = true;
-        _error    = null;
-        _success  = null;
         try
         {
             var (okV, errV) = await SistemaRepo.UpdateVentanaRetroactividadAsync(_ventana);
             var (okU, errU) = await SistemaRepo.UpdateUmbralNotificacionAsync(_umbral);
             if (!okV || !okU)
-                _error = errV ?? errU ?? "No fue posible guardar la configuración.";
+                Snackbar.Add(errV ?? errU ?? L["Params_ErrorSave"].Value, Severity.Error);
             else
-                _success = "Configuración guardada correctamente.";
+                Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
         }
         finally { _isSaving = false; }
     }

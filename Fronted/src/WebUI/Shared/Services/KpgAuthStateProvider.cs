@@ -12,6 +12,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
 
     private readonly IAuthRepository _authRepository;
     private readonly AuthStateService _authState;
+    private readonly SessionTimeoutService _sessionTimeout;
     private readonly IJSRuntime _js;
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
@@ -21,10 +22,12 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
     public KpgAuthStateProvider(
         IAuthRepository authRepository,
         AuthStateService authState,
+        SessionTimeoutService sessionTimeout,
         IJSRuntime js)
     {
         _authRepository = authRepository;
         _authState = authState;
+        _sessionTimeout = sessionTimeout;
         _js = js;
     }
 
@@ -56,6 +59,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
 
         _authState.SetToken(response.AccessToken);
         await SetRefreshTokenInStorageAsync(response.RefreshToken);
+        _sessionTimeout.StartTracking(response.ExpiresAt, response.WarningMinutes);
 
         NotifyAuthenticationStateChanged(Task.FromResult(BuildState(response.AccessToken)));
     }
@@ -67,10 +71,27 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
         if (!string.IsNullOrEmpty(refreshToken) && _authState.IsAuthenticated)
             await _authRepository.LogoutAsync(refreshToken, _authState.AccessToken!);
 
+        _sessionTimeout.StopTracking();
         _authState.ClearToken();
         await RemoveRefreshTokenFromStorageAsync();
 
         NotifyAuthenticationStateChanged(Task.FromResult(_anonymous));
+    }
+
+    public async Task<bool> RefreshSessionAsync()
+    {
+        var refreshToken = await GetRefreshTokenFromStorageAsync();
+        if (string.IsNullOrEmpty(refreshToken)) return false;
+
+        var response = await _authRepository.RefreshAsync(refreshToken);
+        if (response is null) return false;
+
+        _authState.SetToken(response.AccessToken);
+        await SetRefreshTokenInStorageAsync(response.RefreshToken);
+        _sessionTimeout.StartTracking(response.ExpiresAt, response.WarningMinutes);
+
+        NotifyAuthenticationStateChanged(Task.FromResult(BuildState(response.AccessToken)));
+        return true;
     }
 
     private async Task<AuthenticationState> TryRestoreSessionAsync()
@@ -88,6 +109,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
 
         _authState.SetToken(response.AccessToken);
         await SetRefreshTokenInStorageAsync(response.RefreshToken);
+        _sessionTimeout.StartTracking(response.ExpiresAt, response.WarningMinutes);
 
         return BuildState(response.AccessToken);
     }

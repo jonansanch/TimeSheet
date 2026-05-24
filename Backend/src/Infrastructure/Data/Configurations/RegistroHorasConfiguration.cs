@@ -32,6 +32,12 @@ public class RegistroHorasConfiguration : IEntityTypeConfiguration<RegistroHoras
         builder.Ignore(r => r.TienePM);
 
         // Un registro por usuario/día/proyecto (puede haber varios proyectos el mismo día)
-        builder.HasIndex(r => new { r.UserId, r.FechaRegistro, r.Cliente, r.Proyecto }).IsUnique();
+        builder.HasIndex(r => new { r.UserId, r.FechaRegistro, r.Cliente, r.Proyecto })
+            .HasDatabaseName("IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto")
+            .IsUnique();
+
+        builder.HasIndex(r => r.FechaRegistro)
+            .HasDatabaseName("IX_RegistrosHoras_FechaRegistro")
+            .IncludeProperties(r => r.UserId);
     }
 }

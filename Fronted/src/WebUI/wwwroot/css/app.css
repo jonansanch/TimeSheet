@@ -1,9 +1,9 @@
 html, body {
-    font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 h1:focus {
@@ -14,7 +14,7 @@ h1:focus {
 .mud-drawer .mud-nav-link {
     color: #FFFFFF !important;
     border-radius: 0 !important;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.9rem;
     padding: 10px 20px !important;
     transition: background-color 0.15s ease;
@@ -40,28 +40,37 @@ h1:focus {
     color: white !important;
 }
 
-/* Nav grupos padre — título de sección */
+/* Nav grupos padre — comportamiento de ítem clicable */
 .mud-drawer .mud-nav-group > .mud-nav-group-header {
-    color: #5BB8D4 !important;
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.08em;
-    padding: 12px 20px 8px !important;
+    color: #FFFFFF !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: normal;
+    padding: 10px 20px !important;
     opacity: 1 !important;
     background: transparent !important;
+    transition: background-color 0.15s ease;
 }
 
 .mud-drawer .mud-nav-group > .mud-nav-group-header:hover {
-    background-color: rgba(255,255,255,0.06) !important;
+    background-color: #1B4F73 !important;
 }
 
 .mud-drawer .mud-nav-group > .mud-nav-group-header .mud-icon-root {
     color: #5BB8D4 !important;
-    font-size: 1.1rem !important;
+    font-size: 1.2rem !important;
 }
 
-/* Nav hijos — indent, sin icono, prefijo "–" via pseudo-elemento */
+/* Flecha de expansión — color fijo en colapsado y expandido (MudBlazor usa mud-nav-link-expand-icon + mud-transform) */
+.mud-drawer .mud-nav-link-expand-icon,
+.mud-drawer .mud-nav-link-expand-icon.mud-transform {
+    color: #5BB8D4 !important;
+    fill: #5BB8D4 !important;
+    opacity: 1 !important;
+}
+
+/* Nav hijos — indent, sin icono */
 .mud-drawer .kpg-nav-child {
     padding-left: 36px !important;
     font-size: 0.85rem !important;
@@ -80,12 +89,6 @@ h1:focus {
 /* Ocultar el espacio reservado para el icono en hijos */
 .mud-drawer .kpg-nav-child .mud-nav-link-icon-wrapper {
     display: none !important;
-}
-
-
-/* Flecha de expansión del grupo — color claro para que se vea sobre el fondo oscuro */
-.mud-drawer .mud-nav-group > .mud-nav-group-header .mud-nav-group-expand-icon {
-    color: #5BB8D4 !important;
 }
 
 /* Separador visual sutil sobre cada grupo */
@@ -164,7 +167,7 @@ h1:focus {
 }
 
 .kpg-brand-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 28px;
     font-weight: 700;
     color: #FFFFFF;
@@ -172,7 +175,7 @@ h1:focus {
 }
 
 .kpg-loading-text {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
     color: #5BB8D4;
     margin: 0;

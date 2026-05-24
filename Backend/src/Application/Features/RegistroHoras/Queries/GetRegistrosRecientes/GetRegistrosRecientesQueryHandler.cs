@@ -25,23 +25,50 @@ public class GetRegistrosRecientesQueryHandler
 
         var top = Math.Clamp(request.Top, 1, 10);
 
-        // Load ordered by date desc; GroupBy in-memory preserves first-occurrence order,
-        // so the first element of each group is the most recent record for that (Cliente, Proyecto).
-        var records = await _context.RegistrosHoras
+        // Query 1: GROUP BY en SQL — devuelve a lo sumo `top` filas.
+        // El índice (UserId, FechaRegistro, Cliente, Proyecto) cubre esta query.
+        var groups = await _context.RegistrosHoras
             .Where(r => r.UserId == userId)
-            .OrderByDescending(r => r.FechaRegistro)
+            .GroupBy(r => new { r.Cliente, r.Proyecto })
+            .Select(g => new
+            {
+                g.Key.Cliente,
+                g.Key.Proyecto,
+                UltimaFecha = g.Max(r => r.FechaRegistro)
+            })
+            .OrderByDescending(g => g.UltimaFecha)
+            .Take(top)
             .ToListAsync(cancellationToken);
 
-        return records
-            .GroupBy(r => new { r.Cliente, r.Proyecto })
-            .Take(top)
-            .Select(g =>
+        if (groups.Count == 0)
+            return [];
+
+        // Query 2: fetch de datos completos para esos registros en una sola consulta.
+        // Máximo `top` filas — nunca carga toda la tabla del usuario.
+        var clientes  = groups.Select(g => g.Cliente).ToList();
+        var proyectos = groups.Select(g => g.Proyecto).ToList();
+        var fechas    = groups.Select(g => g.UltimaFecha).ToList();
+
+        var records = await _context.RegistrosHoras
+            .Where(r => r.UserId   == userId
+                     && clientes.Contains(r.Cliente)
+                     && proyectos.Contains(r.Proyecto)
+                     && fechas.Contains(r.FechaRegistro))
+            .Select(r => new
             {
-                var latest = g.First();
-                return new RegistroRecienteDto(
-                    latest.Cliente, latest.Proyecto,
-                    latest.Modalidad, latest.Recurso,
-                    latest.Descripcion, latest.Lugar);
-            });
+                r.Cliente, r.Proyecto, r.FechaRegistro,
+                r.Modalidad, r.Recurso, r.Descripcion, r.Lugar
+            })
+            .ToListAsync(cancellationToken);
+
+        // Join en memoria preservando el orden más-reciente-primero (a lo sumo `top` items).
+        return groups.Select(g =>
+        {
+            var r = records.First(r => r.Cliente      == g.Cliente
+                                    && r.Proyecto     == g.Proyecto
+                                    && r.FechaRegistro == g.UltimaFecha);
+            return new RegistroRecienteDto(
+                r.Cliente, r.Proyecto, r.Modalidad, r.Recurso, r.Descripcion, r.Lugar);
+        });
     }
 }

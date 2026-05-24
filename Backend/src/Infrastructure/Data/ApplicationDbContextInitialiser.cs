@@ -513,6 +513,35 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
+        // Índice de rendimiento: dashboard y reportes filtran por rango de FechaRegistro
+        // sin predicado de UserId — el composite (UserId, FechaRegistro, ...) no aplica en esos casos.
+        // INCLUDE (UserId) cubre los JOINs a AspNetUsers sin volver al clúster.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE name = N'IX_RegistrosHoras_FechaRegistro'
+                  AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+            )
+            BEGIN
+                CREATE INDEX [IX_RegistrosHoras_FechaRegistro]
+                    ON [dbo].[RegistrosHoras] ([FechaRegistro])
+                    INCLUDE ([UserId]);
+            END
+            """);
+
+        // Índice de rendimiento: queries de dashboard filtran WHERE u.IsActive = 1
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE name = N'IX_AspNetUsers_IsActive'
+                  AND object_id = OBJECT_ID(N'[dbo].[AspNetUsers]')
+            )
+            BEGIN
+                CREATE INDEX [IX_AspNetUsers_IsActive]
+                    ON [dbo].[AspNetUsers] ([IsActive]);
+            END
+            """);
+
         await _context.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'[dbo].[ParametrosSistema]', N'U') IS NULL
             BEGIN
@@ -656,6 +685,21 @@ public class ApplicationDbContextInitialiser
                 );
                 CREATE INDEX [IX_NotificacionesEnviadas_UserId_Created]
                     ON [dbo].[NotificacionesEnviadas] ([UserId], [Created]);
+                CREATE INDEX [IX_NotificacionesEnviadas_Created]
+                    ON [dbo].[NotificacionesEnviadas] ([Created]);
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[NotificacionesEnviadas]', N'U') IS NOT NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM sys.indexes
+                   WHERE name = N'IX_NotificacionesEnviadas_Created'
+                     AND object_id = OBJECT_ID(N'[dbo].[NotificacionesEnviadas]')
+               )
+            BEGIN
+                CREATE INDEX [IX_NotificacionesEnviadas_Created]
+                    ON [dbo].[NotificacionesEnviadas] ([Created]);
             END
             """);
 

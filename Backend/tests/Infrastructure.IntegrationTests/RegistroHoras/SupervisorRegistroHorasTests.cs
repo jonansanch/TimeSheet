@@ -39,8 +39,8 @@ public class SupervisorRegistroHorasTests
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("supervisor-1"));
         var result = await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None);
 
-        result.Should().HaveCount(1);
-        result.Single().Cliente.Should().Be("KPG");
+        result.Items.Should().HaveCount(1);
+        result.Items.Single().Cliente.Should().Be("KPG");
     }
 
     [Fact]

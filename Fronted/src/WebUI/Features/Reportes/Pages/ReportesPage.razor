@@ -3,14 +3,17 @@
 @inject IReportesRepository Repo
 @inject IUserAdminRepository UsuariosRepo
 @inject IJSRuntime JS
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
 
-<PageTitle>Reporte de Horas - KPG Timesheet</PageTitle>
+<PageTitle>@L["Rep_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
 
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">Reporte de Horas</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Consulta y filtra registros de horas del equipo.</MudText>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Rep_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Rep_Subtitle"]</MudText>
     </div>
 
     <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
@@ -18,16 +21,16 @@
 
             <MudItem xs="12">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
-                    <MudText Typo="Typo.body2" Style="font-weight:600;min-width:60px;">Período</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight:600;min-width:60px;">@L["Rep_Period"]</MudText>
                     <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" OverrideStyles="false">
                         <MudButton Color="@(_periodo == Periodo.Mes ? Color.Primary : Color.Default)"
-                                   OnClick="@(() => CambiarPeriodo(Periodo.Mes))">Este mes</MudButton>
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Mes))">@L["Status_ThisMonth"]</MudButton>
                         <MudButton Color="@(_periodo == Periodo.Semana ? Color.Primary : Color.Default)"
-                                   OnClick="@(() => CambiarPeriodo(Periodo.Semana))">Esta semana</MudButton>
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Semana))">@L["Status_ThisWeek"]</MudButton>
                         <MudButton Color="@(_periodo == Periodo.Hoy ? Color.Primary : Color.Default)"
-                                   OnClick="@(() => CambiarPeriodo(Periodo.Hoy))">Hoy</MudButton>
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Hoy))">@L["Status_Today"]</MudButton>
                         <MudButton Color="@(_periodo == Periodo.Personalizado ? Color.Primary : Color.Default)"
-                                   OnClick="@(() => CambiarPeriodo(Periodo.Personalizado))">Personalizado</MudButton>
+                                   OnClick="@(() => CambiarPeriodo(Periodo.Personalizado))">@L["Status_Custom"]</MudButton>
                     </MudButtonGroup>
                     @if (_periodo == Periodo.Personalizado)
                     {
@@ -45,13 +48,13 @@
 
             <MudItem xs="12" sm="6" md="4">
                 <MudSelect T="string"
-                           Label="Empleado"
+                           Label="@L["Label_Employee"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
                            Value="_filtroUserId"
                            ValueChanged="v => _filtroUserId = v"
-                           aria-label="Filtrar por empleado">
+                           aria-label="@L["Rep_FilterEmployee"]">
                     @foreach (var u in _usuarios)
                     {
                         <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
@@ -61,24 +64,24 @@
 
             <MudItem xs="12" sm="6" md="4">
                 <MudTextField T="string"
-                              Label="Cliente"
+                              Label="@L["Label_Client"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Clearable="true"
                               @bind-Value="_filtroCliente"
-                              Placeholder="Filtrar por nombre de cliente"
-                              aria-label="Filtrar por cliente" />
+                              Placeholder="@L["Rep_FilterClient"]"
+                              aria-label="@L["Rep_FilterClient"]" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="4">
                 <MudTextField T="string"
-                              Label="Proyecto"
+                              Label="@L["Label_Project"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Clearable="true"
                               @bind-Value="_filtroProyecto"
-                              Placeholder="Filtrar por nombre de proyecto"
-                              aria-label="Filtrar por proyecto" />
+                              Placeholder="@L["Rep_FilterProject"]"
+                              aria-label="@L["Rep_FilterProject"]" />
             </MudItem>
 
             <MudItem xs="12">
@@ -88,14 +91,14 @@
                                StartIcon="@Icons.Material.Filled.Search"
                                OnClick="GenerarReporteAsync"
                                Disabled="@(_isLoading || _isExporting)">
-                        Generar reporte
+                        @L["Btn_GenerateReport"]
                     </MudButton>
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Success"
                                StartIcon="@Icons.Material.Filled.TableView"
                                OnClick="@(() => ExportarAsync("excel"))"
-                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)"
-                               aria-label="Exportar reporte a Excel">
+                               Disabled="@(_reporte is null || _reporte.TotalRegistros == 0 || _isLoading || _isExporting)"
+                               aria-label="@L["Btn_ExportExcel"]">
                         @if (_isExporting && _exportandoFormato == "excel")
                         { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
                         Excel
@@ -104,25 +107,18 @@
                                Color="Color.Error"
                                StartIcon="@Icons.Material.Filled.PictureAsPdf"
                                OnClick="@(() => ExportarAsync("pdf"))"
-                               Disabled="@(_reporte is null || _reporte.Items.Count == 0 || _isLoading || _isExporting)"
-                               aria-label="Exportar reporte a PDF">
+                               Disabled="@(_reporte is null || _reporte.TotalRegistros == 0 || _isLoading || _isExporting)"
+                               aria-label="@L["Btn_ExportPdf"]">
                         @if (_isExporting && _exportandoFormato == "pdf")
                         { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
                         PDF
                     </MudButton>
                 </MudStack>
             </MudItem>
-            @if (!string.IsNullOrWhiteSpace(_errorExport))
-            {
-                <MudItem xs="12">
-                    <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorExport</MudAlert>
-                </MudItem>
-            }
-
         </MudGrid>
     </MudPaper>
 
-    @if (_isLoading)
+    @if (_isLoading && !_reporteGenerado)
     {
         <KpgTableSkeleton Rows="10" />
     }
@@ -130,88 +126,95 @@
     {
         <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
-    else if (_reporte is not null)
+    else if (_reporteGenerado)
     {
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-            <MudChip T="string" Color="Color.Primary" Size="Size.Small">
-                @_reporte.TotalRegistros registros
-            </MudChip>
-            <MudChip T="string" Color="Color.Success" Size="Size.Small">
-                @_reporte.TotalHoras.ToString("F1") h totales
-            </MudChip>
-            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                @_reporte.Desde.ToString("dd/MM/yyyy") – @_reporte.Hasta.ToString("dd/MM/yyyy")
-            </MudText>
-        </MudStack>
+        @if (_reporte is not null)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudChip T="string" Color="Color.Primary" Size="Size.Small">
+                    @_reporte.TotalRegistros @L["Rep_Records"]
+                </MudChip>
+                <MudChip T="string" Color="Color.Success" Size="Size.Small">
+                    @_reporte.TotalHoras.ToString("F1") h @L["Rep_TotalHours"]
+                </MudChip>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @_reporte.Desde.ToString("dd/MM/yyyy") - @_reporte.Hasta.ToString("dd/MM/yyyy")
+                </MudText>
+            </MudStack>
+        }
 
-        @if (_reporte.Items.Count == 0)
-        {
-            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SearchOff">
-                No hay registros que coincidan con los filtros seleccionados. Intenta ampliar el período o ajustar los criterios.
-            </MudAlert>
-        }
-        else
-        {
-            <MudDataGrid T="ReporteHorasItemDto"
-                         Items="_reporte.Items"
-                         Dense="true"
-                         Filterable="false"
-                         SortMode="SortMode.Single"
-                         RowsPerPage="5"
-                         Style="border-radius:12px;overflow:hidden;">
-                <Columns>
-                    <PropertyColumn Property="x => x.FechaRegistro" Title="Fecha"
-                                    CellStyle="white-space:nowrap;"
-                                    Format="dd/MM/yyyy" />
-                    <PropertyColumn Property="x => x.NombreEmpleado" Title="Empleado" />
-                    <TemplateColumn Title="Ent. AM" Sortable="false" CellStyle="white-space:nowrap;">
-                        <CellTemplate>
-                            @(context.Item.HoraEntradaAM.HasValue ? context.Item.HoraEntradaAM.Value.ToString("HH:mm") : "—")
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Sal. AM" Sortable="false" CellStyle="white-space:nowrap;">
-                        <CellTemplate>
-                            @(context.Item.HoraSalidaAM.HasValue ? context.Item.HoraSalidaAM.Value.ToString("HH:mm") : "—")
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Ent. PM" Sortable="false" CellStyle="white-space:nowrap;">
-                        <CellTemplate>
-                            @(context.Item.HoraEntradaPM.HasValue ? context.Item.HoraEntradaPM.Value.ToString("HH:mm") : "—")
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Sal. PM" Sortable="false" CellStyle="white-space:nowrap;">
-                        <CellTemplate>
-                            @(context.Item.HoraSalidaPM.HasValue ? context.Item.HoraSalidaPM.Value.ToString("HH:mm") : "—")
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Horas" Sortable="true">
-                        <CellTemplate>
-                            <strong>@context.Item.Horas.ToString("F2")</strong>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <PropertyColumn Property="x => x.Cliente" Title="Cliente" />
-                    <PropertyColumn Property="x => x.Proyecto" Title="Proyecto" />
-                    <PropertyColumn Property="x => x.Modalidad" Title="Modalidad" />
-                    <PropertyColumn Property="x => x.Lugar" Title="Lugar" />
-                    <PropertyColumn Property="x => x.Descripcion" Title="Descripción" />
-                </Columns>
-                <PagerContent>
-                    <MudDataGridPager T="ReporteHorasItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Mostrar:" />
-                </PagerContent>
-            </MudDataGrid>
-        }
+        <MudDataGrid @ref="_grid"
+                     T="ReporteHorasItemDto"
+                     ServerData="CargarReporteServerDataAsync"
+                     Dense="true"
+                     Filterable="false"
+                     SortMode="SortMode.Single"
+                     RowsPerPage="10"
+                     Loading="_isLoading"
+                     Style="border-radius:12px;overflow:hidden;">
+            <Columns>
+                <PropertyColumn Property="x => x.FechaRegistro" Title="@L["Label_Date"]"
+                                CellStyle="white-space:nowrap;"
+                                Format="dd/MM/yyyy" />
+                <PropertyColumn Property="x => x.NombreEmpleado" Title="@L["Label_Employee"]" />
+                <TemplateColumn Title="@L["Rep_ColEntAM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                    <CellTemplate>
+                        @(context.Item.HoraEntradaAM.HasValue ? context.Item.HoraEntradaAM.Value.ToString("HH:mm") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Rep_ColSalAM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                    <CellTemplate>
+                        @(context.Item.HoraSalidaAM.HasValue ? context.Item.HoraSalidaAM.Value.ToString("HH:mm") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Rep_ColEntPM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                    <CellTemplate>
+                        @(context.Item.HoraEntradaPM.HasValue ? context.Item.HoraEntradaPM.Value.ToString("HH:mm") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Rep_ColSalPM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                    <CellTemplate>
+                        @(context.Item.HoraSalidaPM.HasValue ? context.Item.HoraSalidaPM.Value.ToString("HH:mm") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Label_Hours"]" Sortable="true" SortBy="x => x.Horas">
+                    <CellTemplate>
+                        <strong>@context.Item.Horas.ToString("F2")</strong>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Cliente" Title="@L["Label_Client"]" />
+                <PropertyColumn Property="x => x.Proyecto" Title="@L["Label_Project"]" />
+                <PropertyColumn Property="x => x.Modalidad" Title="@L["Rep_ColModality"]" />
+                <PropertyColumn Property="x => x.Lugar" Title="@L["Rep_ColPlace"]" />
+                <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false" />
+            </Columns>
+            <NoRecordsContent>
+                <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SearchOff">
+                    @L["Rep_NoResults2"]
+                </MudAlert>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudDataGridPager T="ReporteHorasItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+            </PagerContent>
+        </MudDataGrid>
     }
 
 </MudStack>
 
 @code {
-    // ── Reporte general ──────────────────────────────────────────────
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Reports"].Value, null, disabled: true),
+        new(L["Nav_ReporteHoras"].Value, null, disabled: true)
+    ];
+
     private ReporteHorasResponse? _reporte;
     private bool _isLoading = false;
+    private bool _reporteGenerado = false;
     private string _errorMessage = string.Empty;
     private bool _isExporting = false;
     private string _exportandoFormato = string.Empty;
-    private string _errorExport = string.Empty;
+    private MudDataGrid<ReporteHorasItemDto>? _grid;
 
     private List<UserAdminResponse> _usuarios = [];
     private string? _filtroUserId;
@@ -235,7 +238,7 @@
             var paged = await UsuariosRepo.GetUsersAsync(pageNumber: 1, pageSize: 200, sortBy: "email", sortDescending: false);
             _usuarios = paged?.Items ?? [];
         }
-        catch { /* lista vacía — el filtro de empleado no estará disponible */ }
+        catch { }
     }
 
     private void CambiarPeriodo(Periodo periodo)
@@ -259,23 +262,69 @@
 
     private async Task GenerarReporteAsync()
     {
-        _isLoading = true;
+        _reporteGenerado = true;
         _errorMessage = string.Empty;
         StateHasChanged();
+
+        await Task.Yield();
+        if (_grid is not null)
+            await _grid.ReloadServerData();
+    }
+
+    private async Task<GridData<ReporteHorasItemDto>> CargarReporteServerDataAsync(GridState<ReporteHorasItemDto> state)
+    {
+        if (!_reporteGenerado)
+            return new GridData<ReporteHorasItemDto> { Items = [], TotalItems = 0 };
+
+        _isLoading = true;
+        _errorMessage = string.Empty;
         try
         {
             var (desde, hasta) = ObtenerRango();
+            var sort = state.SortDefinitions.OrderBy(s => s.Index).FirstOrDefault();
             _reporte = await Repo.GetReporteHorasAsync(
                 desde, hasta,
                 string.IsNullOrWhiteSpace(_filtroUserId)   ? null : _filtroUserId,
                 string.IsNullOrWhiteSpace(_filtroCliente)  ? null : _filtroCliente,
-                string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto);
+                string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto,
+                pageNumber: state.Page + 1,
+                pageSize: state.PageSize,
+                sortBy: MapSortBy(sort?.SortBy),
+                sortDescending: sort?.Descending ?? true);
+
             if (_reporte is null)
-                _errorMessage = "No se pudo generar el reporte.";
+            {
+                _errorMessage = L["Rep_ErrorLoad"];
+                return new GridData<ReporteHorasItemDto> { Items = [], TotalItems = 0 };
+            }
+
+            return new GridData<ReporteHorasItemDto>
+            {
+                Items = _reporte.Items,
+                TotalItems = _reporte.TotalRegistros
+            };
         }
-        catch { _errorMessage = "Error al comunicarse con el servidor."; }
+        catch
+        {
+            _errorMessage = L["Error_Server"];
+            return new GridData<ReporteHorasItemDto> { Items = [], TotalItems = 0 };
+        }
         finally { _isLoading = false; }
     }
+
+    private static string? MapSortBy(string? sortBy)
+        => sortBy switch
+        {
+            nameof(ReporteHorasItemDto.FechaRegistro)  => "fechaRegistro",
+            nameof(ReporteHorasItemDto.NombreEmpleado) => "nombreEmpleado",
+            nameof(ReporteHorasItemDto.Email)          => "email",
+            nameof(ReporteHorasItemDto.Horas)          => "horas",
+            nameof(ReporteHorasItemDto.Cliente)        => "cliente",
+            nameof(ReporteHorasItemDto.Proyecto)       => "proyecto",
+            nameof(ReporteHorasItemDto.Modalidad)      => "modalidad",
+            nameof(ReporteHorasItemDto.Lugar)          => "lugar",
+            _                                          => null
+        };
 
     private (DateOnly desde, DateOnly hasta) ObtenerRango()
     {
@@ -298,7 +347,6 @@
     {
         _isExporting = true;
         _exportandoFormato = formato;
-        _errorExport = string.Empty;
         StateHasChanged();
         try
         {
@@ -311,14 +359,14 @@
 
             if (result is null)
             {
-                _errorExport = "No se pudo generar el archivo de exportación.";
+                Snackbar.Add(L["Rep_ErrorLoad"].Value, Severity.Error);
                 return;
             }
 
             var (bytes, contentType, fileName) = result.Value;
             await JS.InvokeVoidAsync("downloadFile", fileName, contentType, Convert.ToBase64String(bytes));
         }
-        catch { _errorExport = "Error al generar la exportación."; }
+        catch { Snackbar.Add(L["Error_Server"].Value, Severity.Error); }
         finally
         {
             _isExporting = false;

@@ -4,6 +4,7 @@
     <RootNamespace>KPG.Timesheet.WebUI</RootNamespace>
     <AssemblyName>KPG.Timesheet.WebUI</AssemblyName>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
 
   <ItemGroup>

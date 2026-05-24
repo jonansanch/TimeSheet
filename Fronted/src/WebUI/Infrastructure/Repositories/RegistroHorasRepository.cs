@@ -48,20 +48,42 @@ public class RegistroHorasRepository : IRegistroHorasRepository
                ?? [];
     }
 
-    public async Task<List<HistorialRegistroResponse>> GetHistorialAsync(CancellationToken cancellationToken = default)
+    public async Task<HistorialPaginadoResponse> GetHistorialAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return new HistorialPaginadoResponse(0, []);
+
+        var url = $"api/registros-horas?page={page}&pageSize={pageSize}";
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
+
+        var response = await _http.SendAsync(httpRequest, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return new HistorialPaginadoResponse(0, []);
+
+        return await response.Content.ReadFromJsonAsync<HistorialPaginadoResponse>(cancellationToken: cancellationToken)
+               ?? new HistorialPaginadoResponse(0, []);
+    }
+
+    public async Task<List<DateOnly>> GetDiasConRegistroAsync(int mes, int anio, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
             return [];
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, "api/registros-horas");
+        var desde = new DateOnly(anio, mes, 1);
+        var hasta  = desde.AddMonths(1).AddDays(-1);
+        var url    = $"api/registros-horas?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}&pageSize=50";
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
 
         var response = await _http.SendAsync(httpRequest, cancellationToken);
         if (!response.IsSuccessStatusCode)
             return [];
 
-        return await response.Content.ReadFromJsonAsync<List<HistorialRegistroResponse>>(cancellationToken: cancellationToken)
-               ?? [];
+        var paginado = await response.Content.ReadFromJsonAsync<HistorialPaginadoResponse>(cancellationToken: cancellationToken)
+                       ?? new HistorialPaginadoResponse(0, []);
+        return paginado.Items.Select(r => r.FechaRegistro).Distinct().ToList();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)

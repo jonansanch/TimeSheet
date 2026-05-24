@@ -9,4 +9,8 @@ public record GetReporteHorasQuery(
     DateOnly Hasta,
     string? UserId,
     string? Cliente,
-    string? Proyecto) : IRequest<ReporteHorasResponse>;
+    string? Proyecto,
+    int PageNumber,
+    int PageSize,
+    string? SortBy,
+    bool SortDescending) : IRequest<ReporteHorasResponse>;

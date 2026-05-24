@@ -19,7 +19,9 @@ public class GetSolicitudesExcepcionQueryHandler
         GetSolicitudesExcepcionQuery request,
         CancellationToken cancellationToken)
     {
+        var ventana = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-180));
         var solicitudes = await _context.SolicitudesExcepcion
+            .Where(s => s.Estado == Domain.Enums.EstadoSolicitud.Pendiente || s.FechaRegistro >= ventana)
             .OrderByDescending(s => s.Created)
             .ToListAsync(cancellationToken);
 

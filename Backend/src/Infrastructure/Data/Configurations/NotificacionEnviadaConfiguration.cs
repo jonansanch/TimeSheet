@@ -13,5 +13,7 @@ public class NotificacionEnviadaConfiguration : IEntityTypeConfiguration<Notific
         builder.Property(n => n.Email).IsRequired().HasMaxLength(256);
         builder.Property(n => n.ErrorDetalle).HasMaxLength(2000);
         builder.HasIndex(n => new { n.UserId, n.Created });
+        builder.HasIndex(n => n.Created)
+            .HasDatabaseName("IX_NotificacionesEnviadas_Created");
     }
 }

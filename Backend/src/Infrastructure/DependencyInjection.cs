@@ -28,6 +28,8 @@ public static class DependencyInjection
     {
         SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
         SqlMapper.AddTypeHandler(new NullableDateOnlyTypeHandler());
+        SqlMapper.AddTypeHandler(new DateTimeOffsetTypeHandler());
+        SqlMapper.AddTypeHandler(new NullableDateTimeOffsetTypeHandler());
 
         var raw = builder.Configuration.GetConnectionString("DefaultConnection");
         Guard.Against.Null(raw, message: "Connection string 'DefaultConnection' not found.");
@@ -83,7 +85,8 @@ public static class DependencyInjection
         builder.Services
             .AddIdentityCore<ApplicationUser>()
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<IClock, SystemClock>();
