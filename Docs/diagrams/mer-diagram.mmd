@@ -1,0 +1,159 @@
+erDiagram
+    AspNetUsers {
+        string Id PK
+        string UserName
+        string Email
+        string NombreCompleto
+        bool IsActive
+        datetimetz Created
+        datetimetz DeactivatedAt
+        string DeactivatedBy
+    }
+
+    AspNetRoles {
+        string Id PK
+        string Name
+        string NormalizedName
+    }
+
+    AspNetUserRoles {
+        string UserId FK
+        string RoleId FK
+    }
+
+    Clientes {
+        int Id PK
+        string Nombre
+        bool Activo
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    Proyectos {
+        int Id PK
+        string Nombre
+        int ClienteId FK
+        bool Activo
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    Empleados {
+        int Id PK
+        string Nombre
+        bool Activo
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    Modalidades {
+        int Id PK
+        string Nombre
+        bool Activo
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    LugaresTrabajo {
+        int Id PK
+        string Nombre
+        bool Activo
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    RegistrosHoras {
+        int Id PK
+        string UserId FK
+        date FechaRegistro
+        time HoraEntradaAM
+        time HoraSalidaAM
+        time HoraEntradaPM
+        time HoraSalidaPM
+        string Cliente
+        string Proyecto
+        string Modalidad
+        string Recurso
+        string Descripcion
+        string Lugar
+        bool EsRetroactivo
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    SolicitudesExcepcion {
+        int Id PK
+        string UserId FK
+        date FechaRegistro
+        string Justificacion
+        string Estado
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    ParametrosSistema {
+        int Id PK
+        string Clave
+        string Valor
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    RefreshTokens {
+        uuid Id PK
+        string UserId FK
+        string TokenHash
+        datetime ExpiresAt
+        datetime CreatedAt
+        datetime RevokedAt
+    }
+
+    NotificacionesEnviadas {
+        int Id PK
+        string UserId FK
+        string Email
+        date FechaReferencia
+        int DiasAcumulados
+        bool Exitoso
+        string ErrorDetalle
+        datetimetz Created
+        string CreatedBy
+        datetimetz LastModified
+        string LastModifiedBy
+    }
+
+    BitacoraAuditoria {
+        int Id PK
+        string TipoEvento
+        string ActorId FK
+        string ActorEmail
+        string EntidadAfectada
+        string EntidadId
+        datetimetz Timestamp
+        string MetadataJson
+    }
+
+    AspNetUsers ||--o{ AspNetUserRoles : "pertenece a"
+    AspNetRoles ||--o{ AspNetUserRoles : "asigna a"
+    AspNetUsers ||--o{ RegistrosHoras : "registra"
+    AspNetUsers ||--o{ SolicitudesExcepcion : "solicita"
+    AspNetUsers ||--o{ RefreshTokens : "posee"
+    AspNetUsers ||--o{ NotificacionesEnviadas : "recibe"
+    AspNetUsers ||--o{ BitacoraAuditoria : "genera"
+    Clientes ||--o{ Proyectos : "tiene"

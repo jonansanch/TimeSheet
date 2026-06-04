@@ -1,0 +1,157 @@
+classDiagram
+    class BaseEntity {
+        <<abstract>>
+        +int Id
+    }
+
+    class BaseAuditableEntity {
+        <<abstract>>
+        +DateTimeOffset Created
+        +string? CreatedBy
+        +DateTimeOffset LastModified
+        +string? LastModifiedBy
+    }
+
+    class ApplicationUser {
+        +string Id
+        +string? UserName
+        +string? Email
+        +string? NombreCompleto
+        +bool IsActive
+        +DateTimeOffset Created
+        +DateTimeOffset? DeactivatedAt
+        +string? DeactivatedBy
+    }
+
+    class Empleado {
+        +string Nombre
+        +bool Activo
+        +Activar()
+        +Desactivar()
+        +ActualizarNombre(nombre)
+    }
+
+    class Cliente {
+        +string Nombre
+        +bool Activo
+        +Activar()
+        +Desactivar()
+        +ActualizarNombre(nombre)
+    }
+
+    class Proyecto {
+        +string Nombre
+        +int ClienteId
+        +bool Activo
+        +Activar()
+        +Desactivar()
+        +ActualizarNombre(nombre)
+    }
+
+    class Modalidad {
+        +string Nombre
+        +bool Activo
+        +Activar()
+        +Desactivar()
+        +ActualizarNombre(nombre)
+    }
+
+    class LugarTrabajo {
+        +string Nombre
+        +bool Activo
+        +Activar()
+        +Desactivar()
+        +ActualizarNombre(nombre)
+    }
+
+    class RegistroHoras {
+        +string UserId
+        +DateOnly FechaRegistro
+        +TimeOnly? HoraEntradaAM
+        +TimeOnly? HoraSalidaAM
+        +TimeOnly? HoraEntradaPM
+        +TimeOnly? HoraSalidaPM
+        +string Cliente
+        +string Proyecto
+        +string Modalidad
+        +string Recurso
+        +string Descripcion
+        +string Lugar
+        +bool EsRetroactivo
+        +bool TieneAM
+        +bool TienePM
+    }
+
+    class SolicitudExcepcion {
+        +string UserId
+        +DateOnly FechaRegistro
+        +string Justificacion
+        +EstadoSolicitud Estado
+        +Aprobar()
+        +Rechazar()
+    }
+
+    class EstadoSolicitud {
+        <<enumeration>>
+        Pendiente = 1
+        Aprobada = 2
+        Rechazada = 3
+    }
+
+    class ParametroSistema {
+        +string Clave
+        +string Valor
+    }
+
+    class RefreshToken {
+        +Guid Id
+        +string UserId
+        +string TokenHash
+        +DateTime ExpiresAt
+        +DateTime CreatedAt
+        +DateTime? RevokedAt
+        +bool IsRevoked
+        +bool IsExpired
+        +bool IsActive
+        +Revoke()
+    }
+
+    class NotificacionEnviada {
+        +string UserId
+        +string Email
+        +DateOnly FechaReferencia
+        +int DiasAcumulados
+        +bool Exitoso
+        +string? ErrorDetalle
+    }
+
+    class BitacoraAuditoria {
+        +string TipoEvento
+        +string ActorId
+        +string? ActorEmail
+        +string EntidadAfectada
+        +string? EntidadId
+        +DateTimeOffset Timestamp
+        +string? MetadataJson
+    }
+
+    BaseEntity <|-- BaseAuditableEntity
+    BaseAuditableEntity <|-- Empleado
+    BaseAuditableEntity <|-- Cliente
+    BaseAuditableEntity <|-- Proyecto
+    BaseAuditableEntity <|-- Modalidad
+    BaseAuditableEntity <|-- LugarTrabajo
+    BaseAuditableEntity <|-- RegistroHoras
+    BaseAuditableEntity <|-- SolicitudExcepcion
+    BaseAuditableEntity <|-- ParametroSistema
+    BaseAuditableEntity <|-- NotificacionEnviada
+    BaseEntity <|-- RefreshToken
+    BaseEntity <|-- BitacoraAuditoria
+
+    Cliente "1" --> "0..*" Proyecto : tiene
+    ApplicationUser "1" --> "0..*" RegistroHoras : registra
+    ApplicationUser "1" --> "0..*" SolicitudExcepcion : solicita
+    ApplicationUser "1" --> "0..*" RefreshToken : posee
+    ApplicationUser "1" --> "0..*" NotificacionEnviada : recibe
+    ApplicationUser "1" --> "0..*" BitacoraAuditoria : genera
+    SolicitudExcepcion --> EstadoSolicitud : usa
