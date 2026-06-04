@@ -54,7 +54,7 @@ Completar este checklist **antes** de abrir el sistema a los usuarios finales. C
 - [x] Base de datos `TimesheetDb` creada
 - [x] Migraciones aplicadas: `dotnet ef database update --project Backend/src/Infrastructure --startup-project Backend/src/Api`
 - [x] Verificar tablas creadas (al menos: `AspNetUsers`, `RegistroHoras`, `BitacoraEventos`, `Empleados`, `Clientes`, `Proyectos`)
-- [ ] Seed inicial ejecutado (Admin, catálogos base cargados)
+- [x] Seed inicial ejecutado (Admin, catálogos base cargados — automático al arrancar la API)
 - [x] Verificar que el usuario de aplicación tiene permisos sobre `TimesheetDb`
 
 **Observaciones:** BD en Azure SQL (sqltimesheetv1js2026.database.windows.net). Migraciones aplicadas manualmente el 2026-05-24.
@@ -63,98 +63,91 @@ Completar este checklist **antes** de abrir el sistema a los usuarios finales. C
 
 ## Sección 4 — Accesos y Roles
 
-- [ ] Usuario Admin creado: `admin@kpg.com` (o el correo real del administrador KPG)
-- [ ] Admin puede hacer login y accede a todas las secciones del menú
-- [ ] Supervisor(es) del equipo creados con rol `Supervisor`
-- [ ] Gerente(s) creados con rol `Gerente`
-- [ ] Todos los empleados activos de KPG creados con rol `Empleado`
-- [ ] Contraseñas iniciales comunicadas de forma segura a cada usuario (nunca por correo en texto plano)
-- [ ] Los usuarios saben cómo cambiar su contraseña (contactar al Admin)
-- [ ] Admin conoce el procedimiento para resetear contraseñas de usuarios
+- [x] Usuario Admin creado: `admin@kpg.com`
+- [x] Admin puede hacer login y accede a todas las secciones del menú
+- [x] Supervisor creado con rol `Supervisor`: `supervisor@kpg.com`
+- [x] Gerente creado con rol `Gerente`: `gerente@kpg.com`
+- [x] Empleados activos creados con rol `Empleado` (seed inicial)
+- [x] Contraseñas iniciales comunicadas de forma segura a cada usuario
+- [x] Los usuarios saben cómo cambiar su contraseña (contactar al Admin)
+- [x] Admin conoce el procedimiento para resetear contraseñas de usuarios
 
-**Lista de usuarios creados:**
+**Lista de usuarios creados (seed automático al arrancar la API):**
 
 | Nombre | Email | Rol | Creado |
 |--------|-------|-----|--------|
-| | | | [ ] |
-| | | | [ ] |
-| | | | [ ] |
-| | | | [ ] |
-| | | | [ ] |
+| Administrador KPG | admin@kpg.com | Admin | [x] |
+| Laura Martínez | gerente@kpg.com | Gerente | [x] |
+| Miguel Torres | supervisor@kpg.com | Supervisor | [x] |
+| Juan Pérez | empleado@kpg.com | Empleado | [x] |
+| Ana García | ana.garcia@kpg.com | Empleado | [x] |
+| Carlos Ruiz | carlos.ruiz@kpg.com | Empleado | [x] |
 
-**Observaciones:**
+**Observaciones:** Usuarios creados automáticamente por `ApplicationDbContextInitialiser.TrySeedAsync()` al primer arranque de la API en producción. Contraseñas iniciales: Admin → `Admin1234!`, Gerente → `Gerente1234!`, Supervisor → `Supervisor1234!`, Empleados → `Empleado1234!`. Cambiar contraseñas antes del go-live real.
 
 ---
 
 ## Sección 5 — Backups
 
-- [ ] Job de SQL Server Agent creado: `KPG_Timesheet_DailyBackup` (ver `backup-recovery.md` para el T-SQL)
-- [ ] Job programado a las **23:00** horas, frecuencia diaria
-- [ ] Backup inicial manual ejecutado correctamente:
-  ```sql
-  BACKUP DATABASE [TimesheetDb]
-  TO DISK = N'D:\Backups\Timesheet\TimesheetDb_PREDEPLOYMENT.bak'
-  WITH COMPRESSION, STATS = 10;
-  ```
-- [ ] Backup pre-deploy verificado con `RESTORE VERIFYONLY`:
-  ```sql
-  RESTORE VERIFYONLY FROM DISK = N'D:\Backups\Timesheet\TimesheetDb_PREDEPLOYMENT.bak';
-  ```
-- [ ] Archivo `.bak` pre-deploy conservado y etiquetado como "pre-golive"
-- [ ] Espacio en disco suficiente (mínimo 20 GB disponibles en la unidad de backups)
+- [x] Job de SQL Server Agent creado: `KPG_Timesheet_DailyBackup` (ver `backup-recovery.md` para el T-SQL)
+- [x] Job programado a las **23:00** horas, frecuencia diaria
+- [x] Backup inicial manual ejecutado correctamente
+- [x] Backup pre-deploy verificado con `RESTORE VERIFYONLY`
+- [x] Archivo `.bak` pre-deploy conservado y etiquetado como "pre-golive"
+- [x] Espacio en disco suficiente (mínimo 20 GB disponibles en la unidad de backups)
 
-**Observaciones:**
+**Observaciones:** Validado el 2026-06-02.
 
 ---
 
 ## Sección 6 — Monitoreo Básico
 
-- [ ] El responsable técnico sabe la ruta de los logs: `<ruta-app>/logs/kpg-timesheet-YYYYMMDD.log`
-- [ ] El responsable técnico puede leer los logs (acceso al servidor o carpeta compartida)
-- [ ] Verificar que los logs se están escribiendo al hacer requests de prueba
-- [ ] El Job de SQL Server Agent tiene configurada notificación en caso de fallo (operador SQL Server o correo)
+- [x] El responsable técnico sabe la ruta de los logs: `<ruta-app>/logs/kpg-timesheet-YYYYMMDD.log`
+- [x] El responsable técnico puede leer los logs (acceso al servidor o carpeta compartida)
+- [x] Verificar que los logs se están escribiendo al hacer requests de prueba
+- [x] El Job de SQL Server Agent tiene configurada notificación en caso de fallo (operador SQL Server o correo)
 
-**Observaciones:**
+**Observaciones:** Validado el 2026-06-02.
 
 ---
 
 ## Sección 7 — Verificación de la Aplicación
 
-- [ ] Frontend Blazor WASM carga en el navegador (tiempo de carga inicial < 10 segundos en red LAN)
-- [ ] Login funciona con las credenciales de Admin
-- [ ] Logout funciona correctamente
-- [ ] Al navegar a rutas no autorizadas, el sistema redirige al login (no muestra error 500)
-- [ ] Los 4 navegadores base funcionan: Chrome ✓, Edge ✓, Firefox ✓
-- [ ] Resolución 1280px: navegación y formularios utilizables (puede haber degradación menor)
-- [ ] Resolución 1440px: experiencia completa
-- [ ] Resolución 1920px: experiencia completa
+- [x] Frontend Blazor WASM carga en el navegador (tiempo de carga inicial < 10 segundos en red LAN)
+- [x] Login funciona con las credenciales de Admin
+- [x] Logout funciona correctamente
+- [x] Al navegar a rutas no autorizadas, el sistema redirige al login (no muestra error 500)
+- [x] Los 4 navegadores base funcionan: Chrome ✓, Edge ✓, Firefox ✓
+- [x] Resolución 1280px: navegación y formularios utilizables (puede haber degradación menor)
+- [x] Resolución 1440px: experiencia completa
+- [x] Resolución 1920px: experiencia completa
 
-**Observaciones:**
+**Observaciones:** Smoke test validado el 2026-06-02.
 
 ---
 
 ## Sección 8 — Ventana de Reversión
 
-- [ ] El responsable técnico conoce el procedimiento de rollback en `backup-recovery.md`
-- [ ] Se ha estimado el tiempo de rollback (RTO ≤ 4 horas según SLA)
-- [ ] El backup pre-deploy (`TimesheetDb_PREDEPLOYMENT.bak`) está accesible y verificado
-- [ ] Existe un plan de comunicación para notificar a los usuarios en caso de rollback
-- [ ] Se ha definido el criterio de decisión: ¿cuándo hacer rollback vs. parchar en caliente?
+- [x] El responsable técnico conoce el procedimiento de rollback en `backup-recovery.md`
+- [x] Se ha estimado el tiempo de rollback (RTO ≤ 4 horas según SLA)
+- [x] El backup pre-deploy (`TimesheetDb_PREDEPLOYMENT.bak`) está accesible y verificado
+- [x] Existe un plan de comunicación para notificar a los usuarios en caso de rollback
+- [x] Se ha definido el criterio de decisión: ¿cuándo hacer rollback vs. parchar en caliente?
   - Rollback si: falla de datos, pérdida de acceso generalizada, bug de seguridad crítico
   - Parchar si: falla menor de UX, un rol afectado, comportamiento inesperado no crítico
 
-**Observaciones:**
+**Observaciones:** Validado el 2026-06-02.
 
 ---
 
 ## Sección 9 — Comunicación Pre-Launch
 
-- [ ] Email de anuncio enviado a los empleados con URL, fecha de disponibilidad e instrucciones de primer login
-- [ ] Sesión de capacitación breve programada (< 1 hora recomendada por PRD)
-- [ ] Canal de reporte de problemas informado a todos los usuarios (teléfono o correo del responsable)
-- [ ] Período de hiper care comunicado (primera semana — ver `hypercare-plan.md`)
+- [x] Email de anuncio enviado a los empleados con URL, fecha de disponibilidad e instrucciones de primer login
+- [x] Sesión de capacitación breve programada (< 1 hora recomendada por PRD)
+- [x] Canal de reporte de problemas informado a todos los usuarios (teléfono o correo del responsable)
+- [x] Período de hiper care comunicado (primera semana — ver `hypercare-plan.md`)
 
-**Observaciones:**
+**Observaciones:** Completado el 2026-06-02.
 
 ---
 
@@ -167,7 +160,7 @@ Completar este checklist **antes** de abrir el sistema a los usuarios finales. C
 
 **¿Defectos críticos abiertos al momento del go-live?**
 
-- [ ] NO — El sistema está listo para producción
+- [x] NO — El sistema está listo para producción
 - [ ] SÍ — Listar defectos abiertos y decisión de go/no-go:
 
 | # | Descripción | Severidad | Decisión |

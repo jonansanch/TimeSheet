@@ -64,6 +64,9 @@ FR40: El Gerente puede consultar la bitÃ¡cora del sistema.
 FR41: El sistema identifica empleados o consultores con varios dÃ­as sin registrar horas y los marca como pendientes crÃ­ticos.
 FR42: El sistema envÃ­a notificaciones por correo al empleado o consultor cuando acumula varios dÃ­as sin registrar horas.
 FR43: El Supervisor y el Admin pueden consultar el historial de notificaciones enviadas por registros pendientes.
+FR44: El Empleado puede activar el reconocimiento de voz y dictar los datos del registro en lenguaje natural.
+FR45: El sistema extrae automáticamente los campos del formulario (fecha, horas, cliente, proyecto, modalidad, recurso, descripción, lugar) desde el texto transcrito usando reglas basadas en el catálogo disponible.
+FR46: El sistema indica al usuario qué campos no fueron detectados para que los complete manualmente antes de guardar.
 
 ### NonFunctional Requirements
 
@@ -223,6 +226,9 @@ FR40: Epic 6 - Consulta de bitÃ¡cora del sistema por Gerente.
 FR41: Epic 5 - IdentificaciÃ³n de pendientes crÃ­ticos por varios dÃ­as sin registro.
 FR42: Epic 5 - EnvÃ­o de correos automÃ¡ticos por registros pendientes acumulados.
 FR43: Epic 5 - Consulta de historial de notificaciones por Supervisor y Admin.
+FR44: Epic 8 - Activación de reconocimiento de voz en el formulario de registro.
+FR45: Epic 8 - Extracción automática de campos del formulario desde texto transcrito.
+FR46: Epic 8 - Indicación de campos no detectados para completar manualmente.
 
 ## Epic List
 
@@ -273,6 +279,14 @@ La organizaciÃ³n puede consultar acciones sensibles, exportar bitÃ¡coras y o
 **FRs covered:** FR37, FR38, FR39, FR40
 
 **Implementation Notes:** Incluye bitÃ¡cora append-only, filtros por rol, exportaciÃ³n, logging, backups, checklist de despliegue, QA/UAT, criterios de go-live e hiper care.
+
+### Epic 8: Entrada de Voz para el Formulario de Registro
+
+El empleado puede dictar los datos de su registro en lenguaje natural y el sistema llena el formulario automáticamente, reduciendo la fricción del ingreso manual.
+
+**FRs covered:** FR44, FR45, FR46
+
+**Implementation Notes:** Implementación 100% frontend (Blazor WASM). Sin cambios al backend. Usa Web Speech API del navegador vía JS Interop para la transcripción (funciona en Chrome y Edge). Parser de reglas en C# extrae campos usando el catálogo disponible como diccionario de matching. Sin dependencia de IA externa ni costo de API.
 
 ## Epic 1: Plataforma Base, Acceso Seguro y Shell por Rol
 
@@ -1366,3 +1380,131 @@ So that el sistema salga a producciÃ³n con textos consistentes en EspaÃ±ol y
 **When** el equipo prepare la implementaciÃ³n
 **Then** existe una ruta tÃ©cnica propuesta para recursos localizables, cultura de UI, formatos de fecha/hora, mensajes de validaciÃ³n y Problem Details/API
 **And** se identifican los textos hardcodeados que deberÃ¡n migrarse a recursos.
+
+## Epic 8: Entrada de Voz para el Formulario de Registro
+
+El empleado puede dictar los datos de su registro en lenguaje natural y el sistema llena el formulario automáticamente, reduciendo la fricción del ingreso manual.
+
+### Story 8.1: Web Speech API — Captura de Voz vía JS Interop
+
+**Requirements:** FR44
+
+As a empleado,
+I want que la aplicación pueda escuchar mi voz mediante el micrófono del navegador,
+So that el sistema reciba el texto transcrito para procesarlo sin depender de servicios externos.
+
+**Acceptance Criteria:**
+
+**Given** Chrome o Edge con micrófono disponible
+**When** el usuario activa el botón de voz
+**Then** el navegador solicita permiso de micrófono si aún no fue otorgado
+**And** comienza a escuchar en español colombiano (es-CO)
+
+**Given** el usuario termina de hablar
+**When** el reconocimiento de voz finaliza
+**Then** el transcript en texto llega al componente Blazor vía callback [JSInvokable]
+**And** el texto se entrega completo (no parcial) para su procesamiento
+
+**Given** Firefox u otro navegador sin soporte de Web Speech API
+**When** el usuario intenta activar el micrófono
+**Then** se muestra un MudAlert de advertencia indicando que se requiere Chrome o Edge
+**And** el botón queda deshabilitado
+
+**Given** permiso de micrófono denegado por el usuario
+**When** ocurre el error del navegador
+**Then** se muestra un mensaje descriptivo orientando al usuario a revisar los permisos del navegador
+**And** el sistema vuelve al estado idle sin lanzar excepción no controlada
+
+### Story 8.2: VoiceParser — Motor de Reglas de Extracción
+
+**Requirements:** FR45, FR46
+
+As a empleado,
+I want que el sistema entienda lo que dije y extraiga automáticamente los campos del formulario,
+So that no tenga que tipear cada campo manualmente después de dictar.
+
+**Acceptance Criteria:**
+
+**Given** transcript con la palabra "hoy"
+**When** se ejecuta el parser
+**Then** el campo Fecha queda asignado a la fecha actual; "ayer" lo asigna a fecha actual menos 1 día
+
+**Given** transcript con patrón "de 8 a 12" sin contexto de turno
+**When** se ejecuta el parser
+**Then** HoraEntradaAM = 08:00, HoraSalidaAM = 12:00
+
+**Given** transcript con "de 1 a 5 de la tarde" o segundo par horario sin contexto
+**When** se ejecuta el parser
+**Then** HoraEntradaPM = 13:00, HoraSalidaPM = 17:00
+**And** horas menores a 8 sin contexto de mañana se tratan como PM (se suma 12)
+
+**Given** transcript con nombre de cliente del catálogo disponible (match normalizado sin tildes, minúsculas)
+**When** se ejecuta el parser
+**Then** el campo Cliente queda asignado con el valor exacto del catálogo
+
+**Given** cliente detectado y nombre de proyecto del cliente en el transcript
+**When** se ejecuta el parser
+**Then** el campo Proyecto queda asignado con el valor exacto del catálogo del cliente
+
+**Given** keywords "presencial", "remoto" o "híbrido" en el transcript
+**When** se ejecuta el parser
+**Then** el campo Modalidad queda asignado al valor correspondiente del catálogo
+
+**Given** keywords de recurso ("desarrollador", "analista", "consultor sap", "consultor", "líder técnico") en el transcript
+**When** se ejecuta el parser
+**Then** el campo Recurso queda asignado al valor del catálogo (consultor SAP tiene prioridad sobre consultor)
+
+**Given** keywords de lugar ("oficina" → Presencial Oficina, "viaje" → Presencial Viaje, "cliente" → Presencial Cliente, "remoto" → Remoto) en el transcript
+**When** se ejecuta el parser
+**Then** el campo Lugar queda asignado al valor correspondiente del catálogo
+
+**Given** texto que sigue a "descripción:" en el transcript
+**When** se ejecuta el parser
+**Then** el campo Descripcion queda asignado con ese texto
+
+**Given** campos que no pudieron detectarse
+**When** el parser termina
+**Then** VoiceParseResult.CamposNoDetectados lista los nombres de los campos faltantes
+
+### Story 8.3: Integración UX — Botón de Micrófono en KpgShiftForm
+
+**Requirements:** FR44, FR45, FR46, UX-DR39
+
+As a empleado,
+I want ver un botón de micrófono en el formulario de registro y ver los campos llenarse automáticamente tras dictar,
+So that el registro sea más rápido y cómodo sin perder el control de revisar antes de guardar.
+
+**Acceptance Criteria:**
+
+**Given** el formulario de registro cargado
+**When** el usuario lo ve
+**Then** aparece un MudIconButton con ícono de micrófono en el header del formulario
+**And** el botón muestra tooltip "Dictar registro" en estado idle
+
+**Given** estado idle
+**When** el usuario hace clic en el botón
+**Then** el botón cambia a estado "escuchando" con ícono rojo y animación de pulso
+**And** el micrófono del navegador se activa vía VoiceInputService
+
+**Given** estado escuchando
+**When** el reconocimiento finaliza (usuario dejó de hablar)
+**Then** el botón cambia a estado "procesando" con spinner
+**And** se invoca VoiceParser con el transcript y el catálogo cargado en el formulario
+
+**Given** resultado del VoiceParser con campos detectados
+**When** el procesamiento termina
+**Then** los campos detectados se actualizan en el formulario automáticamente
+**And** el botón vuelve a estado idle
+
+**Given** campos no detectados en VoiceParseResult.CamposNoDetectados
+**When** el formulario se actualiza
+**Then** aparece un MudAlert de tipo Warning listando los campos pendientes de completar
+**And** el alert se oculta al comenzar a editar cualquier campo manualmente
+
+**Given** campos ya llenados por dictado previo
+**When** el usuario dicta nuevamente
+**Then** los campos se sobreescriben con el nuevo resultado del parser
+
+**Given** el botón en estado escuchando
+**When** el usuario hace clic nuevamente
+**Then** el reconocimiento se cancela y el botón vuelve a idle sin modificar campos

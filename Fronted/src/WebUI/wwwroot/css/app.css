@@ -262,3 +262,12 @@ input:-webkit-autofill:active {
     -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
     transition: background-color 9999s ease-in-out 0s;
 }
+
+.kpg-voice-pulse {
+    animation: kpg-pulse 1s ease-in-out infinite;
+}
+
+@keyframes kpg-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}

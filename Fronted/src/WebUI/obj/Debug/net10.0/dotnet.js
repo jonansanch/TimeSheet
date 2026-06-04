@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "KPG.Timesheet.WebUI",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-lxtsqCAlVa4WdaImAakcYDzJ+ZX0H0bfNnSrNRQqWac=",
+    "hash": "sha256-6NtPtjNkEpKmEeF29LqNjk4R/N2PcivGo0vYocrnsbk=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.rjbmzc4jpg.js"
@@ -1266,16 +1266,16 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "KPG.Timesheet.WebUI.wasm",
-        "name": "KPG.Timesheet.WebUI.zjck1pu4qg.wasm",
-        "hash": "sha256-cf5GBUyANYPtizc+2QIREF5+woraBu/X/qUslIBl4LI=",
+        "name": "KPG.Timesheet.WebUI.8z8lxi0c69.wasm",
+        "hash": "sha256-TJa+VVropUv9rBeNIltFrNI8zziwjGNU1ghlfLpdEBE=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "KPG.Timesheet.WebUI.pdb",
-        "name": "KPG.Timesheet.WebUI.82uwmddff7.pdb",
-        "hash": "sha256-MBrKqdQdYnMDTugSHbHP/LvtERb0Qo60PJ7ZYrWr9m0=",
+        "name": "KPG.Timesheet.WebUI.vo9azda4br.pdb",
+        "hash": "sha256-cbm2fngbN/S73hr3dSdLBWpQoFFcN3C7oGhTtXuw91k=",
         "cache": "force-cache"
       }
     ],
@@ -1283,8 +1283,8 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       "en": [
         {
           "virtualPath": "KPG.Timesheet.WebUI.resources.wasm",
-          "name": "KPG.Timesheet.WebUI.resources.qow06j90d9.wasm",
-          "hash": "sha256-eift/ouVH7BV6/+CAyA8JG+iCKmhM6DSDdS/RpzMZiA=",
+          "name": "KPG.Timesheet.WebUI.resources.p9f41978uf.wasm",
+          "hash": "sha256-swT+yL5TNNSno0NTgx1KuZig+C+km4AWsLEo4dxi764=",
           "cache": "force-cache"
         }
       ]
@@ -1303,7 +1303,8 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "debugLevel": -1,
   "appsettings": [
     "../appsettings.Development.json",
-    "../appsettings.json"
+    "../appsettings.json",
+    "../appsettings.Production.json"
   ],
   "globalizationMode": "all",
   "extensions": {

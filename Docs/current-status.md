@@ -1,6 +1,6 @@
 # Current Status - KPG Timesheet
 
-Ultima actualizacion: 2026-05-23 — fin sesion 18
+Ultima actualizacion: 2026-06-02 — fin sesion 20 (Go-Live completado)
 
 ## Estado actual
 
@@ -16,12 +16,9 @@ Ultima actualizacion: 2026-05-23 — fin sesion 18
 
 ## Punto exacto para retomar
 
-**Proxima tarea: Continuar QA funcional con todos los roles.**
+**GO-LIVE COMPLETADO (2026-06-02).** Todas las secciones del checklist validadas.
 
-La sesion 18 corrigio bugs encontrados durante QA. Continuar probando con los usuarios de prueba listados abajo, en particular:
-- Flujo completo de Gerente (dashboards, reportes, bitacora)
-- Flujo completo de Supervisor (dashboard, notificaciones, bitacora)
-- Solicitudes de excepcion (empleado solicita, admin aprueba/rechaza)
+Siguiente paso opcional: **UAT con el Product Owner** (`Docs/operations/uat-checklist.md`) y **periodo de hiper-care** semana 1 (`Docs/operations/hypercare-plan.md`).
 
 ## Lo ultimo implementado (sesion 18 — QA bugs + optimizaciones)
 

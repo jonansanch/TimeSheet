@@ -5,6 +5,9 @@
 @inject IClienteRepository ClienteRepository
 @inject CatalogosCacheService CatalogosCache
 @inject IStringLocalizer<SharedResource> L
+@inject VoiceInputService VoiceInput
+@inject VoiceParser VoiceParser
+@implements IAsyncDisposable
 
 <MudPaper Elevation="1" Class="pa-6">
     <MudStack Spacing="4">
@@ -47,6 +50,37 @@
         }
 
         <KpgRecentSuggestions OnSuggestionSelected="HandleSuggestionSelected" />
+
+        @* ── Entrada por voz ─────────────────────────────── *@
+        @if (_browserSupportsVoice)
+        {
+            <MudStack Row="true" Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Class="mb-n2">
+                @if (_voiceState == VoiceState.Processing)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                    <MudText Typo="Typo.caption" Class="ml-1">Procesando...</MudText>
+                }
+                else
+                {
+                    <MudTooltip Text="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")">
+                        <MudIconButton Icon="@(_voiceState == VoiceState.Listening ? Icons.Material.Filled.MicOff : Icons.Material.Filled.Mic)"
+                                       Color="@(_voiceState == VoiceState.Listening ? Color.Error : Color.Default)"
+                                       Class="@(_voiceState == VoiceState.Listening ? "kpg-voice-pulse" : "")"
+                                       OnClick="ToggleVoiceAsync"
+                                       aria-label="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")" />
+                    </MudTooltip>
+                }
+            </MudStack>
+        }
+
+        @if (_voiceCamposNoDetectados.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true"
+                      ShowCloseIcon="true"
+                      CloseIconClicked="@(() => _voiceCamposNoDetectados = [])">
+                Completar manualmente: @string.Join(", ", _voiceCamposNoDetectados)
+            </MudAlert>
+        }
 
         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
 
@@ -281,6 +315,11 @@
             if (lugares.Count > 0) _lugares = lugares.Select(l => l.Nombre).ToList();
         }
         catch { }
+
+        _browserSupportsVoice = await VoiceInput.IsSupportedAsync();
+        _dotNetRef = DotNetObjectReference.Create(this);
+        if (_browserSupportsVoice)
+            await VoiceInput.InitAsync();
     }
 
     private void HandleSuggestionSelected(RegistroRecienteResponse s)
@@ -466,6 +505,112 @@
         _errorMessage     = null;
         _excepcionEnviada = false;
         StateHasChanged();
+    }
+
+    // ── Voz ───────────────────────────────────────────────────────────────────
+
+    private enum VoiceState { Idle, Listening, Processing }
+    private VoiceState _voiceState = VoiceState.Idle;
+    private bool _browserSupportsVoice = true;
+    private List<string> _voiceCamposNoDetectados = [];
+    private DotNetObjectReference<KpgShiftForm>? _dotNetRef;
+
+    private async Task ToggleVoiceAsync()
+    {
+        if (_voiceState == VoiceState.Listening)
+        {
+            await VoiceInput.StopAsync();
+            _voiceState = VoiceState.Idle;
+            return;
+        }
+        _voiceCamposNoDetectados = [];
+        _voiceState = VoiceState.Listening;
+        await VoiceInput.StartAsync(_dotNetRef!, "es-CO");
+    }
+
+    [JSInvokable]
+    public async Task OnTranscriptReceived(string transcript)
+    {
+        _voiceState = VoiceState.Processing;
+        await InvokeAsync(StateHasChanged);
+
+        Console.WriteLine($"[VoiceInput] Transcript: {transcript}");
+
+        try
+        {
+            var result = VoiceParser.Parse(transcript, BuildVoiceCatalog());
+            ApplyVoiceResult(result);
+        }
+        catch { }
+
+        // Volver a Listening para que el mic siga activo entre frases (auto-restart en JS)
+        _voiceState = VoiceState.Listening;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnVoiceError(string error)
+    {
+        _voiceState = VoiceState.Idle;
+        _voiceCamposNoDetectados = [$"Error de micrófono: {error}. Verifica los permisos del navegador."];
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnRecognitionEnded()
+    {
+        if (_voiceState is VoiceState.Listening or VoiceState.Processing)
+            _voiceState = VoiceState.Idle;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private VoiceCatalog BuildVoiceCatalog() => new()
+    {
+        Clientes            = _catalogoClientes.Select(c => c.Nombre).ToList(),
+        ProyectosPorCliente = _catalogoClientes.ToDictionary(c => c.Nombre, c => c.ProyectosActivos),
+        Modalidades         = _modalidades,
+        Recursos            = _recursos,
+        Lugares             = _lugares
+    };
+
+    private void ApplyVoiceResult(VoiceParseResult r)
+    {
+        if (r.Fecha.HasValue)
+            _fecha = r.Fecha.Value.ToDateTime(TimeOnly.MinValue);
+
+        if (r.HoraEntradaAM.HasValue) _model.HoraEntradaAM = r.HoraEntradaAM.Value.ToTimeSpan();
+        if (r.HoraSalidaAM.HasValue)  _model.HoraSalidaAM  = r.HoraSalidaAM.Value.ToTimeSpan();
+        if (r.HoraEntradaPM.HasValue) _model.HoraEntradaPM = r.HoraEntradaPM.Value.ToTimeSpan();
+        if (r.HoraSalidaPM.HasValue)  _model.HoraSalidaPM  = r.HoraSalidaPM.Value.ToTimeSpan();
+
+        if (r.Cliente is not null)  HandleClienteChanged(r.Cliente);
+        if (r.Proyecto is not null) _model.Proyecto = r.Proyecto;
+        if (r.Modalidad is not null) { _model.Modalidad = r.Modalidad; _touchedModalidad = true; }
+        if (r.Recurso is not null)  _model.Recurso     = r.Recurso;
+        if (r.Lugar is not null)    _model.Lugar       = r.Lugar;
+        if (r.Descripcion is not null) _model.Descripcion = r.Descripcion;
+
+        _voiceCamposNoDetectados = ComputeCamposFaltantes();
+    }
+
+    private List<string> ComputeCamposFaltantes()
+    {
+        var faltantes = new List<string>();
+        if (_fecha is null)                                                        faltantes.Add("Fecha");
+        if (!_model.HoraEntradaAM.HasValue && !_model.HoraEntradaPM.HasValue)     faltantes.Add("Horas");
+        if (string.IsNullOrWhiteSpace(_model.Cliente))                            faltantes.Add("Cliente");
+        if (string.IsNullOrWhiteSpace(_model.Proyecto))                           faltantes.Add("Proyecto");
+        if (string.IsNullOrWhiteSpace(_model.Modalidad))                          faltantes.Add("Modalidad");
+        if (string.IsNullOrWhiteSpace(_model.Recurso))                            faltantes.Add("Recurso");
+        if (string.IsNullOrWhiteSpace(_model.Lugar))                              faltantes.Add("Lugar");
+        if (string.IsNullOrWhiteSpace(_model.Descripcion))                        faltantes.Add("Descripción");
+        return faltantes;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await VoiceInput.StopAsync();
+        _dotNetRef?.Dispose();
     }
 
     private sealed class DayFormModel

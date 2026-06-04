@@ -41,6 +41,8 @@ builder.Services.AddScoped<IBitacoraRepository, BitacoraRepository>();
 builder.Services.AddSingleton<AuthStateService>();
 builder.Services.AddScoped<CatalogosCacheService>();
 builder.Services.AddSingleton<SessionTimeoutService>();
+builder.Services.AddScoped<VoiceInputService>();
+builder.Services.AddSingleton<VoiceParser>();
 builder.Services.AddScoped<KpgAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(
     sp => sp.GetRequiredService<KpgAuthStateProvider>());
