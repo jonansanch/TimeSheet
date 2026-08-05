@@ -18,11 +18,15 @@ builder.Services.AddHostedService<NotificacionesPendientesJob>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// En produccion el inicializador solo corre si se activa a proposito con el
+// App Setting RunDatabaseInitialiser=true (crea tablas y siembra roles/usuarios).
+// Es idempotente, pero conviene apagarlo una vez la base quede lista.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("RunDatabaseInitialiser"))
 {
     await app.InitialiseDatabaseAsync();
 }
-else
+
+if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }
