@@ -13,7 +13,9 @@ namespace KPG.Timesheet.Api.Infrastructure;
 /// <see cref="UnauthorizedAccessException"/> → 401, and <see cref="ForbiddenAccessException"/> → 403.
 /// Unrecognised exceptions are not handled and fall through to the default middleware.
 /// </summary>
-public class ProblemDetailsExceptionHandler(ILogger<ProblemDetailsExceptionHandler> logger) : IExceptionHandler
+public class ProblemDetailsExceptionHandler(
+    ILogger<ProblemDetailsExceptionHandler> logger,
+    IConfiguration configuration) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
@@ -66,7 +68,17 @@ public class ProblemDetailsExceptionHandler(ILogger<ProblemDetailsExceptionHandl
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
+        {
             logger.LogError(exception, "Excepción no controlada: {Message}", exception.Message);
+
+            // Diagnostico temporal: con el App Setting ExposeErrorDetails=true la
+            // respuesta incluye el detalle de la excepcion. Apagarlo tras depurar.
+            if (configuration.GetValue<bool>("ExposeErrorDetails"))
+            {
+                problemDetails.Detail = exception.ToString();
+                problemDetails.Extensions["exceptionType"] = exception.GetType().FullName;
+            }
+        }
 
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
