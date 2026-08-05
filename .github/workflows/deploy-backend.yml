@@ -1,0 +1,38 @@
+name: Deploy API - timesheet-api-prod
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'Backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: timesheet-api-prod
+  API_PROJECT: Backend/src/Api/KPG.Timesheet.Api.csproj
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Publish
+        run: dotnet publish ${{ env.API_PROJECT }} -c Release -o publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: Production
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish
