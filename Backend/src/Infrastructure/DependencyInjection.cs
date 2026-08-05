@@ -50,7 +50,13 @@ public static class DependencyInjection
         builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
-            options.UseSqlServer(sqlBuilder.ConnectionString);
+            // Azure SQL Serverless se auto-pausa: el primer acceso tras la pausa
+            // tarda en reanudar, hay que reintentar en vez de fallar.
+            options.UseSqlServer(sqlBuilder.ConnectionString, sql =>
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 6,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null));
             options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 

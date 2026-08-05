@@ -30,11 +30,24 @@ else
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging(opts =>
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} → {StatusCode} en {Elapsed:0.0000} ms");
-app.UseCors(static builder =>
-    builder.AllowAnyMethod()
+// Origenes permitidos via configuracion (Cors:AllowedOrigins).
+// Sin valores configurados se abre a cualquier origen, para no romper desarrollo local.
+var allowedOrigins = app.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+app.UseCors(policy =>
+{
+    policy.AllowAnyMethod()
         .AllowAnyHeader()
-        .AllowAnyOrigin()
-        .WithExposedHeaders("Content-Disposition"));
+        .WithExposedHeaders("Content-Disposition");
+
+    if (allowedOrigins.Length > 0)
+    {
+        policy.WithOrigins(allowedOrigins);
+    }
+    else
+    {
+        policy.AllowAnyOrigin();
+    }
+});
 
 app.UseRateLimiter();
 app.UseAuthentication();
