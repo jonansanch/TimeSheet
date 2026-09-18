@@ -15,6 +15,8 @@ public class RegistroHorasUpdateDescripcionTests
             new TimeOnly(13, 0),
             null,
             null,
+            null,
+            null,
             "KPG",
             "Timesheet",
             "Remoto",

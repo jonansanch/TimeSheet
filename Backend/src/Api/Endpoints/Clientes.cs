@@ -147,8 +147,8 @@ public class Proyectos : IEndpointGroup
         groupBuilder.MapPut("{id:int}/toggle", Toggle).RequireAuthorization(adminOnly);
     }
 
-    [EndpointSummary("Actualizar nombre de proyecto")]
-    [EndpointDescription("Actualiza el nombre de un proyecto existente.")]
+    [EndpointSummary("Actualizar proyecto")]
+    [EndpointDescription("Actualiza el nombre del proyecto y su supervisor responsable (tercera aprobacion del timesheet).")]
     [ProducesResponseType<ProyectoDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -160,7 +160,7 @@ public class Proyectos : IEndpointGroup
         ISender sender,
         CancellationToken cancellationToken)
     {
-        var result = await sender.Send(new UpdateProyectoCommand(id, request.Nombre), cancellationToken);
+        var result = await sender.Send(new UpdateProyectoCommand(id, request.Nombre, request.SupervisorUserId), cancellationToken);
         return Results.Ok(result);
     }
 
@@ -182,4 +182,4 @@ public class Proyectos : IEndpointGroup
 
 public record UpdateClienteRequest(string Nombre);
 public record CreateProyectoRequest(string Nombre);
-public record UpdateProyectoRequest(string Nombre);
+public record UpdateProyectoRequest(string Nombre, string? SupervisorUserId = null);

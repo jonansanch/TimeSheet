@@ -8,6 +8,9 @@ public static class TipoEventoBitacora
     public const string ReactivacionUsuario = "ReactivacionUsuario";
     public const string EliminacionUsuario = "EliminacionUsuario";
     public const string CambioRol = "CambioRol";
+    public const string CambioEstructuraUsuario = "CambioEstructuraUsuario";
+    public const string CambioSupervisorProyecto = "CambioSupervisorProyecto";
+    public const string CambioSupervisorPuesto = "CambioSupervisorPuesto";
     public const string RegistroHorasCreado = "RegistroHorasCreado";
     public const string AprobacionExcepcion = "AprobacionExcepcion";
     public const string RechazoExcepcion = "RechazoExcepcion";

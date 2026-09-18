@@ -20,11 +20,22 @@ public class Proyecto : BaseAuditableEntity
     public int ClienteId { get; private set; }
     public bool Activo { get; private set; }
 
+    /// <summary>
+    /// Usuario responsable del proyecto: tercera y ultima aprobacion del timesheet.
+    /// Nulo mientras no se asigne; en ese caso el nivel se salta.
+    /// </summary>
+    public string? SupervisorUserId { get; private set; }
+
     public void ActualizarNombre(string nombre)
     {
         ValidarNombre(nombre);
         Nombre = nombre.Trim();
     }
+
+    public void AsignarSupervisor(string? supervisorUserId) =>
+        SupervisorUserId = string.IsNullOrWhiteSpace(supervisorUserId)
+            ? null
+            : supervisorUserId.Trim();
 
     public void Activar() => Activo = true;
 

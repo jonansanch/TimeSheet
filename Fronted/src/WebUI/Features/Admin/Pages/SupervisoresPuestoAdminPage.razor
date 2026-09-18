@@ -1,0 +1,196 @@
+@page "/admin/supervisores-puesto"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject ISupervisorPuestoRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+@inject IClienteRepository ClienteRepo
+@inject CatalogosCacheService CatalogosCache
+@inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L["SupPuesto_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["SupPuesto_Title"]</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["SupPuesto_Subtitle"]</MudText>
+        </div>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="_isProcesando"
+                   OnClick="@(() => AbrirDialogoAsync(null))">
+            @L["SupPuesto_New"]
+        </MudButton>
+    </MudStack>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton Rows="5" />
+    }
+    else if (_reglas.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SupervisorAccount">
+            @L["SupPuesto_Empty"]
+        </MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="SupervisorPuestoResponse" Items="_reglas" Dense="true"
+                     Filterable="false" SortMode="SortMode.None" RowsPerPage="50">
+            <Columns>
+                <PropertyColumn Property="x => x.PuestoNombre" Title="@L["Org_Position"]" />
+                <TemplateColumn Title="@L["Label_Client"]" Sortable="false">
+                    <CellTemplate>
+                        @if (context.Item.ClienteId is null)
+                        {
+                            <MudTooltip Text="@(L["SupPuesto_GeneralHint"].Value)">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                                    @L["SupPuesto_General"]
+                                </MudChip>
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            @context.Item.ClienteNombre
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["SupPuesto_Approver"]" Sortable="false">
+                    <CellTemplate>
+                        @NombreUsuario(context.Item.SupervisorUserId)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
+                    <CellTemplate>
+                        <KpgEstadoChip Activo="@context.Item.Activo" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
+                    <CellTemplate>
+                        <MudTooltip Text="@(L["Btn_Edit"].Value)">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary" Size="Size.Small"
+                                           aria-label="@L["Btn_Edit"]"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AbrirDialogoAsync(context.Item))" />
+                        </MudTooltip>
+                        <MudTooltip Text="@(context.Item.Activo ? L["Btn_Deactivate"].Value : L["Btn_Activate"].Value)">
+                            <MudIconButton Icon="@(context.Item.Activo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
+                                           Color="@(context.Item.Activo ? Color.Warning : Color.Success)"
+                                           Size="Size.Small"
+                                           aria-label="@(context.Item.Activo ? L["Btn_Deactivate"] : L["Btn_Activate"])"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => ToggleAsync(context.Item))" />
+                        </MudTooltip>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="SupervisorPuestoResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }"
+                                  RowsPerPageString="@L["Pager_RowsPerPage"]" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["SupPuesto_Title"].Value, null, disabled: true)
+    ];
+
+    private List<SupervisorPuestoResponse> _reglas = [];
+    private List<UserAdminResponse> _usuarios = [];
+    private List<EmpleadoResponse> _puestos = [];
+    private List<ClienteResponse> _clientes = [];
+    private bool _isLoading = true;
+    private bool _isProcesando;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var usuarios = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
+            var reglas   = Repo.GetAllAsync();
+            var puestos  = CatalogosCache.GetEmpleadosActivosAsync();
+            var clientes = ClienteRepo.GetAllAsync();
+
+            await Task.WhenAll(usuarios, reglas, puestos, clientes);
+
+            _usuarios = (await usuarios).Items;
+            _reglas   = await reglas;
+            _puestos  = [.. await puestos];
+            _clientes = (await clientes).Where(c => c.Activo).ToList();
+        }
+        catch { _errorMessage = L["SupPuesto_ErrorLoad"]; }
+        finally { _isLoading = false; }
+    }
+
+    private string NombreUsuario(string userId) =>
+        _usuarios.FirstOrDefault(u => u.Id == userId) is { } u
+            ? (u.NombreCompleto ?? u.Email)
+            : userId;
+
+    private async Task AbrirDialogoAsync(SupervisorPuestoResponse? existente)
+    {
+        var parameters = new DialogParameters<KpgSupervisorPuestoDialog>
+        {
+            { x => x.Existente, existente },
+            { x => x.Usuarios, _usuarios },
+            { x => x.Puestos, _puestos },
+            { x => x.Clientes, _clientes }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialog = await DialogService.ShowAsync<KpgSupervisorPuestoDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not GuardarSupervisorPuestoRequest request)
+            return;
+
+        _isProcesando = true;
+        try
+        {
+            var (ok, _, error) = existente is null
+                ? await Repo.CrearAsync(request)
+                : await Repo.ActualizarAsync(existente.Id, request);
+
+            if (ok)
+            {
+                await CargarAsync();
+                Snackbar.Add(L["SupPuesto_Saved"].Value, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["SupPuesto_ErrorSave"].Value, Severity.Error);
+            }
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task ToggleAsync(SupervisorPuestoResponse item)
+    {
+        _isProcesando = true;
+        try
+        {
+            var (ok, _) = await Repo.ToggleAsync(item.Id);
+            if (ok) await CargarAsync();
+            else Snackbar.Add(L["SupPuesto_ErrorSave"].Value, Severity.Error);
+        }
+        finally { _isProcesando = false; }
+    }
+}

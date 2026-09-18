@@ -43,19 +43,19 @@ public class RegistroHorasImmutabilityTests
     }
 
     [Fact]
-    public async Task SaveChanges_WhenHoraEntradaAMChangedFromNull_Succeeds()
+    public async Task SaveChanges_WhenHoraEntrada1ChangedFromNull_Succeeds()
     {
         // SoloAgregable: null → value is allowed (adding a missing turno)
         await using var context = CreateContext();
         var registro = await SeedRegistroAsync(context); // AM-only registro, PM is null
 
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaPM)).CurrentValue = new TimeOnly(13, 0);
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaPM)).IsModified = true;
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntrada2)).CurrentValue = new TimeOnly(13, 0);
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntrada2)).IsModified = true;
 
         await context.SaveChangesAsync(CancellationToken.None);
 
         var updated = await context.RegistrosHoras.FindAsync(registro.Id);
-        updated!.HoraEntradaPM.Should().Be(new TimeOnly(13, 0));
+        updated!.HoraEntrada2.Should().Be(new TimeOnly(13, 0));
     }
 
     [Fact]
@@ -72,14 +72,14 @@ public class RegistroHorasImmutabilityTests
     }
 
     [Fact]
-    public async Task SaveChanges_WhenHoraEntradaAMChangedFromValue_ThrowsDomainRuleException()
+    public async Task SaveChanges_WhenHoraEntrada1ChangedFromValue_ThrowsDomainRuleException()
     {
         await using var context = CreateContext();
         var registro = await SeedRegistroAsync(context);
 
         // Trying to change an already-set AM time is forbidden (value → value)
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaAM)).CurrentValue = new TimeOnly(7, 30);
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntradaAM)).IsModified = true;
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntrada1)).CurrentValue = new TimeOnly(7, 30);
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.HoraEntrada1)).IsModified = true;
 
         var act = () => context.SaveChangesAsync(CancellationToken.None);
         await act.Should().ThrowAsync<DomainRuleException>();
@@ -131,6 +131,7 @@ public class RegistroHorasImmutabilityTests
             new TimeOnly(13, 0),
             null,
             null,
+            null, null,
             "KPG",
             "Timesheet",
             "Remoto",
@@ -162,6 +163,7 @@ public class RegistroHorasImmutabilityTests
     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
         new(fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 

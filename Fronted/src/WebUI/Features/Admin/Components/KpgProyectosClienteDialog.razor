@@ -1,4 +1,5 @@
 @inject IClienteRepository Repo
+@inject IUserAdminRepository UsuariosRepo
 @inject IDialogService DialogService
 @inject IStringLocalizer<SharedResource> L
 
@@ -37,36 +38,38 @@
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                     <MudText>@proyecto.Nombre</MudText>
-                                    <MudChip T="string"
-                                             Size="Size.Small"
-                                             Color="@(proyecto.Activo ? Color.Success : Color.Default)">
-                                        @(proyecto.Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value)
-                                    </MudChip>
+                                    <KpgEstadoChip Activo="@proyecto.Activo" />
                                 </MudStack>
                                 <MudStack Row="true" Spacing="0">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Color="Color.Primary"
-                                                   Size="Size.Small"
-                                                   aria-label="@L["Btn_Edit"]"
-                                                   Disabled="_isProcesando"
-                                                   OnClick="@(() => AbrirEditarProyectoAsync(proyecto))" />
+                                    <MudTooltip Text="@(L["Btn_Edit"].Value)">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Color="Color.Primary"
+                                                       Size="Size.Small"
+                                                       aria-label="@L["Btn_Edit"]"
+                                                       Disabled="_isProcesando"
+                                                       OnClick="@(() => AbrirEditarProyectoAsync(proyecto))" />
+                                    </MudTooltip>
                                     @if (proyecto.Activo)
                                     {
-                                        <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
-                                                       Color="Color.Warning"
-                                                       Size="Size.Small"
-                                                       aria-label="@L["Btn_Deactivate"]"
-                                                       Disabled="_isProcesando"
-                                                       OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
+                                        <MudTooltip Text="@(L["Btn_Deactivate"].Value)">
+                                            <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                           Color="Color.Warning"
+                                                           Size="Size.Small"
+                                                           aria-label="@L["Btn_Deactivate"]"
+                                                           Disabled="_isProcesando"
+                                                           OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
+                                        </MudTooltip>
                                     }
                                     else
                                     {
-                                        <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
-                                                       Color="Color.Success"
-                                                       Size="Size.Small"
-                                                       aria-label="@L["Btn_Activate"]"
-                                                       Disabled="_isProcesando"
-                                                       OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
+                                        <MudTooltip Text="@(L["Btn_Activate"].Value)">
+                                            <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                           Color="Color.Success"
+                                                           Size="Size.Small"
+                                                           aria-label="@L["Btn_Activate"]"
+                                                           Disabled="_isProcesando"
+                                                           OnClick="@(() => ConfirmarToggleProyectoAsync(proyecto))" />
+                                        </MudTooltip>
                                     }
                                 </MudStack>
                             </MudStack>
@@ -132,6 +135,22 @@
         }
     }
 
+    private List<UserAdminResponse>? _usuarios;
+
+    /// <summary>
+    /// Se carga bajo demanda y se cachea: solo hace falta al editar, para elegir
+    /// el responsable del proyecto.
+    /// </summary>
+    private async Task<List<UserAdminResponse>> CargarUsuariosAsync()
+    {
+        if (_usuarios is not null) return _usuarios;
+
+        try { _usuarios = (await UsuariosRepo.GetUsersAsync(1, 100, "email", false)).Items; }
+        catch { _usuarios = []; }
+
+        return _usuarios;
+    }
+
     private async Task AbrirCrearProyectoAsync()
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
@@ -166,7 +185,11 @@
 
     private async Task AbrirEditarProyectoAsync(ProyectoResponse item)
     {
-        var parameters = new DialogParameters<KpgProyectoDialog> { { x => x.Proyecto, item } };
+        var parameters = new DialogParameters<KpgProyectoDialog>
+        {
+            { x => x.Proyecto, item },
+            { x => x.Usuarios, await CargarUsuariosAsync() }
+        };
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<KpgProyectoDialog>(L["Proj_EditProject"], parameters, options);
         var result = await dialog.Result;

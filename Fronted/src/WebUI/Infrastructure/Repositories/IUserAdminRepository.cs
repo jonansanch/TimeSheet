@@ -22,6 +22,13 @@ public interface IUserAdminRepository
         ChangeUserRoleRequest request,
         CancellationToken ct = default);
 
+    Task<(bool Ok, UserAdminResponse? User, string? Error)> AsignarEstructuraAsync(
+        string id,
+        AsignarEstructuraRequest request,
+        CancellationToken ct = default);
+
+    Task<List<OrganigramaNodoResponse>> GetOrganigramaAsync(CancellationToken ct = default);
+
     Task<(bool Ok, DeleteUserResponse? Result)> DeleteAsync(string id, CancellationToken ct = default);
 
     Task<(bool Ok, string? Error)> AdminResetPasswordAsync(string id, AdminResetPasswordRequest request, CancellationToken ct = default);

@@ -21,13 +21,15 @@ public class RegistroHorasImmutabilityInterceptor : SaveChangesInterceptor
         nameof(BaseAuditableEntity.LastModifiedBy)
     ];
 
-    // Permitidos solo si el valor ANTERIOR era null (agregar un turno que no existía)
+    // Permitidos solo si el valor ANTERIOR era null (agregar un horario que no existía)
     private static readonly HashSet<string> SoloAgregables =
     [
-        nameof(RegistroHoras.HoraEntradaAM),
-        nameof(RegistroHoras.HoraSalidaAM),
-        nameof(RegistroHoras.HoraEntradaPM),
-        nameof(RegistroHoras.HoraSalidaPM)
+        nameof(RegistroHoras.HoraEntrada1),
+        nameof(RegistroHoras.HoraSalida1),
+        nameof(RegistroHoras.HoraEntrada2),
+        nameof(RegistroHoras.HoraSalida2),
+        nameof(RegistroHoras.HoraEntrada3),
+        nameof(RegistroHoras.HoraSalida3)
     ];
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
@@ -68,7 +70,7 @@ public class RegistroHorasImmutabilityInterceptor : SaveChangesInterceptor
 
                 throw new DomainRuleException(
                     "Los registros de horas guardados son inmutables. " +
-                    "Solo se permite agregar un turno faltante o actualizar la descripcion y metadatos.");
+                    "Solo se permite agregar un horario faltante o actualizar la descripcion y metadatos.");
             }
         }
     }

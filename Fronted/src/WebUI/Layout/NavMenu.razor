@@ -43,6 +43,12 @@
                 @L["Nav_Dashboard"]
             </MudNavLink>
 
+            <MudNavLink Href="/organigrama"
+                        Icon="@Icons.Material.Filled.AccountTree"
+                        IconColor="Color.Secondary">
+                @L["Nav_Organigrama"]
+            </MudNavLink>
+
             <MudNavGroup Title="@L["Nav_Reports"]"
                          Icon="@Icons.Material.Filled.BarChart"
                          @bind-Expanded="_reportesExpanded">
@@ -82,6 +88,9 @@
                 </MudNavLink>
                 <MudNavLink Href="/admin/empleados" Class="kpg-nav-child">
                     @L["Nav_Resources"]
+                </MudNavLink>
+                <MudNavLink Href="/admin/supervisores-puesto" Class="kpg-nav-child">
+                    @L["Nav_SupervisoresPuesto"]
                 </MudNavLink>
                 <MudNavLink Href="/admin/clientes" Class="kpg-nav-child">
                     @L["Nav_ClientsProjects"]

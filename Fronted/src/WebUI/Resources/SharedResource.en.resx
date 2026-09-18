@@ -151,8 +151,45 @@
   <!-- === DAILY REGISTER === -->
   <data name="Reg_Title"><value>Daily Work Log</value></data>
   <data name="Reg_Subtitle"><value>Complete your work day log.</value></data>
-  <data name="Reg_ShiftAM"><value>AM Shift</value></data>
-  <data name="Reg_ShiftPM"><value>PM Shift</value></data>
+  <data name="Reg_Shift1"><value>Schedule 1</value></data>
+  <data name="Reg_Shift2"><value>Schedule 2</value></data>
+  <data name="Reg_Shift3"><value>Schedule 3</value></data>
+  <data name="Org_LedBy"><value>Manager:</value></data>
+  <data name="Org_Title"><value>Org chart</value></data>
+  <data name="Org_Subtitle"><value>Company hierarchy based on each person's direct manager.</value></data>
+  <data name="Org_Empty"><value>No active users to display yet.</value></data>
+  <data name="Org_OrphansWarning"><value>{0} person(s) have an inactive or missing manager and are shown at the root.</value></data>
+  <data name="Org_ReportsCount"><value>{0} report(s)</value></data>
+  <data name="Org_AssignTitle"><value>Manager and position</value></data>
+  <data name="Org_AssignSubtitle"><value>Where {0} sits in the organization.</value></data>
+  <data name="Org_AssignSaved"><value>Structure updated.</value></data>
+  <data name="Org_DirectManager"><value>Direct manager</value></data>
+  <data name="Org_DirectManagerHint"><value>Defines the org chart and gives the second timesheet approval.</value></data>
+  <data name="Org_Position"><value>Position</value></data>
+  <data name="Org_PositionHint"><value>Determines who gives the first timesheet approval.</value></data>
+  <data name="SupPuesto_Title"><value>Position approvers</value></data>
+  <data name="SupPuesto_Subtitle"><value>Who gives first-level approval for each position.</value></data>
+  <data name="SupPuesto_New"><value>New rule</value></data>
+  <data name="SupPuesto_Edit"><value>Edit rule</value></data>
+  <data name="SupPuesto_Empty"><value>No rules defined yet. Without them, the first approval is skipped.</value></data>
+  <data name="SupPuesto_Approver"><value>Approver</value></data>
+  <data name="SupPuesto_General"><value>All clients</value></data>
+  <data name="SupPuesto_GeneralHint"><value>General rule: applies to any client without its own rule.</value></data>
+  <data name="SupPuesto_ClientHint"><value>Leave empty so the rule applies to every client.</value></data>
+  <data name="SupPuesto_DialogHint"><value>Position and client identify the rule; editing only changes the approver.</value></data>
+  <data name="SupPuesto_Saved"><value>Rule saved.</value></data>
+  <data name="SupPuesto_ErrorLoad"><value>Could not load the rules.</value></data>
+  <data name="SupPuesto_ErrorSave"><value>Could not save the rule.</value></data>
+  <data name="Proy_Supervisor"><value>Project supervisor</value></data>
+  <data name="Proy_SupervisorHint"><value>Gives the third and final timesheet approval.</value></data>
+  <data name="Nav_Organigrama"><value>Org chart</value></data>
+  <data name="Nav_SupervisoresPuesto"><value>Position approvers</value></data>
+  <data name="Hist_CurrentMonth"><value>Current month</value></data>
+  <data name="Val_FullNameRequired"><value>Full name is required.</value></data>
+  <data name="Reg_QuarterHourOnly"><value>Minutes must be in quarter hours (00, 15, 30 or 45).</value></data>
+  <data name="Reg_DescriptionTooLong"><value>The description cannot exceed {0} characters.</value></data>
+  <data name="Cal_DayComplete"><value>Full day</value></data>
+  <data name="Cal_DayIncomplete"><value>Incomplete day</value></data>
   <data name="Reg_RecentlyUsed"><value>Recently used:</value></data>
   <data name="Reg_ApplySuggestion"><value>Apply</value></data>
   <data name="Reg_SaveShift"><value>Save work day</value></data>
@@ -399,10 +436,12 @@
   <data name="Rep_Period"><value>Period</value></data>
   <data name="Rep_Records"><value>records</value></data>
   <data name="Rep_TotalHours"><value>total hours</value></data>
-  <data name="Rep_ColEntAM"><value>Ent. AM</value></data>
-  <data name="Rep_ColSalAM"><value>Sal. AM</value></data>
-  <data name="Rep_ColEntPM"><value>Ent. PM</value></data>
-  <data name="Rep_ColSalPM"><value>Sal. PM</value></data>
+  <data name="Rep_ColEnt1"><value>In 1</value></data>
+  <data name="Rep_ColSal1"><value>Out 1</value></data>
+  <data name="Rep_ColEnt2"><value>In 2</value></data>
+  <data name="Rep_ColEnt3"><value>In 3</value></data>
+  <data name="Rep_ColSal2"><value>Out 2</value></data>
+  <data name="Rep_ColSal3"><value>Out 3</value></data>
   <data name="Rep_ColModality"><value>Modality</value></data>
   <data name="Rep_ColPlace"><value>Place</value></data>
   <data name="Rep_NoResults2"><value>No records match the selected filters. Try widening the period or adjusting criteria.</value></data>
@@ -472,8 +511,7 @@
 
   <!-- === MINI CALENDAR === -->
   <data name="Cal_HasRecord"><value>Has record</value></data>
-  <data name="Cal_WithRecord"><value>With record</value></data>
-  <data name="Cal_WithoutRecord"><value>Without record</value></data>
+    <data name="Cal_WithoutRecord"><value>Without record</value></data>
   <data name="Cal_HasException"><value>Approved exception</value></data>
   <data name="Cal_ExceptionApproved"><value>Approved exception</value></data>
 

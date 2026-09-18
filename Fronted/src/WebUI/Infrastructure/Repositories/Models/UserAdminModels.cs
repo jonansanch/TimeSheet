@@ -7,7 +7,11 @@ public record UserAdminResponse(
     bool IsActive,
     string Role,
     DateTimeOffset Created,
-    DateTimeOffset? DeactivatedAt);
+    DateTimeOffset? DeactivatedAt,
+    string? SupervisorUserId,
+    string? SupervisorNombre,
+    int? PuestoId,
+    string? PuestoNombre);
 
 public record UsersPageResponse(
     List<UserAdminResponse> Items,
@@ -18,6 +22,17 @@ public record UsersPageResponse(
 public record CreateUserRequest(string Email, string Password, string Role, string? NombreCompleto = null);
 
 public record ChangeUserRoleRequest(string Role);
+
+public record AsignarEstructuraRequest(string? SupervisorUserId, int? PuestoId);
+
+/// <summary>Nodo plano del organigrama; el arbol se arma enlazando por SupervisorUserId.</summary>
+public record OrganigramaNodoResponse(
+    string UserId,
+    string Nombre,
+    string Email,
+    string Rol,
+    string? PuestoNombre,
+    string? SupervisorUserId);
 
 public record DeleteUserResponse(bool WasHardDeleted);
 public record AdminResetPasswordRequest(string NewPassword);

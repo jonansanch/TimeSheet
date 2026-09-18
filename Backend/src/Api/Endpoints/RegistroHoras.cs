@@ -3,6 +3,7 @@ using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHo
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.UpdateDescripcionRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetRegistrosRecientes;
+using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetResumenMensual;
 using KPG.Timesheet.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,7 @@ public class RegistroHoras : IEndpointGroup
         groupBuilder.MapPost(Create).RequireAuthorization(auth);
         groupBuilder.MapGet("", GetMisRegistros).RequireAuthorization(auth);
         groupBuilder.MapGet("recientes", GetRecientes).RequireAuthorization(auth);
+        groupBuilder.MapGet("resumen-mensual", GetResumenMensual).RequireAuthorization(auth);
         groupBuilder.MapDelete("{id}", Delete).RequireAuthorization(auth);
         groupBuilder.MapPatch("{id}/descripcion", UpdateDescripcion).RequireAuthorization(supervisorAdmin);
     }
@@ -54,8 +56,30 @@ public class RegistroHoras : IEndpointGroup
         return Results.Ok(result);
     }
 
-    [EndpointSummary("Registrar turno AM/PM")]
-    [EndpointDescription("Crea un registro de horas para el usuario autenticado en la fecha y turno indicados.")]
+    [EndpointSummary("Resumen mensual de horas por dia")]
+    [EndpointDescription("Retorna los minutos registrados por cada dia del mes indicado y el umbral vigente de dia completo. Alimenta el calendario de la pantalla de registro.")]
+    [ProducesResponseType<ResumenMensualResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> GetResumenMensual(
+        ISender sender,
+        CancellationToken cancellationToken,
+        [FromQuery] int? mes  = null,
+        [FromQuery] int? anio = null)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var mesEfectivo  = mes  ?? hoy.Month;
+        var anioEfectivo = anio ?? hoy.Year;
+
+        if (mesEfectivo is < 1 or > 12)
+            return Results.BadRequest("El mes debe estar entre 1 y 12.");
+
+        var result = await sender.Send(
+            new GetResumenMensualQuery(mesEfectivo, anioEfectivo), cancellationToken);
+        return Results.Ok(result);
+    }
+
+    [EndpointSummary("Registrar horarios del dia")]
+    [EndpointDescription("Crea un registro de horas para el usuario autenticado en la fecha indicada, con hasta tres bloques horarios.")]
     [ProducesResponseType<RegistroHorasDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

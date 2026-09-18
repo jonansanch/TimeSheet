@@ -3,16 +3,21 @@ using KPG.Timesheet.Api.Infrastructure;
 using KPG.Timesheet.Application.Common.Exceptions;
 using KPG.Timesheet.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.Api;
 
 public class ProblemDetailsExceptionHandlerTests
 {
+    // Sin ExposeErrorDetails: el handler no debe filtrar el detalle de la excepcion.
+    private static readonly IConfiguration EmptyConfiguration =
+        new ConfigurationBuilder().AddInMemoryCollection().Build();
+
     [Fact]
     public async Task TryHandleAsync_WhenDomainRuleException_ReturnsBadRequestProblemDetails()
     {
-        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance);
+        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance, EmptyConfiguration);
         var httpContext = new DefaultHttpContext();
         await using var responseBody = new MemoryStream();
         httpContext.Response.Body = responseBody;
@@ -35,7 +40,7 @@ public class ProblemDetailsExceptionHandlerTests
     [Fact]
     public async Task TryHandleAsync_WhenNotFoundException_ReturnsNotFoundProblemDetails()
     {
-        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance);
+        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance, EmptyConfiguration);
         var httpContext = new DefaultHttpContext();
         await using var responseBody = new MemoryStream();
         httpContext.Response.Body = responseBody;
@@ -58,7 +63,7 @@ public class ProblemDetailsExceptionHandlerTests
     [Fact]
     public async Task TryHandleAsync_WhenUnauthorizedAccessException_ReturnsUnauthorizedProblemDetails()
     {
-        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance);
+        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance, EmptyConfiguration);
         var httpContext = new DefaultHttpContext();
         await using var responseBody = new MemoryStream();
         httpContext.Response.Body = responseBody;
@@ -80,7 +85,7 @@ public class ProblemDetailsExceptionHandlerTests
     [Fact]
     public async Task TryHandleAsync_WhenForbiddenAccessException_ReturnsForbiddenProblemDetails()
     {
-        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance);
+        var handler = new ProblemDetailsExceptionHandler(NullLogger<ProblemDetailsExceptionHandler>.Instance, EmptyConfiguration);
         var httpContext = new DefaultHttpContext();
         await using var responseBody = new MemoryStream();
         httpContext.Response.Body = responseBody;

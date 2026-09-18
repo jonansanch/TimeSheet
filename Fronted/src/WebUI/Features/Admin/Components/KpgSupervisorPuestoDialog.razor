@@ -1,0 +1,92 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.SupervisorAccount" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">
+                @(Existente is null ? L["SupPuesto_New"] : L["SupPuesto_Edit"])
+            </MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["SupPuesto_DialogHint"]</MudText>
+
+            <MudSelect T="int"
+                       Label="@L["Org_Position"]"
+                       Variant="Variant.Outlined"
+                       @bind-Value="_puestoId"
+                       Disabled="@(Existente is not null)"
+                       Required="true"
+                       aria-label="@L["Org_Position"]">
+                @foreach (var p in Puestos)
+                {
+                    <MudSelectItem Value="@p.Id">@p.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?"
+                       Label="@L["Label_Client"]"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       @bind-Value="_clienteId"
+                       Disabled="@(Existente is not null)"
+                       HelperText="@L["SupPuesto_ClientHint"]"
+                       aria-label="@L["Label_Client"]">
+                @foreach (var c in Clientes)
+                {
+                    <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string"
+                       Label="@L["SupPuesto_Approver"]"
+                       Variant="Variant.Outlined"
+                       @bind-Value="_supervisorUserId"
+                       Required="true"
+                       aria-label="@L["SupPuesto_Approver"]">
+                @foreach (var u in Usuarios.Where(u => u.IsActive))
+                {
+                    <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!EsValido)" OnClick="Submit">
+            @L["Btn_Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public SupervisorPuestoResponse? Existente { get; set; }
+    [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
+    [Parameter] public List<EmpleadoResponse> Puestos { get; set; } = [];
+    [Parameter] public List<ClienteResponse> Clientes { get; set; } = [];
+
+    private int _puestoId;
+    private int? _clienteId;
+    private string? _supervisorUserId;
+
+    // Puesto y cliente forman la llave de la regla: al editar solo cambia el aprobador,
+    // para no convertir una edicion en un duplicado de otra regla existente.
+    private bool EsValido => _puestoId > 0 && !string.IsNullOrWhiteSpace(_supervisorUserId);
+
+    protected override void OnInitialized()
+    {
+        _puestoId         = Existente?.PuestoId ?? 0;
+        _clienteId        = Existente?.ClienteId;
+        _supervisorUserId = Existente?.SupervisorUserId;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(
+            new GuardarSupervisorPuestoRequest(_puestoId, _clienteId, _supervisorUserId!)));
+}

@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Common.Models;
+using KPG.Timesheet.Application.Features.Users.Queries.GetOrganigrama;
 using KPG.Timesheet.Application.Features.Users.Queries.GetUsers;
 
 namespace KPG.Timesheet.Application.Common.Interfaces;
@@ -19,6 +20,19 @@ public interface IIdentityService
     Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role, string? nombreCompleto = null);
 
     Task<Result> ActivateUserAsync(string userId);
+
+    /// <summary>
+    /// Asigna jefe directo y puesto. Rechaza auto-referencias y ciclos en el organigrama:
+    /// una jerarquia circular colgaria tanto el arbol como la cadena de aprobacion.
+    /// </summary>
+    Task<(Result Result, UserAdminDto? User)> AsignarEstructuraAsync(
+        string userId,
+        string? supervisorUserId,
+        int? puestoId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Usuarios activos en forma de arbol para el organigrama.</summary>
+    Task<IReadOnlyList<OrganigramaNodoDto>> GetOrganigramaAsync(CancellationToken cancellationToken = default);
 
     Task<Result> DeactivateUserAsync(string userId, string? deactivatedBy);
 
@@ -42,4 +56,9 @@ public interface IIdentityService
     Task<Result> AdminResetPasswordAsync(string userId, string newPassword);
 }
 
-public record UserCredentialsResult(string UserId, string Email, IReadOnlyList<string> Roles);
+public record UserCredentialsResult(
+    string UserId,
+    string Email,
+    IReadOnlyList<string> Roles,
+    string? NombreCompleto,
+    string? SupervisorNombre);

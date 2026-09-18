@@ -86,6 +86,7 @@ public class VentanaRetroactivoTests
         new(fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

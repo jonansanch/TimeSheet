@@ -41,7 +41,7 @@ public class CreateProyectoCommandHandler : IRequestHandler<CreateProyectoComman
             ]);
         }
 
-        return new ProyectoDto(proyecto.Id, proyecto.Nombre, proyecto.ClienteId, proyecto.Activo);
+        return new ProyectoDto(proyecto.Id, proyecto.Nombre, proyecto.ClienteId, proyecto.Activo, proyecto.SupervisorUserId);
     }
 
     private static bool EsDuplicado(DbUpdateException ex)

@@ -22,6 +22,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<LugarTrabajo> LugaresTrabajo => Set<LugarTrabajo>();
     public DbSet<NotificacionEnviada> NotificacionesEnviadas => Set<NotificacionEnviada>();
     public DbSet<BitacoraAuditoria> BitacoraAuditoria => Set<BitacoraAuditoria>();
+    public DbSet<SupervisorPuesto> SupervisoresPuesto => Set<SupervisorPuesto>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -30,5 +31,23 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
         builder.Entity<ApplicationUser>()
             .HasIndex(u => u.IsActive)
             .HasDatabaseName("IX_AspNetUsers_IsActive");
+
+        // Auto-referencia: el organigrama es una jerarquia de usuarios. Restrict evita
+        // que borrar a un jefe arrastre a su equipo.
+        builder.Entity<ApplicationUser>()
+            .HasOne<ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(u => u.SupervisorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ApplicationUser>()
+            .HasIndex(u => u.SupervisorUserId)
+            .HasDatabaseName("IX_AspNetUsers_SupervisorUserId");
+
+        builder.Entity<ApplicationUser>()
+            .HasOne<Empleado>()
+            .WithMany()
+            .HasForeignKey(u => u.PuestoId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

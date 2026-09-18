@@ -51,7 +51,7 @@
                          Filterable="false"
                          SortMode="SortMode.Single"
                          QuickFilter="_quickFilter"
-                         RowsPerPage="5">
+                         RowsPerPage="50">
                 <ToolBarContent>
                     <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
@@ -66,38 +66,40 @@
                     <PropertyColumn Property="x => x.Nombre" Title="@L["Resources_ColName"]" />
                     <TemplateColumn Title="@L["Resources_ColStatus"]" Sortable="true">
                         <CellTemplate>
-                            <MudChip T="string"
-                                     Size="Size.Small"
-                                     Color="@(context.Item.Activo ? Color.Success : Color.Default)">
-                                @(context.Item.Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value)
-                            </MudChip>
+                            <KpgEstadoChip Activo="@context.Item.Activo" />
                         </CellTemplate>
                     </TemplateColumn>
                     <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           aria-label="@L["Btn_Edit"]"
-                                           Disabled="_isProcesando"
-                                           OnClick="@(() => AbrirEditarAsync(context.Item))" />
+                            <MudTooltip Text="@(L["Btn_Edit"].Value)">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               aria-label="@L["Btn_Edit"]"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => AbrirEditarAsync(context.Item))" />
+                            </MudTooltip>
                             @if (context.Item.Activo)
                             {
-                                <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
-                                               Color="Color.Warning"
-                                               Size="Size.Small"
-                                               aria-label="@L["Btn_Deactivate"]"
-                                               Disabled="_isProcesando"
-                                               OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                                <MudTooltip Text="@(L["Btn_Deactivate"].Value)">
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                   Color="Color.Warning"
+                                                   Size="Size.Small"
+                                                   aria-label="@L["Btn_Deactivate"]"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                                </MudTooltip>
                             }
                             else
                             {
-                                <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
-                                               Color="Color.Success"
-                                               Size="Size.Small"
-                                               aria-label="@L["Btn_Activate"]"
-                                               Disabled="_isProcesando"
-                                               OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                                <MudTooltip Text="@(L["Btn_Activate"].Value)">
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                   Color="Color.Success"
+                                                   Size="Size.Small"
+                                                   aria-label="@L["Btn_Activate"]"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                                </MudTooltip>
                             }
                         </CellTemplate>
                     </TemplateColumn>

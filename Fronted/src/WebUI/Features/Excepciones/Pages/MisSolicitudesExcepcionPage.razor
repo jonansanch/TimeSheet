@@ -37,7 +37,7 @@
                      Dense="true"
                      Filterable="false"
                      SortMode="SortMode.Single"
-                     RowsPerPage="10">
+                     RowsPerPage="50">
             <Columns>
                 <TemplateColumn Title="@L["Exc_ColDate"]" Sortable="true">
                     <CellTemplate>
@@ -62,7 +62,7 @@
                 </TemplateColumn>
             </Columns>
             <PagerContent>
-                <MudDataGridPager T="MiSolicitudExcepcionResponse" PageSizeOptions="new[] { 10, 20, 50 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                <MudDataGridPager T="MiSolicitudExcepcionResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
             </PagerContent>
         </MudDataGrid>
     }

@@ -19,7 +19,10 @@ public class JwtTokenService : IJwtTokenService
         _timeProvider = timeProvider;
     }
 
-    public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles)
+    /// <summary>Claim propio de KPG: nombre del jefe directo.</summary>
+    public const string ClaimLider = "lider";
+
+    public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? nombreCompleto = null, string? supervisorNombre = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -29,7 +32,13 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            // La UI saluda por nombre; el email queda como respaldo para cuentas antiguas sin nombre.
+            new(JwtRegisteredClaimNames.Name, string.IsNullOrWhiteSpace(nombreCompleto) ? email : nombreCompleto),
         };
+
+        // Quien lidera al usuario, para mostrarlo al iniciar sesion sin una llamada extra.
+        if (!string.IsNullOrWhiteSpace(supervisorNombre))
+            claims.Add(new Claim(ClaimLider, supervisorNombre));
 
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));

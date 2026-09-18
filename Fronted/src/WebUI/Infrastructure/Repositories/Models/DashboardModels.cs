@@ -57,6 +57,6 @@ public record MiembroEstadoDto(
     string UserId,
     string Nombre,
     string Email,
-    bool TieneAm,
-    bool TienePm,
+    int TotalMinutos,
+    int HorariosRegistrados,
     string Estado);

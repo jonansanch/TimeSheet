@@ -3,10 +3,12 @@ namespace KPG.Timesheet.WebUI.Shared.Models;
 public class VoiceParseResult
 {
     public DateOnly? Fecha { get; set; }
-    public TimeOnly? HoraEntradaAM { get; set; }
-    public TimeOnly? HoraSalidaAM { get; set; }
-    public TimeOnly? HoraEntradaPM { get; set; }
-    public TimeOnly? HoraSalidaPM { get; set; }
+    public TimeOnly? HoraEntrada1 { get; set; }
+    public TimeOnly? HoraSalida1 { get; set; }
+    public TimeOnly? HoraEntrada2 { get; set; }
+    public TimeOnly? HoraSalida2 { get; set; }
+    public TimeOnly? HoraEntrada3 { get; set; }
+    public TimeOnly? HoraSalida3 { get; set; }
     public string? Cliente { get; set; }
     public string? Proyecto { get; set; }
     public string? Modalidad { get; set; }

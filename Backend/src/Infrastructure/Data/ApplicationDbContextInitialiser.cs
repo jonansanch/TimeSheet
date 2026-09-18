@@ -84,6 +84,7 @@ public class ApplicationDbContextInitialiser
         // ── Parámetros del sistema ────────────────────────────────────────────
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.VentanaRetroactividad, "3");
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DiasUmbralNotificacion, "3");
+        await EnsureParametroAsync(Domain.Constants.ParametrosSistema.HorasDiaCompleto, "8");
 
         // ── Catálogos ────────────────────────────────────────────────────────
         await SeedCatalogosAsync();
@@ -167,7 +168,7 @@ public class ApplicationDbContextInitialiser
 
         if (!_context.Modalidades.Any())
         {
-            foreach (var nombre in new[] { "Presencial", "Remoto", "Hibrido" })
+            foreach (var nombre in new[] { "Cliente", "Remoto" })
                 _context.Modalidades.Add(new Modalidad(nombre));
             await _context.SaveChangesAsync(CancellationToken.None);
         }
@@ -198,13 +199,13 @@ public class ApplicationDbContextInitialiser
         {
             registros.Add(Reg(emp1Id, dia,
                 new(8, 0), new(12, 0), new(13, 0), new(17, 0),
-                "Banco Nacional", "Core Bancario", "Presencial", "Desarrollador",
+                "Banco Nacional", "Core Bancario", "Cliente", "Desarrollador",
                 "Análisis y desarrollo de módulo de pagos.", "Presencial Oficina",
                 esRetroactivo: dia < hoy));
         }
         registros.Add(Reg(emp1Id, hoy,
             new(8, 0), new(12, 0), null, null,
-            "Banco Nacional", "Banca Digital", "Presencial", "Desarrollador",
+            "Banco Nacional", "Banca Digital", "Cliente", "Desarrollador",
             "Diseño de flujo de autenticación biométrica.", "Presencial Oficina"));
 
         // ── Ana García: AM siempre, PM en 3 de cada 4 semanas ───────────────
@@ -216,14 +217,14 @@ public class ApplicationDbContextInitialiser
                 new(8, 30), new(12, 30),
                 tienePM ? new TimeOnly(14, 0) : null,
                 tienePM ? new TimeOnly(18, 0) : null,
-                "Ministerio de Salud", "Sistema RIPS", "Presencial", "Analista",
+                "Ministerio de Salud", "Sistema RIPS", "Cliente", "Analista",
                 "Validación de reglas de facturación electrónica.", "Presencial Cliente",
                 esRetroactivo: dia < hoy));
             anaIdx++;
         }
         registros.Add(Reg(emp2Id, hoy,
             new(8, 30), new(12, 30), null, null,
-            "Ministerio de Salud", "Portal Ciudadano", "Presencial", "Analista",
+            "Ministerio de Salud", "Portal Ciudadano", "Cliente", "Analista",
             "Capacitación usuarios clave módulo de citas.", "Presencial Cliente"));
 
         // ── Carlos Ruiz: último registro hace 2 semanas (para notificación) ──
@@ -231,7 +232,7 @@ public class ApplicationDbContextInitialiser
         {
             registros.Add(Reg(emp3Id, dia,
                 new(7, 0), new(11, 0), new(13, 0), new(17, 0),
-                "Petrocol", "SAP FI", "Presencial", "Consultor SAP",
+                "Petrocol", "SAP FI", "Cliente", "Consultor SAP",
                 "Configuración de centros de costo proyecto offshore.", "Presencial Cliente",
                 esRetroactivo: true));
         }
@@ -287,13 +288,14 @@ public class ApplicationDbContextInitialiser
 
     private static RegistroHoras Reg(
         string userId, DateOnly fecha,
-        TimeOnly? entradaAM, TimeOnly? salidaAM,
-        TimeOnly? entradaPM, TimeOnly? salidaPM,
+        TimeOnly? entrada1, TimeOnly? salida1,
+        TimeOnly? entrada2, TimeOnly? salida2,
         string cliente, string proyecto, string modalidad, string recurso,
         string descripcion, string lugar,
-        bool esRetroactivo = false) =>
+        bool esRetroactivo = false,
+        TimeOnly? entrada3 = null, TimeOnly? salida3 = null) =>
         new(userId, fecha,
-            entradaAM, salidaAM, entradaPM, salidaPM,
+            entrada1, salida1, entrada2, salida2, entrada3, salida3,
             cliente, proyecto, modalidad, recurso, descripcion, lugar, esRetroactivo);
 
     // ── EnsureTimesheetTablesAsync (DDL idempotente) ──────────────────────────
@@ -340,7 +342,7 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
-        // Crear tabla si no existe (esquema nuevo con columnas AM/PM)
+        // Crear tabla si no existe (esquema nuevo con horarios 1/2/3)
         await _context.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'[dbo].[RegistrosHoras]', N'U') IS NULL
             BEGIN
@@ -348,10 +350,12 @@ public class ApplicationDbContextInitialiser
                     [Id]           int NOT NULL IDENTITY,
                     [UserId]       nvarchar(450) NOT NULL,
                     [FechaRegistro] date NOT NULL,
-                    [HoraEntradaAM] time NULL,
-                    [HoraSalidaAM]  time NULL,
-                    [HoraEntradaPM] time NULL,
-                    [HoraSalidaPM]  time NULL,
+                    [HoraEntrada1] time NULL,
+                    [HoraSalida1]  time NULL,
+                    [HoraEntrada2] time NULL,
+                    [HoraSalida2]  time NULL,
+                    [HoraEntrada3] time NULL,
+                    [HoraSalida3]  time NULL,
                     [Cliente]      nvarchar(200) NOT NULL,
                     [Proyecto]     nvarchar(200) NOT NULL,
                     [Modalidad]    nvarchar(100) NOT NULL,
@@ -384,13 +388,13 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
-        // Migracion registro unico diario — paso 1: agregar columnas AM/PM
+        // Migracion registro unico diario — paso 1: agregar columnas AM/PM.
+        // Solo aplica a una BD anterior a la fusion diaria: la condicion sobre HoraEntrada1
+        // evita que, una vez migrada a horarios 1/2/3, este paso vuelva a crear las columnas
+        // AM/PM en cada arranque.
         await _context.Database.ExecuteSqlRawAsync("""
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.columns
-                WHERE object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
-                  AND name = N'HoraEntradaAM'
-            )
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntradaAM') IS NULL
+               AND COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntrada1') IS NULL
             BEGIN
                 ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraEntradaAM] time NULL;
                 ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraSalidaAM]  time NULL;
@@ -464,17 +468,24 @@ public class ApplicationDbContextInitialiser
 
         // Migracion registro unico diario — paso 5: fusionar y limpiar duplicados restantes
         // Para cada par (UserId, FechaRegistro) duplicado: copia AM/PM del segundo al primero y lo borra
+        // Guardado por existencia de las columnas AM/PM: tras la migracion a horarios 1/2/3
+        // estas columnas ya no existen y el batch fallaria al compilar.
         await _context.Database.ExecuteSqlRawAsync("""
-            UPDATE r1
-            SET r1.HoraEntradaAM = COALESCE(r1.HoraEntradaAM, r2.HoraEntradaAM),
-                r1.HoraSalidaAM  = COALESCE(r1.HoraSalidaAM,  r2.HoraSalidaAM),
-                r1.HoraEntradaPM = COALESCE(r1.HoraEntradaPM, r2.HoraEntradaPM),
-                r1.HoraSalidaPM  = COALESCE(r1.HoraSalidaPM,  r2.HoraSalidaPM)
-            FROM [dbo].[RegistrosHoras] r1
-            INNER JOIN [dbo].[RegistrosHoras] r2
-                ON r1.UserId = r2.UserId
-               AND r1.FechaRegistro = r2.FechaRegistro
-               AND r1.Id < r2.Id
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntradaAM') IS NOT NULL
+            BEGIN
+                EXEC('
+                    UPDATE r1
+                    SET r1.HoraEntradaAM = COALESCE(r1.HoraEntradaAM, r2.HoraEntradaAM),
+                        r1.HoraSalidaAM  = COALESCE(r1.HoraSalidaAM,  r2.HoraSalidaAM),
+                        r1.HoraEntradaPM = COALESCE(r1.HoraEntradaPM, r2.HoraEntradaPM),
+                        r1.HoraSalidaPM  = COALESCE(r1.HoraSalidaPM,  r2.HoraSalidaPM)
+                    FROM [dbo].[RegistrosHoras] r1
+                    INNER JOIN [dbo].[RegistrosHoras] r2
+                        ON r1.UserId = r2.UserId
+                       AND r1.FechaRegistro = r2.FechaRegistro
+                       AND r1.Id < r2.Id
+                ');
+            END
             """);
 
         await _context.Database.ExecuteSqlRawAsync("""
@@ -513,6 +524,28 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
+        // ── Migracion horarios 1/2/3 ─────────────────────────────────────────
+        // Renombra AM->1 y PM->2 preservando los datos, y agrega el horario 3.
+        // sp_rename conserva el contenido: no se pierde ningun registro existente.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntradaAM') IS NOT NULL
+               AND COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntrada1') IS NULL
+            BEGIN
+                EXEC sp_rename N'[dbo].[RegistrosHoras].[HoraEntradaAM]', N'HoraEntrada1', 'COLUMN';
+                EXEC sp_rename N'[dbo].[RegistrosHoras].[HoraSalidaAM]',  N'HoraSalida1',  'COLUMN';
+                EXEC sp_rename N'[dbo].[RegistrosHoras].[HoraEntradaPM]', N'HoraEntrada2', 'COLUMN';
+                EXEC sp_rename N'[dbo].[RegistrosHoras].[HoraSalidaPM]',  N'HoraSalida2',  'COLUMN';
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntrada3') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraEntrada3] time NULL;
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [HoraSalida3]  time NULL;
+            END
+            """);
+
         // Índice de rendimiento: dashboard y reportes filtran por rango de FechaRegistro
         // sin predicado de UserId — el composite (UserId, FechaRegistro, ...) no aplica en esos casos.
         // INCLUDE (UserId) cubre los JOINs a AspNetUsers sin volver al clúster.
@@ -539,6 +572,76 @@ public class ApplicationDbContextInitialiser
             BEGIN
                 CREATE INDEX [IX_AspNetUsers_IsActive]
                     ON [dbo].[AspNetUsers] ([IsActive]);
+            END
+            """);
+
+        // ── Estructura organizacional (Fase 4) ────────────────────────────────
+        // Jefe directo de cada persona: define el organigrama y la 2a aprobacion.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'SupervisorUserId') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[AspNetUsers] ADD [SupervisorUserId] nvarchar(450) NULL;
+            END
+            """);
+
+        // Puesto de la persona (catalogo Empleados): resuelve la 1a aprobacion.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'PuestoId') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[AspNetUsers] ADD [PuestoId] int NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE name = N'IX_AspNetUsers_SupervisorUserId'
+                  AND object_id = OBJECT_ID(N'[dbo].[AspNetUsers]')
+            )
+            BEGIN
+                CREATE INDEX [IX_AspNetUsers_SupervisorUserId]
+                    ON [dbo].[AspNetUsers] ([SupervisorUserId]);
+            END
+            """);
+
+        // Responsable del proyecto: 3a y ultima aprobacion.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[Proyectos]', N'SupervisorUserId') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[Proyectos] ADD [SupervisorUserId] nvarchar(450) NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[SupervisoresPuesto]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[SupervisoresPuesto] (
+                    [Id] int NOT NULL IDENTITY,
+                    [PuestoId] int NOT NULL,
+                    [ClienteId] int NULL,
+                    [SupervisorUserId] nvarchar(450) NOT NULL,
+                    [Activo] bit NOT NULL DEFAULT 1,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_SupervisoresPuesto] PRIMARY KEY ([Id]),
+                    CONSTRAINT [FK_SupervisoresPuesto_Empleados] FOREIGN KEY ([PuestoId])
+                        REFERENCES [dbo].[Empleados] ([Id]),
+                    CONSTRAINT [FK_SupervisoresPuesto_Clientes] FOREIGN KEY ([ClienteId])
+                        REFERENCES [dbo].[Clientes] ([Id])
+                );
+
+                -- Indices filtrados: la regla general (ClienteId NULL) convive con las
+                -- especificas del mismo puesto. Un unique normal trataria los NULL como
+                -- iguales y solo dejaria una regla general en toda la tabla.
+                CREATE UNIQUE INDEX [IX_SupervisoresPuesto_PuestoId_ClienteId]
+                    ON [dbo].[SupervisoresPuesto] ([PuestoId], [ClienteId])
+                    WHERE [ClienteId] IS NOT NULL;
+
+                CREATE UNIQUE INDEX [IX_SupervisoresPuesto_PuestoId_General]
+                    ON [dbo].[SupervisoresPuesto] ([PuestoId])
+                    WHERE [ClienteId] IS NULL;
             END
             """);
 
@@ -627,6 +730,31 @@ public class ApplicationDbContextInitialiser
                 );
                 CREATE UNIQUE INDEX [IX_Modalidades_Nombre] ON [dbo].[Modalidades] ([Nombre]);
             END
+            """);
+
+        // ── Modalidades: "Presencial" pasa a llamarse "Cliente" e "Hibrido" se retira ──
+        // El rename tambien se aplica al historico de RegistrosHoras: es un cambio de
+        // nombre, no de significado, y dejarlo a medias partiria los agrupamientos
+        // de los reportes entre 'Presencial' y 'Cliente'.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (SELECT 1 FROM [dbo].[Modalidades] WHERE [Nombre] = N'Presencial')
+            BEGIN
+                -- Si 'Cliente' ya existe no se puede renombrar: el indice unico lo impide.
+                IF EXISTS (SELECT 1 FROM [dbo].[Modalidades] WHERE [Nombre] = N'Cliente')
+                    DELETE FROM [dbo].[Modalidades] WHERE [Nombre] = N'Presencial'
+                ELSE
+                    UPDATE [dbo].[Modalidades] SET [Nombre] = N'Cliente' WHERE [Nombre] = N'Presencial'
+
+                UPDATE [dbo].[RegistrosHoras] SET [Modalidad] = N'Cliente' WHERE [Modalidad] = N'Presencial';
+            END
+            """);
+
+        // Hibrido se desactiva en lugar de borrarse: los registros historicos que lo
+        // usaron conservan su valor, pero deja de ofrecerse al registrar.
+        await _context.Database.ExecuteSqlRawAsync("""
+            UPDATE [dbo].[Modalidades]
+            SET    [Activo] = 0
+            WHERE  [Nombre] IN (N'Hibrido', N'Híbrido') AND [Activo] = 1;
             """);
 
         await _context.Database.ExecuteSqlRawAsync("""

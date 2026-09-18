@@ -15,10 +15,12 @@ public class RegistroHorasConfiguration : IEntityTypeConfiguration<RegistroHoras
         builder.Property(r => r.UserId).HasMaxLength(450).IsRequired();
         builder.Property(r => r.FechaRegistro).IsRequired();
 
-        builder.Property(r => r.HoraEntradaAM).IsRequired(false);
-        builder.Property(r => r.HoraSalidaAM).IsRequired(false);
-        builder.Property(r => r.HoraEntradaPM).IsRequired(false);
-        builder.Property(r => r.HoraSalidaPM).IsRequired(false);
+        builder.Property(r => r.HoraEntrada1).IsRequired(false);
+        builder.Property(r => r.HoraSalida1).IsRequired(false);
+        builder.Property(r => r.HoraEntrada2).IsRequired(false);
+        builder.Property(r => r.HoraSalida2).IsRequired(false);
+        builder.Property(r => r.HoraEntrada3).IsRequired(false);
+        builder.Property(r => r.HoraSalida3).IsRequired(false);
 
         builder.Property(r => r.Cliente).HasMaxLength(200).IsRequired();
         builder.Property(r => r.Proyecto).HasMaxLength(200).IsRequired();
@@ -28,8 +30,10 @@ public class RegistroHorasConfiguration : IEntityTypeConfiguration<RegistroHoras
         builder.Property(r => r.Lugar).HasMaxLength(200).IsRequired();
         builder.Property(r => r.EsRetroactivo).IsRequired().HasDefaultValue(false);
 
-        builder.Ignore(r => r.TieneAM);
-        builder.Ignore(r => r.TienePM);
+        builder.Ignore(r => r.TieneHorario1);
+        builder.Ignore(r => r.TieneHorario2);
+        builder.Ignore(r => r.TieneHorario3);
+        builder.Ignore(r => r.TotalMinutos);
 
         // Un registro por usuario/día/proyecto (puede haber varios proyectos el mismo día)
         builder.HasIndex(r => new { r.UserId, r.FechaRegistro, r.Cliente, r.Proyecto })

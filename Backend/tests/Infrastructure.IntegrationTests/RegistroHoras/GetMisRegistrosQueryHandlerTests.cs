@@ -65,10 +65,10 @@ public class GetMisRegistrosQueryHandlerTests
 
         var item = result[0];
         item.FechaRegistro.Should().Be(new DateOnly(2026, 5, 10));
-        item.HoraEntradaAM.Should().Be(new TimeOnly(8, 0));
-        item.HoraSalidaAM.Should().Be(new TimeOnly(13, 0));
-        item.HoraEntradaPM.Should().BeNull();
-        item.HoraSalidaPM.Should().BeNull();
+        item.HoraEntrada1.Should().Be(new TimeOnly(8, 0));
+        item.HoraSalida1.Should().Be(new TimeOnly(13, 0));
+        item.HoraEntrada2.Should().BeNull();
+        item.HoraSalida2.Should().BeNull();
         item.Cliente.Should().Be("KPG");
         item.Proyecto.Should().Be("Timesheet");
         item.Modalidad.Should().Be("Remoto");
@@ -90,6 +90,7 @@ public class GetMisRegistrosQueryHandlerTests
         DateOnly fecha) =>
         new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             null, null,
             cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
 

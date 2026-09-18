@@ -21,7 +21,8 @@
     <MudGrid Spacing="3">
         <MudItem xs="12" md="4">
             <KpgMiniCalendario PrimerDiaMes="@_primerDiaMes"
-                               DiasConRegistro="@_diasConRegistro"
+                               MinutosPorDia="@_minutosPorDia"
+                               MinutosDiaCompleto="@_minutosDiaCompleto"
                                DiasConExcepcionAprobada="@_diasConExcepcionAprobada"
                                FechaSeleccionada="@_fechaSeleccionada"
                                VentanaDias="@_ventanaDias"
@@ -40,7 +41,8 @@
     private KpgShiftForm _shiftForm = default!;
 
     private DateOnly _primerDiaMes = new(DateTime.Today.Year, DateTime.Today.Month, 1);
-    private List<DateOnly> _diasConRegistro = [];
+    private Dictionary<DateOnly, int> _minutosPorDia = [];
+    private int _minutosDiaCompleto = 480;
     private List<DateOnly> _diasConExcepcionAprobada = [];
     private DateOnly? _fechaSeleccionada;
     private int _ventanaDias = 3;
@@ -71,9 +73,11 @@
         _loadingCalendario = true;
         try
         {
-            _diasConRegistro = await RegistroRepo.GetDiasConRegistroAsync(_primerDiaMes.Month, _primerDiaMes.Year);
+            var resumen = await RegistroRepo.GetResumenMensualAsync(_primerDiaMes.Month, _primerDiaMes.Year);
+            _minutosDiaCompleto = resumen.MinutosDiaCompleto;
+            _minutosPorDia = resumen.Dias.ToDictionary(d => d.Fecha, d => d.TotalMinutos);
         }
-        catch { _diasConRegistro = []; }
+        catch { _minutosPorDia = []; }
         finally { _loadingCalendario = false; }
     }
 
@@ -97,9 +101,9 @@
 
     private async Task HandleRegistroGuardado(DateOnly fecha)
     {
-        if (!_diasConRegistro.Contains(fecha))
-            _diasConRegistro = [.. _diasConRegistro, fecha];
         _fechaSeleccionada = fecha;
-        await Task.CompletedTask;
+        // Se recarga el mes en lugar de marcar el dia localmente: el color depende
+        // del total de minutos del dia, que solo conoce el backend tras guardar.
+        await CargarCalendarioAsync();
     }
 }

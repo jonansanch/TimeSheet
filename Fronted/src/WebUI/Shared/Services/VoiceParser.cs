@@ -168,8 +168,8 @@ public class VoiceParser
 
             var entrada = new TimeOnly(hEnt, mEnt);
             var salida  = new TimeOnly(hSal, mSal);
-            if (esPM) { result.HoraEntradaPM = entrada; result.HoraSalidaPM = salida; }
-            else      { result.HoraEntradaAM = entrada; result.HoraSalidaAM = salida; }
+            if (esPM) { result.HoraEntrada2 = entrada; result.HoraSalida2 = salida; }
+            else      { result.HoraEntrada1 = entrada; result.HoraSalida1 = salida; }
             return;
         }
 
@@ -194,13 +194,13 @@ public class VoiceParser
 
             if (tipo == "entrada")
             {
-                if (esPM) result.HoraEntradaPM = tiempo;
-                else      result.HoraEntradaAM = tiempo;
+                if (esPM) result.HoraEntrada2 = tiempo;
+                else      result.HoraEntrada1 = tiempo;
             }
             else
             {
-                if (esPM) result.HoraSalidaPM = tiempo;
-                else      result.HoraSalidaAM = tiempo;
+                if (esPM) result.HoraSalida2 = tiempo;
+                else      result.HoraSalida1 = tiempo;
             }
         }
     }
@@ -229,8 +229,8 @@ public class VoiceParser
             var entrada = new TimeOnly(hEnt, mEnt);
             var salida  = new TimeOnly(hSal, mSal);
 
-            if (asignarAM) { result.HoraEntradaAM = entrada; result.HoraSalidaAM = salida; }
-            else           { result.HoraEntradaPM = entrada; result.HoraSalidaPM = salida; }
+            if (asignarAM) { result.HoraEntrada1 = entrada; result.HoraSalida1 = salida; }
+            else           { result.HoraEntrada2 = entrada; result.HoraSalida2 = salida; }
         }
     }
 
@@ -328,7 +328,8 @@ public class VoiceParser
     {
         var faltantes = new List<string>();
         if (r.Fecha is null)                                     faltantes.Add("Fecha");
-        if (r.HoraEntradaAM is null && r.HoraEntradaPM is null) faltantes.Add("Horas");
+        if (r.HoraEntrada1 is null && r.HoraEntrada2 is null &&
+            r.HoraEntrada3 is null)                              faltantes.Add("Horas");
         if (r.Cliente is null)                                   faltantes.Add("Cliente");
         if (r.Proyecto is null)                                  faltantes.Add("Proyecto");
         if (r.Modalidad is null)                                 faltantes.Add("Modalidad");

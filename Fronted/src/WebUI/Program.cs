@@ -31,6 +31,7 @@ builder.Services.AddScoped<ISolicitudExcepcionAdminRepository, SolicitudExcepcio
 builder.Services.AddScoped<IUserAdminRepository, UserAdminRepository>();
 builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<ISupervisorPuestoRepository, SupervisorPuestoRepository>();
 builder.Services.AddScoped<IModalidadRepository, ModalidadRepository>();
 builder.Services.AddScoped<ILugarTrabajoRepository, LugarTrabajoRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();

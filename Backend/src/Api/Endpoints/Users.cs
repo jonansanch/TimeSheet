@@ -1,9 +1,11 @@
 using KPG.Timesheet.Application.Features.Users.Commands.ActivateUser;
+using KPG.Timesheet.Application.Features.Users.Commands.AsignarEstructura;
 using KPG.Timesheet.Application.Features.Users.Commands.AdminResetPassword;
 using KPG.Timesheet.Application.Features.Users.Commands.ChangeUserRole;
 using KPG.Timesheet.Application.Features.Users.Commands.CreateUser;
 using KPG.Timesheet.Application.Features.Users.Commands.DeactivateUser;
 using KPG.Timesheet.Application.Features.Users.Commands.DeleteUser;
+using KPG.Timesheet.Application.Features.Users.Queries.GetOrganigrama;
 using KPG.Timesheet.Application.Features.Users.Queries.GetUsers;
 using KPG.Timesheet.Domain.Constants;
 using MediatR;
@@ -27,8 +29,34 @@ public class Users : IEndpointGroup
         groupBuilder.MapPost(DeactivateUser, "{id}/deactivate").RequireAuthorization(adminOnly);
         groupBuilder.MapPut(ChangeUserRole, "{id}/role").RequireAuthorization(adminOnly);
         groupBuilder.MapPut(AdminResetPassword, "{id}/reset-password").RequireAuthorization(adminOnly);
+        groupBuilder.MapPut(AsignarEstructura, "{id}/estructura").RequireAuthorization(adminOnly);
+        groupBuilder.MapGet("organigrama", GetOrganigrama).RequireAuthorization(readAllowed);
         groupBuilder.MapDelete(DeleteUser, "{id}").RequireAuthorization(adminOnly);
     }
+
+    [EndpointSummary("Asignar jefe directo y puesto")]
+    [EndpointDescription("Define la posicion del usuario en el organigrama (jefe directo) y su puesto. Rechaza auto-referencias y ciclos en la jerarquia.")]
+    [ProducesResponseType<UserAdminDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> AsignarEstructura(
+        string id,
+        [FromBody] AsignarEstructuraRequest request,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new AsignarEstructuraUsuarioCommand(id, request.SupervisorUserId, request.PuestoId),
+            cancellationToken);
+        return Results.Ok(result);
+    }
+
+    [EndpointSummary("Organigrama")]
+    [EndpointDescription("Retorna los usuarios activos en forma plana con su jefe directo, para armar el arbol jerarquico.")]
+    [ProducesResponseType<IReadOnlyList<OrganigramaNodoDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> GetOrganigrama(ISender sender, CancellationToken cancellationToken)
+        => Results.Ok(await sender.Send(new GetOrganigramaQuery(), cancellationToken));
 
     [EndpointSummary("Listar usuarios")]
     [EndpointDescription("Retorna usuarios de Identity para administracion, paginados y sin datos sensibles.")]
@@ -145,3 +173,4 @@ public class Users : IEndpointGroup
 
 public record ChangeUserRoleRequest(string Role);
 public record AdminResetPasswordRequest(string NewPassword);
+public record AsignarEstructuraRequest(string? SupervisorUserId, int? PuestoId);

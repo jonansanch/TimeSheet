@@ -18,6 +18,24 @@
                           Required="true"
                           RequiredError="@L["Val_NameRequired"]"
                           aria-label="@L["Label_Name"]" />
+
+            @if (_proyecto is not null)
+            {
+                @* Solo al editar: al crear aun no hay proyecto al que asignarle responsable. *@
+                <MudSelect T="string"
+                           Label="@L["Proy_Supervisor"]"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           @bind-Value="_supervisorUserId"
+                           HelperText="@L["Proy_SupervisorHint"]"
+                           aria-label="@L["Proy_Supervisor"]">
+                    @foreach (var u in Usuarios.Where(u => u.IsActive))
+                    {
+                        <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+
             @if (!string.IsNullOrWhiteSpace(_errorMessage))
             {
                 <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
@@ -38,11 +56,13 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public ProyectoResponse? Proyecto { get; set; }
+    [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
     [Parameter] public string? ErrorMessage { get; set; }
 
     private MudTextField<string> _nombreField = default!;
     private ProyectoResponse? _proyecto;
     private string _nombre = string.Empty;
+    private string? _supervisorUserId;
     private string? _errorMessage;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -55,12 +75,16 @@
     {
         _proyecto = Proyecto;
         _nombre = Proyecto?.Nombre ?? string.Empty;
+        _supervisorUserId = Proyecto?.SupervisorUserId;
         _errorMessage = ErrorMessage;
     }
 
+    // Al editar basta con que cambie el nombre o el supervisor.
     private bool EsValido =>
         !string.IsNullOrWhiteSpace(_nombre)
-        && (_proyecto is null || _nombre.Trim() != _proyecto.Nombre);
+        && (_proyecto is null
+            || _nombre.Trim() != _proyecto.Nombre
+            || _supervisorUserId != _proyecto.SupervisorUserId);
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -69,6 +93,6 @@
         if (_proyecto is null)
             MudDialog.Close(DialogResult.Ok(new CreateProyectoRequest(_nombre.Trim())));
         else
-            MudDialog.Close(DialogResult.Ok(new UpdateProyectoRequest(_nombre.Trim())));
+            MudDialog.Close(DialogResult.Ok(new UpdateProyectoRequest(_nombre.Trim(), _supervisorUserId)));
     }
 }

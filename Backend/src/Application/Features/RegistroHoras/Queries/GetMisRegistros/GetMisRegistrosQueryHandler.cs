@@ -39,13 +39,16 @@ public class GetMisRegistrosQueryHandler : IRequestHandler<GetMisRegistrosQuery,
             .Select(r => new MisRegistrosItemDto(
                 r.Id,
                 r.FechaRegistro,
-                r.HoraEntradaAM,
-                r.HoraSalidaAM,
-                r.HoraEntradaPM,
-                r.HoraSalidaPM,
+                r.HoraEntrada1,
+                r.HoraSalida1,
+                r.HoraEntrada2,
+                r.HoraSalida2,
+                r.HoraEntrada3,
+                r.HoraSalida3,
                 r.Cliente,
                 r.Proyecto,
                 r.Modalidad,
+                r.Recurso,
                 r.Descripcion))
             .ToListAsync(cancellationToken);
 

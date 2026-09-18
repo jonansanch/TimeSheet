@@ -1,0 +1,85 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Org_AssignTitle"]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@ErrorMessage</MudAlert>
+            }
+
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @string.Format(L["Org_AssignSubtitle"], NombreUsuario)
+            </MudText>
+
+            <MudSelect T="string"
+                       Label="@L["Org_DirectManager"]"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       @bind-Value="_supervisorUserId"
+                       HelperText="@L["Org_DirectManagerHint"]"
+                       aria-label="@L["Org_DirectManager"]">
+                @foreach (var u in CandidatosSupervisor)
+                {
+                    <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int?"
+                       Label="@L["Org_Position"]"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       @bind-Value="_puestoId"
+                       HelperText="@L["Org_PositionHint"]"
+                       aria-label="@L["Org_Position"]">
+                @foreach (var p in Puestos)
+                {
+                    <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">@L["Btn_Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string UserId { get; set; } = string.Empty;
+    [Parameter] public string NombreUsuario { get; set; } = string.Empty;
+    [Parameter] public string? SupervisorUserId { get; set; }
+    [Parameter] public int? PuestoId { get; set; }
+    [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
+    [Parameter] public List<EmpleadoResponse> Puestos { get; set; } = [];
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private string? _supervisorUserId;
+    private int? _puestoId;
+
+    /// <summary>
+    /// El propio usuario no puede ser su jefe. Los ciclos indirectos los rechaza el
+    /// backend, que es quien conoce la jerarquia completa.
+    /// </summary>
+    private IEnumerable<UserAdminResponse> CandidatosSupervisor =>
+        Usuarios.Where(u => u.IsActive && u.Id != UserId);
+
+    protected override void OnInitialized()
+    {
+        _supervisorUserId = SupervisorUserId;
+        _puestoId = PuestoId;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(new AsignarEstructuraRequest(_supervisorUserId, _puestoId)));
+}

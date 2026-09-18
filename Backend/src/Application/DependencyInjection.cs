@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 using KPG.Timesheet.Application.Common.Behaviours;
+using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Application.Common.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -9,6 +11,8 @@ public static class DependencyInjection
     public static void AddApplicationServices(this IHostApplicationBuilder builder)
     {
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        builder.Services.AddScoped<IParametrosSistemaService, ParametrosSistemaService>();
 
         builder.Services.AddMediatR(cfg => {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());

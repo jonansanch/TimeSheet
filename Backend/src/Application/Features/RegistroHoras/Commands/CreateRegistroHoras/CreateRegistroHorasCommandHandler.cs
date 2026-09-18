@@ -74,10 +74,12 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
             registro = new RegistroHorasEntity(
                 userId,
                 request.FechaRegistro,
-                request.HoraEntradaAM,
-                request.HoraSalidaAM,
-                request.HoraEntradaPM,
-                request.HoraSalidaPM,
+                request.HoraEntrada1,
+                request.HoraSalida1,
+                request.HoraEntrada2,
+                request.HoraSalida2,
+                request.HoraEntrada3,
+                request.HoraSalida3,
                 request.Cliente,
                 request.Proyecto,
                 request.Modalidad,
@@ -90,14 +92,18 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         }
         else
         {
-            // Upsert: agregar el bloque que faltaba
-            if (request.HoraEntradaAM.HasValue && request.HoraSalidaAM.HasValue)
+            // Upsert: agregar los bloques horarios que faltaban
+            if (request.HoraEntrada1.HasValue && request.HoraSalida1.HasValue)
             {
-                existente.SetBloqueAM(request.HoraEntradaAM.Value, request.HoraSalidaAM.Value);
+                existente.SetBloque(1, request.HoraEntrada1.Value, request.HoraSalida1.Value);
             }
-            if (request.HoraEntradaPM.HasValue && request.HoraSalidaPM.HasValue)
+            if (request.HoraEntrada2.HasValue && request.HoraSalida2.HasValue)
             {
-                existente.SetBloquePM(request.HoraEntradaPM.Value, request.HoraSalidaPM.Value);
+                existente.SetBloque(2, request.HoraEntrada2.Value, request.HoraSalida2.Value);
+            }
+            if (request.HoraEntrada3.HasValue && request.HoraSalida3.HasValue)
+            {
+                existente.SetBloque(3, request.HoraEntrada3.Value, request.HoraSalida3.Value);
             }
             existente.UpdateMetadata(request.Cliente, request.Proyecto, request.Modalidad, request.Recurso, request.Lugar);
             existente.UpdateDescripcion(request.Descripcion);
@@ -108,7 +114,15 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
             TipoEventoBitacora.RegistroHorasCreado,
             userId, null,
             "RegistrosHoras", null,
-            new { registro.FechaRegistro, TieneAM = registro.TieneAM, TienePM = registro.TienePM, registro.Cliente, registro.Proyecto },
+            new
+            {
+                registro.FechaRegistro,
+                registro.TieneHorario1,
+                registro.TieneHorario2,
+                registro.TieneHorario3,
+                registro.Cliente,
+                registro.Proyecto
+            },
             cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -118,8 +132,9 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
 
     private static RegistroHorasDto ToDto(RegistroHorasEntity r) => new(
         r.Id, r.UserId, r.FechaRegistro,
-        r.HoraEntradaAM, r.HoraSalidaAM,
-        r.HoraEntradaPM, r.HoraSalidaPM,
+        r.HoraEntrada1, r.HoraSalida1,
+        r.HoraEntrada2, r.HoraSalida2,
+        r.HoraEntrada3, r.HoraSalida3,
         r.Cliente, r.Proyecto, r.Modalidad, r.Recurso, r.Descripcion, r.Lugar,
         r.EsRetroactivo);
 }

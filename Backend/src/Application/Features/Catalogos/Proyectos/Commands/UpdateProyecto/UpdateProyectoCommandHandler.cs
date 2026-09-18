@@ -24,6 +24,7 @@ public class UpdateProyectoCommandHandler : IRequestHandler<UpdateProyectoComman
             ?? throw new NotFoundException($"Proyecto con id '{request.Id}' no fue encontrado.");
 
         proyecto.ActualizarNombre(request.Nombre);
+        proyecto.AsignarSupervisor(request.SupervisorUserId);
 
         try
         {
@@ -37,7 +38,7 @@ public class UpdateProyectoCommandHandler : IRequestHandler<UpdateProyectoComman
             ]);
         }
 
-        return new ProyectoDto(proyecto.Id, proyecto.Nombre, proyecto.ClienteId, proyecto.Activo);
+        return new ProyectoDto(proyecto.Id, proyecto.Nombre, proyecto.ClienteId, proyecto.Activo, proyecto.SupervisorUserId);
     }
 
     private static bool EsDuplicado(DbUpdateException ex)

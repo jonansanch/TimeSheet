@@ -127,6 +127,7 @@ public class DeleteRegistroHorasCommandHandlerTests
         new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
+            null, null,
             cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser

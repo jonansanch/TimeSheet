@@ -107,6 +107,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IBitacoraQueryRepository, BitacoraQueryRepository>();
         builder.Services.AddScoped<INotificacionesRepository, NotificacionesRepository>();
         builder.Services.AddScoped<IReportesRepository, ReportesRepository>();
+        builder.Services.AddScoped<ICadenaAprobacionService, KPG.Timesheet.Infrastructure.Organizacion.CadenaAprobacionService>();
 
         // Registrar handlers de MediatR que viven en Infrastructure (export handlers: Excel/PDF)
         builder.Services.AddMediatR(cfg =>

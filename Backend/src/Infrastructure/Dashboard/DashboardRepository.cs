@@ -16,8 +16,9 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
     private const string SqlGerencial = """
         SELECT r.Cliente,
                ROUND((
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
@@ -28,8 +29,9 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         SELECT r.Proyecto,
                r.Cliente,
                ROUND((
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
@@ -42,8 +44,9 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         SELECT u.Id                                                        AS UserId,
                ISNULL(u.NombreCompleto, u.Email)                          AS Nombre,
                ROUND((
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1)                                               AS TotalHoras
         FROM   RegistrosHoras r
         JOIN   AspNetUsers u ON r.UserId = u.Id
@@ -56,8 +59,16 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         SELECT u.Id                               AS UserId,
                ISNULL(u.NombreCompleto, u.Email) AS Nombre,
                u.Email,
-               CASE WHEN r.HoraEntradaAM IS NOT NULL THEN 1 ELSE 0 END AS TieneAM,
-               CASE WHEN r.HoraEntradaPM IS NOT NULL THEN 1 ELSE 0 END AS TienePM
+               ISNULL(SUM(
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3), 0)
+               ), 0) AS TotalMinutos,
+               ISNULL(SUM(
+                   CASE WHEN r.HoraEntrada1 IS NOT NULL THEN 1 ELSE 0 END +
+                   CASE WHEN r.HoraEntrada2 IS NOT NULL THEN 1 ELSE 0 END +
+                   CASE WHEN r.HoraEntrada3 IS NOT NULL THEN 1 ELSE 0 END
+               ), 0) AS HorariosRegistrados
         FROM   AspNetUsers u
         JOIN   AspNetUserRoles ur ON u.Id = ur.UserId
         JOIN   AspNetRoles ro     ON ur.RoleId = ro.Id
@@ -65,6 +76,7 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
                ON r.UserId = u.Id AND r.FechaRegistro = @Fecha
         WHERE  u.IsActive = 1
           AND  ro.Name IN ('Empleado', 'Supervisor')
+        GROUP  BY u.Id, u.NombreCompleto, u.Email
         ORDER  BY ISNULL(u.NombreCompleto, u.Email)
         """;
 
@@ -75,8 +87,9 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
             SELECT
                 COUNT(*)                                                              AS TotalRegistros,
                 ROUND((
-                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaAM, HoraSalidaAM)), 0) +
-                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntradaPM, HoraSalidaPM)), 0)
+                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntrada1, HoraSalida1)), 0) +
+                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntrada2, HoraSalida2)), 0) +
+                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntrada3, HoraSalida3)), 0)
                 ) / 60.0, 1)                                                         AS TotalHoras,
                 COUNT(DISTINCT CASE WHEN Cliente <> '' THEN Cliente END)              AS ClientesActivos
             FROM   RegistrosHoras
@@ -110,8 +123,9 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         SELECT r.FechaRegistro                                                        AS Fecha,
                COUNT(*)                                                               AS TotalRegistros,
                ROUND((
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1)                                                           AS TotalHoras
         FROM   RegistrosHoras r
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
@@ -170,21 +184,19 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
             Consultores:      consultores);
     }
 
-    public async Task<EstadoEquipoResponse> GetEstadoEquipoAsync(DateOnly fecha, CancellationToken cancellationToken = default)
+    public async Task<EstadoEquipoResponse> GetEstadoEquipoAsync(
+        DateOnly fecha,
+        int minutosDiaCompleto,
+        CancellationToken cancellationToken = default)
     {
         var rows = await db.QueryAsync<EstadoRawRow>(SqlEstadoEquipo, new { Fecha = fecha });
 
         var equipo = rows.Select(r =>
         {
-            var tieneAm = r.TieneAM == 1;
-            var tienePm = r.TienePM == 1;
-            var estado = (tieneAm, tienePm) switch
-            {
-                (true, true)   => "Completo",
-                (false, false) => "Pendiente",
-                _              => "Parcial"
-            };
-            return new MiembroEstadoDto(r.UserId, r.Nombre, r.Email, tieneAm, tienePm, estado);
+            var estado = r.TotalMinutos >= minutosDiaCompleto ? "Completo"
+                       : r.TotalMinutos > 0                   ? "Parcial"
+                       :                                        "Pendiente";
+            return new MiembroEstadoDto(r.UserId, r.Nombre, r.Email, r.TotalMinutos, r.HorariosRegistrados, estado);
         }).ToList();
 
         return new EstadoEquipoResponse(
@@ -232,7 +244,7 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
         return new PendientesCriticosResponse(umbral, pendientes);
     }
 
-    private sealed record EstadoRawRow(string UserId, string Nombre, string Email, int TieneAM, int TienePM);
+    private sealed record EstadoRawRow(string UserId, string Nombre, string Email, int TotalMinutos, int HorariosRegistrados);
     private sealed record MetricasResumenRow(int TotalRegistros, decimal TotalHoras, int UsuariosActivos, int ClientesActivos, int PendientesHoy);
     private sealed record PendientesRawRow(string UserId, string Nombre, string Email, DateOnly? UltimoRegistro);
 }

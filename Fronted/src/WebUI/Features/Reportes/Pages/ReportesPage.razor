@@ -135,7 +135,7 @@
                     @_reporte.TotalRegistros @L["Rep_Records"]
                 </MudChip>
                 <MudChip T="string" Color="Color.Success" Size="Size.Small">
-                    @_reporte.TotalHoras.ToString("F1") h @L["Rep_TotalHours"]
+                    @KpgFormat.Horas(_reporte.TotalHoras, 1) h @L["Rep_TotalHours"]
                 </MudChip>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
                     @_reporte.Desde.ToString("dd/MM/yyyy") - @_reporte.Hasta.ToString("dd/MM/yyyy")
@@ -149,7 +149,7 @@
                      Dense="true"
                      Filterable="false"
                      SortMode="SortMode.Single"
-                     RowsPerPage="10"
+                     RowsPerPage="50"
                      Loading="_isLoading"
                      Style="border-radius:12px;overflow:hidden;">
             <Columns>
@@ -157,29 +157,39 @@
                                 CellStyle="white-space:nowrap;"
                                 Format="dd/MM/yyyy" />
                 <PropertyColumn Property="x => x.NombreEmpleado" Title="@L["Label_Employee"]" />
-                <TemplateColumn Title="@L["Rep_ColEntAM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                <TemplateColumn Title="@L["Rep_ColEnt1"]" Sortable="false" CellStyle="white-space:nowrap;">
                     <CellTemplate>
-                        @(context.Item.HoraEntradaAM.HasValue ? context.Item.HoraEntradaAM.Value.ToString("HH:mm") : "-")
+                        @(context.Item.HoraEntrada1.HasValue ? context.Item.HoraEntrada1.Value.ToString("HH:mm") : "-")
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="@L["Rep_ColSalAM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                <TemplateColumn Title="@L["Rep_ColSal1"]" Sortable="false" CellStyle="white-space:nowrap;">
                     <CellTemplate>
-                        @(context.Item.HoraSalidaAM.HasValue ? context.Item.HoraSalidaAM.Value.ToString("HH:mm") : "-")
+                        @(context.Item.HoraSalida1.HasValue ? context.Item.HoraSalida1.Value.ToString("HH:mm") : "-")
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="@L["Rep_ColEntPM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                <TemplateColumn Title="@L["Rep_ColEnt2"]" Sortable="false" CellStyle="white-space:nowrap;">
                     <CellTemplate>
-                        @(context.Item.HoraEntradaPM.HasValue ? context.Item.HoraEntradaPM.Value.ToString("HH:mm") : "-")
+                        @(context.Item.HoraEntrada2.HasValue ? context.Item.HoraEntrada2.Value.ToString("HH:mm") : "-")
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="@L["Rep_ColSalPM"]" Sortable="false" CellStyle="white-space:nowrap;">
+                <TemplateColumn Title="@L["Rep_ColSal2"]" Sortable="false" CellStyle="white-space:nowrap;">
                     <CellTemplate>
-                        @(context.Item.HoraSalidaPM.HasValue ? context.Item.HoraSalidaPM.Value.ToString("HH:mm") : "-")
+                        @(context.Item.HoraSalida2.HasValue ? context.Item.HoraSalida2.Value.ToString("HH:mm") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Rep_ColEnt3"]" Sortable="false" CellStyle="white-space:nowrap;">
+                    <CellTemplate>
+                        @(context.Item.HoraEntrada3.HasValue ? context.Item.HoraEntrada3.Value.ToString("HH:mm") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Rep_ColSal3"]" Sortable="false" CellStyle="white-space:nowrap;">
+                    <CellTemplate>
+                        @(context.Item.HoraSalida3.HasValue ? context.Item.HoraSalida3.Value.ToString("HH:mm") : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="@L["Label_Hours"]" Sortable="true" SortBy="x => x.Horas">
                     <CellTemplate>
-                        <strong>@context.Item.Horas.ToString("F2")</strong>
+                        <strong>@KpgFormat.Horas(context.Item.Horas, 2)</strong>
                     </CellTemplate>
                 </TemplateColumn>
                 <PropertyColumn Property="x => x.Cliente" Title="@L["Label_Client"]" />

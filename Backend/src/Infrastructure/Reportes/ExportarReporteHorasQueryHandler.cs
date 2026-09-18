@@ -16,13 +16,16 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
         SELECT ISNULL(u.NombreCompleto, u.Email)                          AS Empleado,
                u.Email,
                CONVERT(varchar(10), r.FechaRegistro, 103)                 AS Fecha,
-               ISNULL(CONVERT(varchar(5), r.HoraEntradaAM, 108), '')      AS EntradaAM,
-               ISNULL(CONVERT(varchar(5), r.HoraSalidaAM,  108), '')      AS SalidaAM,
-               ISNULL(CONVERT(varchar(5), r.HoraEntradaPM, 108), '')      AS EntradaPM,
-               ISNULL(CONVERT(varchar(5), r.HoraSalidaPM,  108), '')      AS SalidaPM,
+               ISNULL(CONVERT(varchar(5), r.HoraEntrada1, 108), '')       AS Entrada1,
+               ISNULL(CONVERT(varchar(5), r.HoraSalida1,  108), '')       AS Salida1,
+               ISNULL(CONVERT(varchar(5), r.HoraEntrada2, 108), '')       AS Entrada2,
+               ISNULL(CONVERT(varchar(5), r.HoraSalida2,  108), '')       AS Salida2,
+               ISNULL(CONVERT(varchar(5), r.HoraEntrada3, 108), '')       AS Entrada3,
+               ISNULL(CONVERT(varchar(5), r.HoraSalida3,  108), '')       AS Salida3,
                ROUND((
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM), 0) +
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM), 0)
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3), 0)
                ) / 60.0, 2) AS Horas,
                r.Cliente,
                r.Proyecto,
@@ -112,10 +115,12 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
                     {
                         cols.RelativeColumn(2.5f); // Empleado
                         cols.RelativeColumn(1.2f); // Fecha
-                        cols.ConstantColumn(38);   // Entrada AM
-                        cols.ConstantColumn(38);   // Salida AM
-                        cols.ConstantColumn(38);   // Entrada PM
-                        cols.ConstantColumn(38);   // Salida PM
+                        cols.ConstantColumn(34);   // Entrada horario 1
+                        cols.ConstantColumn(34);   // Salida  horario 1
+                        cols.ConstantColumn(34);   // Entrada horario 2
+                        cols.ConstantColumn(34);   // Salida  horario 2
+                        cols.ConstantColumn(34);   // Entrada horario 3
+                        cols.ConstantColumn(34);   // Salida  horario 3
                         cols.ConstantColumn(32);   // Horas
                         cols.RelativeColumn(2f);   // Cliente
                         cols.RelativeColumn(2f);   // Proyecto
@@ -129,7 +134,7 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
 
                     table.Header(header =>
                     {
-                        foreach (var h in new[] { "Empleado", "Fecha", "Entrada AM", "Salida AM", "Entrada PM", "Salida PM", "Horas", "Cliente", "Proyecto", "Descripción" })
+                        foreach (var h in new[] { "Empleado", "Fecha", "Entrada 1", "Salida 1", "Entrada 2", "Salida 2", "Entrada 3", "Salida 3", "Horas", "Cliente", "Proyecto", "Descripción" })
                             header.Cell().Element(HeaderCell).Text(h);
                     });
 
@@ -142,7 +147,7 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
                         static IContainer DataCell(IContainer c, string bg) =>
                             c.Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(3);
 
-                        foreach (var val in new[] { r.Empleado, r.Fecha, r.EntradaAM, r.SalidaAM, r.EntradaPM, r.SalidaPM, r.Horas.ToString("F2"), r.Cliente, r.Proyecto, r.Descripcion })
+                        foreach (var val in new[] { r.Empleado, r.Fecha, r.Entrada1, r.Salida1, r.Entrada2, r.Salida2, r.Entrada3, r.Salida3, r.Horas.ToString("F2"), r.Cliente, r.Proyecto, r.Descripcion })
                             table.Cell().Element(c => DataCell(c, bg)).Text(val ?? string.Empty);
                     }
                 });
@@ -165,10 +170,12 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
         string  Empleado,
         string  Email,
         string  Fecha,
-        string  EntradaAM,
-        string  SalidaAM,
-        string  EntradaPM,
-        string  SalidaPM,
+        string  Entrada1,
+        string  Salida1,
+        string  Entrada2,
+        string  Salida2,
+        string  Entrada3,
+        string  Salida3,
         decimal Horas,
         string  Cliente,
         string  Proyecto,

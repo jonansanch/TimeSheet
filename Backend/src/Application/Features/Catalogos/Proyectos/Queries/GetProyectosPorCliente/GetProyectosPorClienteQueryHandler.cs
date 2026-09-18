@@ -23,7 +23,7 @@ public class GetProyectosPorClienteQueryHandler : IRequestHandler<GetProyectosPo
 
         return await query
             .OrderBy(p => p.Nombre)
-            .Select(p => new ProyectoDto(p.Id, p.Nombre, p.ClienteId, p.Activo))
+            .Select(p => new ProyectoDto(p.Id, p.Nombre, p.ClienteId, p.Activo, p.SupervisorUserId))
             .ToListAsync(cancellationToken);
     }
 }

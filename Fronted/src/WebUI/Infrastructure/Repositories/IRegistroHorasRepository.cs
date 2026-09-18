@@ -6,8 +6,8 @@ public interface IRegistroHorasRepository
 {
     Task<RegistroHorasResponse?> CreateAsync(CreateRegistroHorasRequest request, CancellationToken cancellationToken = default);
     Task<List<RegistroRecienteResponse>> GetRecientesAsync(int top = 5, CancellationToken cancellationToken = default);
-    Task<HistorialPaginadoResponse> GetHistorialAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default);
-    Task<List<DateOnly>> GetDiasConRegistroAsync(int mes, int anio, CancellationToken cancellationToken = default);
+    Task<HistorialPaginadoResponse> GetHistorialAsync(int page = 1, int pageSize = 20, DateOnly? desde = null, DateOnly? hasta = null, CancellationToken cancellationToken = default);
+    Task<ResumenMensualResponse> GetResumenMensualAsync(int mes, int anio, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<bool> UpdateDescripcionAsync(int id, string descripcion, CancellationToken cancellationToken = default);
 }

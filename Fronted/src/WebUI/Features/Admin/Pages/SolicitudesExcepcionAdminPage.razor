@@ -40,7 +40,7 @@
                          Dense="true"
                          Filterable="false"
                          SortMode="SortMode.Single"
-                         RowsPerPage="5">
+                         RowsPerPage="50">
                 <Columns>
                     <PropertyColumn Property="x => x.SolicitanteEmail" Title="@L["Exc_ColEmployee"]" />
                     <TemplateColumn Title="@L["Exc_ColDate"]" Sortable="true">
@@ -66,18 +66,22 @@
                     </TemplateColumn>
                     <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
                         <CellTemplate>
-                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
-                                           Color="Color.Success"
-                                           Size="Size.Small"
-                                           aria-label="@L["Exc_BtnApprove"]"
-                                           Disabled="@(context.Item.Estado != "Pendiente" || _isProcesando)"
-                                           OnClick="@(() => ConfirmarAprobarAsync(context.Item))" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Cancel"
-                                           Color="Color.Error"
-                                           Size="Size.Small"
-                                           aria-label="@L["Exc_BtnReject"]"
-                                           Disabled="@(context.Item.Estado != "Pendiente" || _isProcesando)"
-                                           OnClick="@(() => ConfirmarRechazarAsync(context.Item))" />
+                            <MudTooltip Text="@(L["Exc_BtnApprove"].Value)">
+                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                               Color="Color.Success"
+                                               Size="Size.Small"
+                                               aria-label="@L["Exc_BtnApprove"]"
+                                               Disabled="@(context.Item.Estado != "Pendiente" || _isProcesando)"
+                                               OnClick="@(() => ConfirmarAprobarAsync(context.Item))" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(L["Exc_BtnReject"].Value)">
+                                <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               aria-label="@L["Exc_BtnReject"]"
+                                               Disabled="@(context.Item.Estado != "Pendiente" || _isProcesando)"
+                                               OnClick="@(() => ConfirmarRechazarAsync(context.Item))" />
+                            </MudTooltip>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>

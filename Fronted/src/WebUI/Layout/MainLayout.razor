@@ -3,6 +3,7 @@
 @inject KpgAuthStateProvider AuthProvider
 @inject SessionTimeoutService SessionTimeout
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> L
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary" Dense="false" Style="height:64px;">
@@ -23,9 +24,15 @@
                         <MudButton Color="Color.Inherit"
                                    EndIcon="@Icons.Material.Filled.ArrowDropDown"
                                    Style="text-transform:none; opacity:0.85; font-size:0.875rem;">
-                            @(context.User.FindFirst("email")?.Value
-                              ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                              ?? context.User.Identity?.Name)
+                            <MudStack Spacing="0" AlignItems="AlignItems.Start">
+                                <span>@NombreParaMostrar(context.User)</span>
+                                @if (context.User.FindFirst("lider")?.Value is { Length: > 0 } lider)
+                                {
+                                    <MudText Typo="Typo.caption" Style="opacity:0.7;line-height:1;">
+                                        @L["Org_LedBy"] @lider
+                                    </MudText>
+                                }
+                            </MudStack>
                         </MudButton>
                     </ActivatorContent>
                     <ChildContent>
@@ -78,6 +85,22 @@
     private bool _drawerOpen = true;
     private bool _showWarning;
     private DateTime _expiresAt;
+
+    /// <summary>
+    /// Nombre del usuario para la barra superior. Cae al email para las cuentas
+    /// creadas antes de que el nombre fuera obligatorio.
+    /// </summary>
+    private static string? NombreParaMostrar(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var nombre = user.FindFirst("name")?.Value
+                     ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+
+        if (!string.IsNullOrWhiteSpace(nombre)) return nombre;
+
+        return user.FindFirst("email")?.Value
+               ?? user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+               ?? user.Identity?.Name;
+    }
 
     protected override void OnInitialized()
     {

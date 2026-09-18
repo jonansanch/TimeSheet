@@ -5,6 +5,6 @@ public record ClienteConProyectosResponse(int Id, string Nombre, List<string> Pr
 public record CreateClienteRequest(string Nombre);
 public record UpdateClienteRequest(string Nombre);
 
-public record ProyectoResponse(int Id, string Nombre, int ClienteId, bool Activo);
+public record ProyectoResponse(int Id, string Nombre, int ClienteId, bool Activo, string? SupervisorUserId);
 public record CreateProyectoRequest(string Nombre);
-public record UpdateProyectoRequest(string Nombre);
+public record UpdateProyectoRequest(string Nombre, string? SupervisorUserId = null);

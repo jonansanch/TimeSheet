@@ -25,7 +25,7 @@ public class SupervisorRegistroHorasTests
         result.UserId.Should().Be("supervisor-1");
         context.RegistrosHoras.Should().ContainSingle(r =>
             r.UserId == "supervisor-1" &&
-            r.HoraEntradaAM == new TimeOnly(8, 0));
+            r.HoraEntrada1 == new TimeOnly(8, 0));
     }
 
     [Fact]
@@ -90,11 +90,13 @@ public class SupervisorRegistroHorasTests
         new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private static CreateRegistroHorasCommand ValidCommand() =>
         new(new DateOnly(2026, 5, 14),
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 

@@ -10,7 +10,7 @@ public interface IDashboardRepository
 {
     Task<DashboardGerencialResponse> GetGerencialAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
     Task<DistribucionHorasResponse> GetDistribucionHorasAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
-    Task<EstadoEquipoResponse> GetEstadoEquipoAsync(DateOnly fecha, CancellationToken cancellationToken = default);
+    Task<EstadoEquipoResponse> GetEstadoEquipoAsync(DateOnly fecha, int minutosDiaCompleto, CancellationToken cancellationToken = default);
     Task<MetricasGlobalesResponse> GetMetricasGlobalesAsync(DateOnly desde, DateOnly hasta, CancellationToken cancellationToken = default);
     Task<PendientesCriticosResponse> GetPendientesCriticosAsync(CancellationToken cancellationToken = default);
 }

@@ -84,55 +84,40 @@
 
         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
 
-            @* ── Turno AM ──────────────────────────────────── *@
-            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-2" Color="Color.Primary">@L["Reg_ShiftAM"]</MudText>
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="6">
-                    <MudTextField T="string"
-                                  Label="@L["Label_Entry"]"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Time"
-                                  Value="@TsToStr(_model.HoraEntradaAM)"
-                                  ValueChanged="@(v => _model.HoraEntradaAM = ParseTs(v))"
-                                  aria-label="@($"{L["Label_Entry"].Value} {L["Reg_ShiftAM"].Value}")" />
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudTextField T="string"
-                                  Label="@L["Label_Exit"]"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Time"
-                                  Value="@TsToStr(_model.HoraSalidaAM)"
-                                  ValueChanged="@(v => _model.HoraSalidaAM = ParseTs(v))"
-                                  Error="@IsInvalidAM()"
-                                  ErrorText="@L["Reg_ExitAfterEntry"]"
-                                  aria-label="@($"{L["Label_Exit"].Value} {L["Reg_ShiftAM"].Value}")" />
-                </MudItem>
-            </MudGrid>
-
-            @* ── Turno PM ──────────────────────────────────── *@
-            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">@L["Reg_ShiftPM"]</MudText>
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="6">
-                    <MudTextField T="string"
-                                  Label="@L["Label_Entry"]"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Time"
-                                  Value="@TsToStr(_model.HoraEntradaPM)"
-                                  ValueChanged="@(v => _model.HoraEntradaPM = ParseTs(v))"
-                                  aria-label="@($"{L["Label_Entry"].Value} {L["Reg_ShiftPM"].Value}")" />
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudTextField T="string"
-                                  Label="@L["Label_Exit"]"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Time"
-                                  Value="@TsToStr(_model.HoraSalidaPM)"
-                                  ValueChanged="@(v => _model.HoraSalidaPM = ParseTs(v))"
-                                  Error="@IsInvalidPM()"
-                                  ErrorText="@L["Reg_ExitAfterEntry"]"
-                                  aria-label="@($"{L["Label_Exit"].Value} {L["Reg_ShiftPM"].Value}")" />
-                </MudItem>
-            </MudGrid>
+            @* ── Horarios 1 / 2 / 3 ────────────────────────── *@
+            @for (var i = 1; i <= TotalHorarios; i++)
+            {
+                var numero = i;
+                <MudText Typo="Typo.subtitle2" Class="@(numero == 1 ? "mb-1 mt-2" : "mb-1 mt-3")" Color="Color.Primary">
+                    @L[$"Reg_Shift{numero}"]
+                </MudText>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="@L["Label_Entry"]"
+                                      Variant="Variant.Outlined"
+                                      InputType="InputType.Time"
+                                      step="@CuartoHoraStep"
+                                      Value="@TsToStr(_model.GetEntrada(numero))"
+                                      ValueChanged="@(v => _model.SetEntrada(numero, ParseTs(v)))"
+                                      Error="@NoEsCuartoDeHora(_model.GetEntrada(numero))"
+                                      ErrorText="@L["Reg_QuarterHourOnly"]"
+                                      aria-label="@($"{L["Label_Entry"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="@L["Label_Exit"]"
+                                      Variant="Variant.Outlined"
+                                      InputType="InputType.Time"
+                                      step="@CuartoHoraStep"
+                                      Value="@TsToStr(_model.GetSalida(numero))"
+                                      ValueChanged="@(v => _model.SetSalida(numero, ParseTs(v)))"
+                                      Error="@(IsInvalidBloque(numero) || NoEsCuartoDeHora(_model.GetSalida(numero)))"
+                                      ErrorText="@(IsInvalidBloque(numero) ? L["Reg_ExitAfterEntry"] : L["Reg_QuarterHourOnly"])"
+                                      aria-label="@($"{L["Label_Exit"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
+                    </MudItem>
+                </MudGrid>
+            }
 
             @if (_sinTurno)
             {
@@ -214,9 +199,13 @@
                 <MudItem xs="12">
                     <MudTextField T="string" Label="@L["Label_Description"]" Variant="Variant.Outlined"
                                   Lines="3" @bind-Value="_model.Descripcion"
-                                  MaxLength="1000"
+                                  Immediate="true"
+                                  MaxLength="@MaxDescripcion"
                                   Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
-                                  Counter="1000" />
+                                  Counter="@MaxDescripcion"
+                                  Error="@DescripcionExcedida"
+                                  ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
+                                  Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
                 </MudItem>
             </MudGrid>
 
@@ -242,6 +231,9 @@
 
 @code {
     [Parameter] public EventCallback<DateOnly> OnGuardado { get; set; }
+
+    /// <summary>Bloques horarios que admite un registro diario (ver RegistroHoras.TotalBloques).</summary>
+    private const int TotalHorarios = 3;
 
     private MudForm _form = default!;
 
@@ -278,11 +270,9 @@
         get
         {
             if (_response is null) return string.Empty;
-            int totalMin = 0;
-            if (_response.HoraEntradaAM.HasValue && _response.HoraSalidaAM.HasValue)
-                totalMin += (int)(_response.HoraSalidaAM.Value - _response.HoraEntradaAM.Value).TotalMinutes;
-            if (_response.HoraEntradaPM.HasValue && _response.HoraSalidaPM.HasValue)
-                totalMin += (int)(_response.HoraSalidaPM.Value - _response.HoraEntradaPM.Value).TotalMinutes;
+            var totalMin = Minutos(_response.HoraEntrada1, _response.HoraSalida1)
+                         + Minutos(_response.HoraEntrada2, _response.HoraSalida2)
+                         + Minutos(_response.HoraEntrada3, _response.HoraSalida3);
             return $"{totalMin / 60:D2}:{totalMin % 60:D2}";
         }
     }
@@ -385,22 +375,50 @@
         StateHasChanged();
     }
 
+    private static int Minutos(TimeOnly? entrada, TimeOnly? salida) =>
+        entrada.HasValue && salida.HasValue
+            ? (int)(salida.Value - entrada.Value).TotalMinutes
+            : 0;
+
     private static string TsToStr(TimeSpan? t) =>
         t.HasValue ? t.Value.ToString(@"hh\:mm") : string.Empty;
 
     private static TimeSpan? ParseTs(string? s) =>
         TimeSpan.TryParse(s, out var t) ? t : null;
 
-    private bool IsInvalidAM() =>
-        _model.HoraEntradaAM.HasValue && _model.HoraSalidaAM.HasValue &&
-        _model.HoraSalidaAM.Value <= _model.HoraEntradaAM.Value;
+    private bool IsInvalidBloque(int numero)
+    {
+        var entrada = _model.GetEntrada(numero);
+        var salida  = _model.GetSalida(numero);
+        return entrada.HasValue && salida.HasValue && salida.Value <= entrada.Value;
+    }
 
-    private bool IsInvalidPM() =>
-        _model.HoraEntradaPM.HasValue && _model.HoraSalidaPM.HasValue &&
-        _model.HoraSalidaPM.Value <= _model.HoraEntradaPM.Value;
+    /// <summary>Paso del input time en segundos: 900 = 15 min, para que el selector nativo ofrezca cuartos de hora.</summary>
+    private const string CuartoHoraStep = "900";
+
+    private const int MinutosPorCuarto = 15;
+
+    /// <summary>Limite de RegistrosHoras.Descripcion (NVARCHAR(1000)).</summary>
+    private const int MaxDescripcion = 1000;
+
+    private bool DescripcionExcedida => (_model.Descripcion?.Length ?? 0) > MaxDescripcion;
+
+    /// <summary>
+    /// El atributo step del input no impide teclear un valor libre, asi que el cuarto de
+    /// hora tambien se valida aqui antes de dejar guardar.
+    /// </summary>
+    private static bool NoEsCuartoDeHora(TimeSpan? valor) =>
+        valor.HasValue && valor.Value.Minutes % MinutosPorCuarto != 0;
+
+    private bool HayMinutoInvalido() =>
+        Enumerable.Range(1, TotalHorarios)
+            .Any(n => NoEsCuartoDeHora(_model.GetEntrada(n)) || NoEsCuartoDeHora(_model.GetSalida(n)));
+
+    private bool HayBloqueInvalido() =>
+        Enumerable.Range(1, TotalHorarios).Any(IsInvalidBloque);
 
     private bool TieneAlMenosUnTurno() =>
-        _model.HoraEntradaAM.HasValue || _model.HoraEntradaPM.HasValue;
+        Enumerable.Range(1, TotalHorarios).Any(n => _model.GetEntrada(n).HasValue);
 
     private void HandleModalidadKey(KeyboardEventArgs e)
     {
@@ -451,13 +469,19 @@
         await _form.Validate();
         _sinTurno = false;
 
-        if (!TieneAlMenosUnTurno())       { _sinTurno = true; return; }
-        if (IsInvalidAM() || IsInvalidPM()) return;
+        if (!TieneAlMenosUnTurno()) { _sinTurno = true; return; }
+        if (HayBloqueInvalido()) return;
+        if (HayMinutoInvalido()) return;
         if (!_form.IsValid) return;
         if (string.IsNullOrWhiteSpace(_model.Modalidad)) return;
         if (_dateAvailability == DateAvailability.OutOfWindow) return;
         if (!_fecha.HasValue) return;
 
+        // El resultado del guardado anterior debe limpiarse ANTES de intentar el nuevo:
+        // si no, un guardado fallido deja visible el banner de exito del anterior con el
+        // total de horas vacio (porque _response ya quedo en null).
+        _guardado     = false;
+        _response     = null;
         _isSaving     = true;
         _errorMessage = null;
 
@@ -465,10 +489,12 @@
         {
             var request = new CreateRegistroHorasRequest(
                 DateOnly.FromDateTime(_fecha!.Value),
-                _model.HoraEntradaAM.HasValue ? TimeOnly.FromTimeSpan(_model.HoraEntradaAM.Value) : null,
-                _model.HoraSalidaAM.HasValue  ? TimeOnly.FromTimeSpan(_model.HoraSalidaAM.Value)  : null,
-                _model.HoraEntradaPM.HasValue ? TimeOnly.FromTimeSpan(_model.HoraEntradaPM.Value) : null,
-                _model.HoraSalidaPM.HasValue  ? TimeOnly.FromTimeSpan(_model.HoraSalidaPM.Value)  : null,
+                ToTimeOnly(_model.HoraEntrada1),
+                ToTimeOnly(_model.HoraSalida1),
+                ToTimeOnly(_model.HoraEntrada2),
+                ToTimeOnly(_model.HoraSalida2),
+                ToTimeOnly(_model.HoraEntrada3),
+                ToTimeOnly(_model.HoraSalida3),
                 _model.Cliente!,
                 _model.Proyecto!,
                 _model.Modalidad!,
@@ -483,6 +509,13 @@
                 return;
             }
             _guardado = true;
+
+            // Limpiar el formulario evita que el usuario reenvie el mismo dia/proyecto,
+            // que el backend rechaza por inmutabilidad del bloque ya registrado.
+            _model.Reset();
+            _touchedModalidad = false;
+            _form.ResetValidation();
+
             if (_fecha.HasValue)
                 await OnGuardado.InvokeAsync(DateOnly.FromDateTime(_fecha.Value));
         }
@@ -490,6 +523,9 @@
         catch { _errorMessage = L["Reg_ErrorSaveGeneral"]; }
         finally { _isSaving = false; }
     }
+
+    private static TimeOnly? ToTimeOnly(TimeSpan? value) =>
+        value.HasValue ? TimeOnly.FromTimeSpan(value.Value) : null;
 
     public void SetFecha(DateOnly fecha, List<DateOnly>? excepcionesAprobadas = null)
     {
@@ -578,10 +614,12 @@
         if (r.Fecha.HasValue)
             _fecha = r.Fecha.Value.ToDateTime(TimeOnly.MinValue);
 
-        if (r.HoraEntradaAM.HasValue) _model.HoraEntradaAM = r.HoraEntradaAM.Value.ToTimeSpan();
-        if (r.HoraSalidaAM.HasValue)  _model.HoraSalidaAM  = r.HoraSalidaAM.Value.ToTimeSpan();
-        if (r.HoraEntradaPM.HasValue) _model.HoraEntradaPM = r.HoraEntradaPM.Value.ToTimeSpan();
-        if (r.HoraSalidaPM.HasValue)  _model.HoraSalidaPM  = r.HoraSalidaPM.Value.ToTimeSpan();
+        if (r.HoraEntrada1.HasValue) _model.HoraEntrada1 = r.HoraEntrada1.Value.ToTimeSpan();
+        if (r.HoraSalida1.HasValue)  _model.HoraSalida1  = r.HoraSalida1.Value.ToTimeSpan();
+        if (r.HoraEntrada2.HasValue) _model.HoraEntrada2 = r.HoraEntrada2.Value.ToTimeSpan();
+        if (r.HoraSalida2.HasValue)  _model.HoraSalida2  = r.HoraSalida2.Value.ToTimeSpan();
+        if (r.HoraEntrada3.HasValue) _model.HoraEntrada3 = r.HoraEntrada3.Value.ToTimeSpan();
+        if (r.HoraSalida3.HasValue)  _model.HoraSalida3  = r.HoraSalida3.Value.ToTimeSpan();
 
         if (r.Cliente is not null)  HandleClienteChanged(r.Cliente);
         if (r.Proyecto is not null) _model.Proyecto = r.Proyecto;
@@ -597,7 +635,7 @@
     {
         var faltantes = new List<string>();
         if (_fecha is null)                                                        faltantes.Add("Fecha");
-        if (!_model.HoraEntradaAM.HasValue && !_model.HoraEntradaPM.HasValue)     faltantes.Add("Horas");
+        if (!TieneAlMenosUnTurno())                                               faltantes.Add("Horas");
         if (string.IsNullOrWhiteSpace(_model.Cliente))                            faltantes.Add("Cliente");
         if (string.IsNullOrWhiteSpace(_model.Proyecto))                           faltantes.Add("Proyecto");
         if (string.IsNullOrWhiteSpace(_model.Modalidad))                          faltantes.Add("Modalidad");
@@ -615,15 +653,56 @@
 
     private sealed class DayFormModel
     {
-        public TimeSpan? HoraEntradaAM { get; set; }
-        public TimeSpan? HoraSalidaAM  { get; set; }
-        public TimeSpan? HoraEntradaPM { get; set; }
-        public TimeSpan? HoraSalidaPM  { get; set; }
+        public TimeSpan? HoraEntrada1 { get; set; }
+        public TimeSpan? HoraSalida1  { get; set; }
+        public TimeSpan? HoraEntrada2 { get; set; }
+        public TimeSpan? HoraSalida2  { get; set; }
+        public TimeSpan? HoraEntrada3 { get; set; }
+        public TimeSpan? HoraSalida3  { get; set; }
         public string?   Cliente     { get; set; }
         public string?   Proyecto    { get; set; }
         public string?   Modalidad   { get; set; }
         public string?   Recurso     { get; set; }
         public string?   Descripcion { get; set; }
         public string?   Lugar       { get; set; }
+
+        public TimeSpan? GetEntrada(int numero) => numero switch
+        {
+            1 => HoraEntrada1, 2 => HoraEntrada2, 3 => HoraEntrada3, _ => null
+        };
+
+        public TimeSpan? GetSalida(int numero) => numero switch
+        {
+            1 => HoraSalida1, 2 => HoraSalida2, 3 => HoraSalida3, _ => null
+        };
+
+        public void SetEntrada(int numero, TimeSpan? valor)
+        {
+            switch (numero)
+            {
+                case 1: HoraEntrada1 = valor; break;
+                case 2: HoraEntrada2 = valor; break;
+                case 3: HoraEntrada3 = valor; break;
+            }
+        }
+
+        public void SetSalida(int numero, TimeSpan? valor)
+        {
+            switch (numero)
+            {
+                case 1: HoraSalida1 = valor; break;
+                case 2: HoraSalida2 = valor; break;
+                case 3: HoraSalida3 = valor; break;
+            }
+        }
+
+        /// <summary>Deja el formulario listo para un nuevo registro conservando la fecha.</summary>
+        public void Reset()
+        {
+            HoraEntrada1 = HoraSalida1 = null;
+            HoraEntrada2 = HoraSalida2 = null;
+            HoraEntrada3 = HoraSalida3 = null;
+            Cliente = Proyecto = Modalidad = Recurso = Descripcion = Lugar = null;
+        }
     }
 }

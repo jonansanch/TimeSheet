@@ -7,4 +7,9 @@ public record UserAdminDto(
     bool IsActive,
     string Role,
     DateTimeOffset Created,
-    DateTimeOffset? DeactivatedAt);
+    DateTimeOffset? DeactivatedAt,
+    // ── Estructura organizacional ──────────────────────────────────────────
+    string? SupervisorUserId,
+    string? SupervisorNombre,
+    int? PuestoId,
+    string? PuestoNombre);

@@ -77,8 +77,8 @@
                     <MudItem xs="12" sm="6" md="4" lg="3">
                         <KpgTeamStatusCard Nombre="@miembro.Nombre"
                                            Estado="@miembro.Estado"
-                                           TieneAm="@miembro.TieneAm"
-                                           TienePm="@miembro.TienePm" />
+                                           TotalMinutos="@miembro.TotalMinutos"
+                                           HorariosRegistrados="@miembro.HorariosRegistrados" />
                     </MudItem>
                 }
             </MudGrid>
@@ -175,7 +175,7 @@
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                 <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Size="Size.Small" />
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    @L["Dash_TeamTotal"] <strong>@_distribucion.TotalHorasEquipo.ToString("F1") h</strong>
+                    @L["Dash_TeamTotal"] <strong>@KpgFormat.Horas(_distribucion.TotalHorasEquipo, 1) h</strong>
                     (@_distribucion.Desde.ToString("dd/MM") – @_distribucion.Hasta.ToString("dd/MM/yyyy"))
                 </MudText>
             </MudStack>
@@ -239,7 +239,7 @@
                             <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
                                 <MudStack Spacing="1">
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TotalHours"]</MudText>
-                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@_gerencial.TotalHoras.ToString("F1") h</MudText>
+                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@KpgFormat.Horas(_gerencial.TotalHoras, 1) h</MudText>
                                 </MudStack>
                             </MudPaper>
                         </MudItem>
@@ -258,7 +258,7 @@
                                     <MudStack Spacing="1">
                                         <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TopClient"]</MudText>
                                         <MudText Typo="Typo.h6" Style="font-weight:600;">@_gerencial.PorCliente[0].Cliente</MudText>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_gerencial.PorCliente[0].TotalHoras.ToString("F1") h</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@KpgFormat.Horas(_gerencial.PorCliente[0].TotalHoras, 1) h</MudText>
                                     </MudStack>
                                 </MudPaper>
                             </MudItem>
@@ -350,7 +350,7 @@
                                         <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Success" Size="Size.Medium" />
                                         <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TotalHours"]</MudText>
                                     </MudStack>
-                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@_metricas.TotalHoras.ToString("F1") h</MudText>
+                                    <MudText Typo="Typo.h4" Style="font-weight:700;">@KpgFormat.Horas(_metricas.TotalHoras, 1) h</MudText>
                                 </MudStack>
                             </MudPaper>
                         </MudItem>

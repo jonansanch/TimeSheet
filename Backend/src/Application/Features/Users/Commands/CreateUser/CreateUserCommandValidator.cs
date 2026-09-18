@@ -19,5 +19,11 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
         RuleFor(x => x.Role)
             .NotEmpty().WithMessage("El rol es requerido.")
             .Must(role => ValidRoles.Contains(role)).WithMessage("El rol seleccionado no es valido.");
+
+        // El nombre es obligatorio al crear: sin el, la app cae al email para identificar
+        // a la persona en dashboards, reportes y timesheet.
+        RuleFor(x => x.NombreCompleto)
+            .NotEmpty().WithMessage("El nombre completo es requerido.")
+            .MaximumLength(200).WithMessage("El nombre completo no puede superar 200 caracteres.");
     }
 }

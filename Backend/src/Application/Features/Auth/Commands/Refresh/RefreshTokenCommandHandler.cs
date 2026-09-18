@@ -48,7 +48,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         var now = _clock.UtcNow;
         var accessToken = _jwtTokenService.GenerateAccessToken(
-            credentials.UserId, credentials.Email, credentials.Roles);
+            credentials.UserId, credentials.Email, credentials.Roles, credentials.NombreCompleto, credentials.SupervisorNombre);
         var expiresAt = now.AddMinutes(_jwtSettings.ExpirationMinutes).UtcDateTime;
 
         // Rotación: revocar el token anterior y emitir uno nuevo

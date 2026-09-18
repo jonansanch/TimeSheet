@@ -19,8 +19,9 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
     private const string SqlResumen = $"""
         SELECT COUNT(*) AS TotalRegistros,
                ISNULL(ROUND((
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM)), 0) +
-                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM)), 0)
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
+                   ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1), 0) AS TotalHoras
         {SqlBase};
         """;
@@ -30,13 +31,16 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
                ISNULL(u.NombreCompleto, u.Email)                          AS NombreEmpleado,
                u.Email,
                r.FechaRegistro,
-               r.HoraEntradaAM,
-               r.HoraSalidaAM,
-               r.HoraEntradaPM,
-               r.HoraSalidaPM,
+               r.HoraEntrada1,
+               r.HoraSalida1,
+               r.HoraEntrada2,
+               r.HoraSalida2,
+               r.HoraEntrada3,
+               r.HoraSalida3,
                ROUND((
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaAM, r.HoraSalidaAM), 0) +
-                   ISNULL(DATEDIFF(MINUTE, r.HoraEntradaPM, r.HoraSalidaPM), 0)
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2), 0) +
+                   ISNULL(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3), 0)
                ) / 60.0, 2) AS Horas,
                r.Cliente,
                r.Proyecto,
@@ -89,10 +93,12 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
             r.NombreEmpleado,
             r.Email,
             DateOnly.FromDateTime(r.FechaRegistro),
-            r.HoraEntradaAM.HasValue ? TimeOnly.FromTimeSpan(r.HoraEntradaAM.Value) : null,
-            r.HoraSalidaAM.HasValue  ? TimeOnly.FromTimeSpan(r.HoraSalidaAM.Value)  : null,
-            r.HoraEntradaPM.HasValue ? TimeOnly.FromTimeSpan(r.HoraEntradaPM.Value) : null,
-            r.HoraSalidaPM.HasValue  ? TimeOnly.FromTimeSpan(r.HoraSalidaPM.Value)  : null,
+            r.HoraEntrada1.HasValue ? TimeOnly.FromTimeSpan(r.HoraEntrada1.Value) : null,
+            r.HoraSalida1.HasValue  ? TimeOnly.FromTimeSpan(r.HoraSalida1.Value)  : null,
+            r.HoraEntrada2.HasValue ? TimeOnly.FromTimeSpan(r.HoraEntrada2.Value) : null,
+            r.HoraSalida2.HasValue  ? TimeOnly.FromTimeSpan(r.HoraSalida2.Value)  : null,
+            r.HoraEntrada3.HasValue ? TimeOnly.FromTimeSpan(r.HoraEntrada3.Value) : null,
+            r.HoraSalida3.HasValue  ? TimeOnly.FromTimeSpan(r.HoraSalida3.Value)  : null,
             r.Horas,
             r.Cliente,
             r.Proyecto,
@@ -152,10 +158,12 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
         string    NombreEmpleado,
         string    Email,
         DateTime  FechaRegistro,
-        TimeSpan? HoraEntradaAM,
-        TimeSpan? HoraSalidaAM,
-        TimeSpan? HoraEntradaPM,
-        TimeSpan? HoraSalidaPM,
+        TimeSpan? HoraEntrada1,
+        TimeSpan? HoraSalida1,
+        TimeSpan? HoraEntrada2,
+        TimeSpan? HoraSalida2,
+        TimeSpan? HoraEntrada3,
+        TimeSpan? HoraSalida3,
         decimal   Horas,
         string    Cliente,
         string    Proyecto,

@@ -29,8 +29,21 @@ public class KpgWebApplicationFactory : WebApplicationFactory<Program>
 
     public KpgWebApplicationFactory()
     {
+        // Program.cs lee Jwt:Key con builder.Configuration mientras se construye el host,
+        // antes de que ConfigureAppConfiguration pueda inyectar nada. La variable de entorno
+        // es la unica fuente que ya esta presente en ese momento y que gana sobre el valor
+        // vacio de appsettings.json.
+        Environment.SetEnvironmentVariable("Jwt__Key", TestJwtKey);
+
         _connection.Open();
     }
+
+    /// <summary>
+    /// Llave JWT exclusiva de los tests. appsettings.json deja Jwt:Key vacia a proposito
+    /// (en produccion la inyecta la configuracion de Azure), por lo que el entorno "Test"
+    /// debe aportar la suya o el host no puede construir la SymmetricSecurityKey.
+    /// </summary>
+    private const string TestJwtKey = "KPG-Timesheet-Test-Secret-Key-MinLength32Chars!!";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

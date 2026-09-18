@@ -42,7 +42,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
 
         var now = _clock.UtcNow;
         var nowUtc = now.UtcDateTime;
-        var accessToken = _jwtTokenService.GenerateAccessToken(credentials.UserId, credentials.Email, credentials.Roles);
+        var accessToken = _jwtTokenService.GenerateAccessToken(credentials.UserId, credentials.Email, credentials.Roles, credentials.NombreCompleto, credentials.SupervisorNombre);
         var expiresAt = now.AddMinutes(_jwtSettings.ExpirationMinutes).UtcDateTime;
 
         await _context.RefreshTokens

@@ -4,7 +4,7 @@ using MediatR;
 
 namespace KPG.Timesheet.Application.Features.Catalogos.Proyectos.Commands.UpdateProyecto;
 
-public record UpdateProyectoCommand(int Id, string Nombre) : IRequest<ProyectoDto>;
+public record UpdateProyectoCommand(int Id, string Nombre, string? SupervisorUserId = null) : IRequest<ProyectoDto>;
 
 public class UpdateProyectoCommandValidator : AbstractValidator<UpdateProyectoCommand>
 {

@@ -25,13 +25,49 @@
         <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
 
+    <MudPaper Elevation="1" Class="pa-3">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudSelect T="int"
+                       Label="@L["Label_Month"]"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Value="_mes"
+                       ValueChanged="OnMesChangedAsync"
+                       Style="max-width:200px;"
+                       aria-label="@L["Label_Month"]">
+                @foreach (var (numero, nombre) in _meses)
+                {
+                    <MudSelectItem Value="@numero">@nombre</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField T="int"
+                             Label="@L["Label_Year"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Value="_anio"
+                             ValueChanged="OnAnioChangedAsync"
+                             Min="2020"
+                             Max="2099"
+                             Style="max-width:120px;"
+                             aria-label="@L["Label_Year"]" />
+            <MudTooltip Text="@(L["Hist_CurrentMonth"].Value)">
+                <MudButton Variant="Variant.Text"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Today"
+                           OnClick="VolverAlMesActualAsync">
+                    @L["Hist_CurrentMonth"]
+                </MudButton>
+            </MudTooltip>
+        </MudStack>
+    </MudPaper>
+
     <MudDataGrid @ref="_grid"
                  T="HistorialRegistroResponse"
                  ServerData="CargarDatosAsync"
                  Dense="true"
                  Filterable="false"
                  SortMode="SortMode.None"
-                 RowsPerPage="20">
+                 RowsPerPage="50">
         <NoRecordsContent>
             <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EventBusy" Class="ma-4">
                 <MudText Typo="Typo.body1">@L["Hist_NoRecords"]</MudText>
@@ -50,11 +86,11 @@
                     @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
                 </CellTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="AM" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Reg_Shift1"]" Sortable="false" CellStyle="white-space:nowrap;">
                 <CellTemplate>
-                    @if (context.Item.HoraEntradaAM.HasValue && context.Item.HoraSalidaAM.HasValue)
+                    @if (context.Item.HoraEntrada1.HasValue && context.Item.HoraSalida1.HasValue)
                     {
-                        @($"{context.Item.HoraEntradaAM.Value:HH\\:mm} – {context.Item.HoraSalidaAM.Value:HH\\:mm}")
+                        @($"{context.Item.HoraEntrada1.Value:HH\\:mm} – {context.Item.HoraSalida1.Value:HH\\:mm}")
                     }
                     else
                     {
@@ -62,11 +98,23 @@
                     }
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="PM" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Reg_Shift2"]" Sortable="false" CellStyle="white-space:nowrap;">
                 <CellTemplate>
-                    @if (context.Item.HoraEntradaPM.HasValue && context.Item.HoraSalidaPM.HasValue)
+                    @if (context.Item.HoraEntrada2.HasValue && context.Item.HoraSalida2.HasValue)
                     {
-                        @($"{context.Item.HoraEntradaPM.Value:HH\\:mm} – {context.Item.HoraSalidaPM.Value:HH\\:mm}")
+                        @($"{context.Item.HoraEntrada2.Value:HH\\:mm} – {context.Item.HoraSalida2.Value:HH\\:mm}")
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary">—</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@L["Reg_Shift3"]" Sortable="false" CellStyle="white-space:nowrap;">
+                <CellTemplate>
+                    @if (context.Item.HoraEntrada3.HasValue && context.Item.HoraSalida3.HasValue)
+                    {
+                        @($"{context.Item.HoraEntrada3.Value:HH\\:mm} – {context.Item.HoraSalida3.Value:HH\\:mm}")
                     }
                     else
                     {
@@ -76,25 +124,30 @@
             </TemplateColumn>
             <PropertyColumn Property="x => x.Cliente" Title="@L["Label_Client"]" />
             <PropertyColumn Property="x => x.Proyecto" Title="@L["Label_Project"]" />
+            <PropertyColumn Property="x => x.Recurso" Title="@L["Label_Resource"]" Sortable="false" />
             <PropertyColumn Property="x => x.Modalidad" Title="@L["Label_Modality"]" Sortable="false" />
             <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false" />
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     @if (_puedeEditar)
                     {
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       aria-label="@L["Btn_Edit"]"
-                                       Disabled="_isEditing"
-                                       OnClick="@(() => AbrirEditarDescripcionAsync(context.Item))" />
+                        <MudTooltip Text="@(L["Btn_Edit"].Value)">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           aria-label="@L["Btn_Edit"]"
+                                           Disabled="_isEditing"
+                                           OnClick="@(() => AbrirEditarDescripcionAsync(context.Item))" />
+                        </MudTooltip>
                     }
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                   Color="Color.Error"
-                                   Size="Size.Small"
-                                   aria-label="@L["Btn_Delete"]"
-                                   Disabled="_isDeleting"
-                                   OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
+                    <MudTooltip Text="@(L["Btn_Delete"].Value)">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       aria-label="@L["Btn_Delete"]"
+                                       Disabled="_isDeleting"
+                                       OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
+                    </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -147,14 +200,58 @@
                     || await CurrentUserService.IsInRoleAsync(Roles.Admin);
     }
 
+    // El filtro arranca en el mes en curso, que es lo que el usuario quiere ver al entrar.
+    private int _mes  = DateTime.Today.Month;
+    private int _anio = DateTime.Today.Year;
+
+    private IEnumerable<(int Numero, string Nombre)> _meses =>
+        Enumerable.Range(1, 12).Select(m => (m, CapitalizarMes(m)));
+
+    private static string CapitalizarMes(int mes)
+    {
+        var nombre = new DateTime(2000, mes, 1)
+            .ToString("MMMM", System.Globalization.CultureInfo.CurrentUICulture);
+        return char.ToUpper(nombre[0]) + nombre[1..];
+    }
+
+    private async Task OnMesChangedAsync(int mes)
+    {
+        _mes = mes;
+        await RecargarAsync();
+    }
+
+    private async Task OnAnioChangedAsync(int anio)
+    {
+        _anio = anio;
+        await RecargarAsync();
+    }
+
+    private async Task VolverAlMesActualAsync()
+    {
+        _mes  = DateTime.Today.Month;
+        _anio = DateTime.Today.Year;
+        await RecargarAsync();
+    }
+
+    private async Task RecargarAsync()
+    {
+        if (_grid is not null)
+            await _grid.ReloadServerData();
+    }
+
     private async Task<GridData<HistorialRegistroResponse>> CargarDatosAsync(GridState<HistorialRegistroResponse> state)
     {
         _errorMessage = null;
         try
         {
+            var desde = new DateOnly(_anio, _mes, 1);
+            var hasta = desde.AddMonths(1).AddDays(-1);
+
             var resp = await RegistroHorasRepository.GetHistorialAsync(
                 page: state.Page + 1,
-                pageSize: state.PageSize);
+                pageSize: state.PageSize,
+                desde: desde,
+                hasta: hasta);
             _totalCount = resp.TotalCount;
             return new GridData<HistorialRegistroResponse> { Items = resp.Items, TotalItems = resp.TotalCount };
         }

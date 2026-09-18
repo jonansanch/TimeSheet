@@ -54,6 +54,39 @@ public class UserAdminRepository : IUserAdminRepository
         return (user is not null, user, null);
     }
 
+    public async Task<(bool Ok, UserAdminResponse? User, string? Error)> AsignarEstructuraAsync(
+        string id,
+        AsignarEstructuraRequest request,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return (false, null, "Sesion no disponible.");
+
+        using var message = CreateMessage(HttpMethod.Put, $"api/users/{id}/estructura");
+        message.Content = JsonContent.Create(request);
+
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode)
+            return (false, null, await ReadErrorAsync(response, ct));
+
+        var user = await response.Content.ReadFromJsonAsync<UserAdminResponse>(cancellationToken: ct);
+        return (user is not null, user, null);
+    }
+
+    public async Task<List<OrganigramaNodoResponse>> GetOrganigramaAsync(CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return [];
+
+        using var message = CreateMessage(HttpMethod.Get, "api/users/organigrama");
+
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode)
+            return [];
+
+        return await response.Content.ReadFromJsonAsync<List<OrganigramaNodoResponse>>(cancellationToken: ct) ?? [];
+    }
+
     public async Task<(bool Ok, UserAdminResponse? User)> ActivateAsync(string id, CancellationToken ct = default) =>
         await SendUserActionAsync(HttpMethod.Post, $"api/users/{id}/activate", ct);
 

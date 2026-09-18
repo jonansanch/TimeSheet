@@ -29,7 +29,8 @@
                           Label="@L["Label_FullName"]"
                           Variant="Variant.Outlined"
                           @bind-Value="_nombreCompleto"
-                          Placeholder="@L["Label_Optional"]"
+                          Required="true"
+                          RequiredError="@L["Val_FullNameRequired"]"
                           autocomplete="off"
                           aria-label="@L["Label_FullName"]" />
 
@@ -84,6 +85,7 @@
     private bool EsValido =>
         !string.IsNullOrWhiteSpace(_email)
         && _email.Contains('@')
+        && !string.IsNullOrWhiteSpace(_nombreCompleto)
         && PasswordCumplePolitica(_password)
         && !string.IsNullOrWhiteSpace(_role);
 
@@ -100,7 +102,7 @@
             _email.Trim(),
             _password,
             _role,
-            string.IsNullOrWhiteSpace(_nombreCompleto) ? null : _nombreCompleto.Trim())));
+            _nombreCompleto.Trim())));
 
     private static bool PasswordCumplePolitica(string password) =>
         password.Length >= 6

@@ -28,6 +28,6 @@ public class ToggleProyectoActivoCommandHandler : IRequestHandler<ToggleProyecto
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ProyectoDto(proyecto.Id, proyecto.Nombre, proyecto.ClienteId, proyecto.Activo);
+        return new ProyectoDto(proyecto.Id, proyecto.Nombre, proyecto.ClienteId, proyecto.Activo, proyecto.SupervisorUserId);
     }
 }

@@ -23,7 +23,7 @@ public class CreateRegistroHorasCommandHandlerTests
         context.RegistrosHoras.Should().ContainSingle(r =>
             r.UserId == "user-1" &&
             r.FechaRegistro == new DateOnly(2026, 5, 14) &&
-            r.HoraEntradaAM == new TimeOnly(8, 0));
+            r.HoraEntrada1 == new TimeOnly(8, 0));
     }
 
     [Fact]
@@ -40,14 +40,15 @@ public class CreateRegistroHorasCommandHandlerTests
             new DateOnly(2026, 5, 14),
             null, null,
             new TimeOnly(13, 0), new TimeOnly(17, 0),
+            null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
         await handler.Handle(pmCommand, CancellationToken.None);
 
         // Must remain a single record with both blocks
         context.RegistrosHoras.Count(r => r.UserId == "user-1").Should().Be(1);
         var registro = await context.RegistrosHoras.SingleAsync(r => r.UserId == "user-1");
-        registro.TieneAM.Should().BeTrue();
-        registro.TienePM.Should().BeTrue();
+        registro.TieneHorario1.Should().BeTrue();
+        registro.TieneHorario2.Should().BeTrue();
     }
 
     [Fact]
@@ -64,6 +65,7 @@ public class CreateRegistroHorasCommandHandlerTests
         var command = new CreateRegistroHorasCommand(
             fechaFuera,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
+            null, null,
             null, null,
             "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
@@ -95,6 +97,7 @@ public class CreateRegistroHorasCommandHandlerTests
             new TimeOnly(13, 0),
             null,
             null,
+            null, null,
             "KPG",
             "Timesheet",
             "Remoto",

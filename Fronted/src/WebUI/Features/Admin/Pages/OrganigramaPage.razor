@@ -1,0 +1,121 @@
+@page "/organigrama"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject IUserAdminRepository Repo
+@inject IStringLocalizer<SharedResource> L
+
+<PageTitle>@L["Org_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Org_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Org_Subtitle"]</MudText>
+    </div>
+
+    @if (_isLoading)
+    {
+        <MudSkeleton Width="100%" Height="320px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
+    }
+    else if (_nodos.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.AccountTree">@L["Org_Empty"]</MudAlert>
+    }
+    else
+    {
+        @if (_huerfanos.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                @string.Format(L["Org_OrphansWarning"], _huerfanos.Count)
+            </MudAlert>
+        }
+
+        <MudPaper Elevation="1" Class="pa-4" Style="overflow-x:auto;">
+            @foreach (var raiz in _raices)
+            {
+                @RenderNodo(raiz, 0)
+            }
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Org_Title"].Value, null, disabled: true)
+    ];
+
+    private List<OrganigramaNodoResponse> _nodos = [];
+    private List<OrganigramaNodoResponse> _raices = [];
+    private List<OrganigramaNodoResponse> _huerfanos = [];
+    private Dictionary<string, List<OrganigramaNodoResponse>> _hijosPorSupervisor = [];
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _nodos = await Repo.GetOrganigramaAsync();
+            ConstruirArbol();
+        }
+        catch { _nodos = []; }
+        finally { _isLoading = false; }
+    }
+
+    private void ConstruirArbol()
+    {
+        var ids = _nodos.Select(n => n.UserId).ToHashSet(StringComparer.Ordinal);
+
+        _hijosPorSupervisor = _nodos
+            .Where(n => n.SupervisorUserId is not null && ids.Contains(n.SupervisorUserId))
+            .GroupBy(n => n.SupervisorUserId!)
+            .ToDictionary(g => g.Key, g => g.OrderBy(n => n.Nombre).ToList(), StringComparer.Ordinal);
+
+        // Sin jefe = raiz. Con un jefe que no esta en la lista (inactivo o borrado) el
+        // nodo quedaria invisible, asi que tambien se trata como raiz y se avisa.
+        _huerfanos = _nodos
+            .Where(n => n.SupervisorUserId is not null && !ids.Contains(n.SupervisorUserId))
+            .ToList();
+
+        _raices = _nodos
+            .Where(n => n.SupervisorUserId is null || !ids.Contains(n.SupervisorUserId))
+            .OrderBy(n => n.Nombre)
+            .ToList();
+    }
+
+    private RenderFragment RenderNodo(OrganigramaNodoResponse nodo, int nivel) => __builder =>
+    {
+        var hijos = _hijosPorSupervisor.TryGetValue(nodo.UserId, out var lista) ? lista : [];
+
+        <div style="@($"margin-left:{nivel * 28}px;")" class="mb-1">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                @if (nivel > 0)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.SubdirectoryArrowRight"
+                             Size="Size.Small" Color="Color.Secondary" />
+                }
+                <MudIcon Icon="@(hijos.Count > 0 ? Icons.Material.Filled.SupervisorAccount : Icons.Material.Filled.Person)"
+                         Size="Size.Small"
+                         Color="@(hijos.Count > 0 ? Color.Primary : Color.Default)" />
+                <MudText Typo="Typo.body1" Style="font-weight:600;">@nodo.Nombre</MudText>
+                @if (!string.IsNullOrWhiteSpace(nodo.PuestoNombre))
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">
+                        @nodo.PuestoNombre
+                    </MudChip>
+                }
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@nodo.Rol</MudText>
+                @if (hijos.Count > 0)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @string.Format(L["Org_ReportsCount"], hijos.Count)
+                    </MudText>
+                }
+            </MudStack>
+        </div>
+
+        @foreach (var hijo in hijos)
+        {
+            @RenderNodo(hijo, nivel + 1)
+        }
+    };
+}

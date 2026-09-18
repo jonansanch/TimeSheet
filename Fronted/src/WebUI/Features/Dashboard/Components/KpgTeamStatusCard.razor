@@ -15,18 +15,12 @@
         <MudDivider />
         <MudStack Class="pa-3" Row="true" Spacing="4">
             <MudStack Spacing="0" AlignItems="AlignItems.Center">
-                <MudIcon Icon="@(TieneAm ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
-                         Color="@(TieneAm ? Color.Success : Color.Default)"
-                         Size="Size.Small"
-                         Title="@(TieneAm ? "AM: registrado" : "AM: pendiente")" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary">AM</MudText>
+                <MudText Typo="Typo.subtitle2" Style="font-weight:600;">@HorasFormateadas</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Horas</MudText>
             </MudStack>
             <MudStack Spacing="0" AlignItems="AlignItems.Center">
-                <MudIcon Icon="@(TienePm ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
-                         Color="@(TienePm ? Color.Success : Color.Default)"
-                         Size="Size.Small"
-                         Title="@(TienePm ? "PM: registrado" : "PM: pendiente")" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary">PM</MudText>
+                <MudText Typo="Typo.subtitle2" Style="font-weight:600;">@HorariosRegistrados</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Horarios</MudText>
             </MudStack>
         </MudStack>
     </MudStack>
@@ -35,8 +29,10 @@
 @code {
     [Parameter, EditorRequired] public string Nombre { get; set; } = default!;
     [Parameter, EditorRequired] public string Estado { get; set; } = default!;
-    [Parameter] public bool TieneAm { get; set; }
-    [Parameter] public bool TienePm { get; set; }
+    [Parameter] public int TotalMinutos { get; set; }
+    [Parameter] public int HorariosRegistrados { get; set; }
+
+    private string HorasFormateadas => $"{TotalMinutos / 60}:{TotalMinutos % 60:00}";
 
     private Color EstadoColor => Estado switch
     {
