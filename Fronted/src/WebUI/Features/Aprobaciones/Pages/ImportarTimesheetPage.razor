@@ -1,0 +1,253 @@
+@page "/admin/importar-timesheet"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IAprobacionRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L["Imp_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Imp_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Imp_Subtitle"]</MudText>
+    </div>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Info" Dense="true">@L["Imp_SkipsWindow"]</MudAlert>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="5">
+                    <MudSelect T="string"
+                               Label="@L["Imp_Employee"]"
+                               Variant="Variant.Outlined"
+                               @bind-Value="_userId"
+                               Required="true"
+                               HelperText="@L["Imp_EmployeeHint"]"
+                               aria-label="@L["Imp_Employee"]">
+                        @foreach (var u in _usuarios.Where(u => u.IsActive))
+                        {
+                            <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="7" Class="d-flex align-center">
+                    <MudFileUpload T="IBrowserFile" FilesChanged="OnArchivoSeleccionado" Accept=".xlsx">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.UploadFile"
+                                       Disabled="_isImportando">
+                                @(_archivo is null ? L["Imp_ChooseFile"].Value : _archivo.Name)
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                </MudItem>
+
+                <MudItem xs="12">
+                    @* Marcada por defecto: lo importado suele venir ya validado fuera del sistema. *@
+                    <MudCheckBox T="bool" @bind-Value="_marcarAprobado" Color="Color.Primary"
+                                 Label="@L["Imp_MarkApproved"]" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-8">
+                        @(_marcarAprobado ? L["Imp_MarkApprovedOn"] : L["Imp_MarkApprovedOff"])
+                    </MudText>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               Disabled="@(!PuedeImportar)"
+                               OnClick="ImportarAsync">
+                        @if (_isImportando)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        @L["Imp_Import"]
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </MudPaper>
+
+    @if (_resultado is { } r)
+    {
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Imp_ResultTitle"]</MudText>
+
+                @if (!string.IsNullOrWhiteSpace(_avisoNombre))
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">@_avisoNombre</MudAlert>
+                }
+
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
+                        @string.Format(L["Imp_Period"], r.Mes, r.Anio)
+                    </MudChip>
+                    <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
+                        @r.FilasLeidas @L["Imp_RowsRead"]
+                    </MudChip>
+                    <MudChip T="string" Color="@(r.Importadas > 0 ? Color.Success : Color.Default)" Variant="Variant.Filled">
+                        @r.Importadas @L["Imp_Imported"]
+                    </MudChip>
+                    @if (r.Omitidas.Count > 0)
+                    {
+                        <MudChip T="string" Color="Color.Warning" Variant="Variant.Filled">
+                            @r.Omitidas.Count @L["Imp_Skipped"]
+                        </MudChip>
+                    }
+                    @if (r.Errores.Count > 0)
+                    {
+                        <MudChip T="string" Color="Color.Error" Variant="Variant.Filled">
+                            @r.Errores.Count @L["Imp_Failed"]
+                        </MudChip>
+                    }
+                </MudStack>
+
+                @if (r.SinCambios && r.Errores.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">@L["Imp_NothingNew"]</MudAlert>
+                }
+
+                @if (r.Omitidas.Count > 0)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Imp_SkippedTitle"]</MudText>
+                        @foreach (var f in r.Omitidas)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
+                                @string.Format(L["Imp_RowPrefix"], f.NumeroFila) @f.Detalle — @f.Motivo
+                            </MudText>
+                        }
+                    </div>
+                }
+
+                @if (r.Errores.Count > 0)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Imp_FailedTitle"]</MudText>
+                        @foreach (var f in r.Errores)
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-1">
+                                @string.Format(L["Imp_RowPrefix"], f.NumeroFila)
+                                @(string.IsNullOrWhiteSpace(f.Detalle) ? "" : f.Detalle + " — ")@f.Motivo
+                            </MudAlert>
+                        }
+                    </div>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Imp_Title"].Value, null, disabled: true)
+    ];
+
+    /// <summary>Tope alineado con el del backend, para avisar antes de subir en balde.</summary>
+    private const long MaxBytes = 10 * 1024 * 1024;
+
+    private List<UserAdminResponse> _usuarios = [];
+    private IBrowserFile? _archivo;
+    private string? _userId;
+    private bool _marcarAprobado = true;
+    private bool _isImportando;
+    private ImportacionResultadoResponse? _resultado;
+    private string? _avisoNombre;
+
+    private bool PuedeImportar => !_isImportando && _archivo is not null && !string.IsNullOrWhiteSpace(_userId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _usuarios = (await UsuariosRepo.GetUsersAsync(1, 100, "email", false)).Items; }
+        catch { Snackbar.Add(L["Users_ErrorLoad"].Value, Severity.Error); }
+    }
+
+    private void OnArchivoSeleccionado(IBrowserFile? archivo)
+    {
+        _resultado = null;
+        _avisoNombre = null;
+
+        if (archivo is not null && archivo.Size > MaxBytes)
+        {
+            Snackbar.Add(L["Imp_FileTooBig"].Value, Severity.Error);
+            _archivo = null;
+            return;
+        }
+
+        _archivo = archivo;
+    }
+
+    private async Task ImportarAsync()
+    {
+        if (_archivo is null || _userId is null) return;
+
+        _isImportando = true;
+        _resultado = null;
+        _avisoNombre = null;
+
+        try
+        {
+            await using var stream = _archivo.OpenReadStream(MaxBytes);
+            var (ok, resultado, error) = await Repo.ImportarAsync(
+                stream, _archivo.Name, _userId, _marcarAprobado);
+
+            if (!ok || resultado is null)
+            {
+                Snackbar.Add(error ?? L["Imp_Error"].Value, Severity.Error);
+                return;
+            }
+
+            _resultado = resultado;
+            AvisarSiElNombreNoCoincide(resultado.NombreEnArchivo);
+
+            Snackbar.Add(
+                string.Format(L["Imp_Done"], resultado.Importadas),
+                resultado.Importadas > 0 ? Severity.Success : Severity.Info);
+        }
+        catch
+        {
+            Snackbar.Add(L["Imp_Error"].Value, Severity.Error);
+        }
+        finally { _isImportando = false; }
+    }
+
+    /// <summary>
+    /// El empleado lo decide quien importa, pero si el nombre de la cabecera del archivo
+    /// no se parece al elegido conviene avisarlo: suele ser que se subió el archivo equivocado.
+    /// </summary>
+    private void AvisarSiElNombreNoCoincide(string? nombreEnArchivo)
+    {
+        if (string.IsNullOrWhiteSpace(nombreEnArchivo)) return;
+
+        var elegido = _usuarios.FirstOrDefault(u => u.Id == _userId);
+        var nombreElegido = elegido?.NombreCompleto ?? elegido?.Email;
+        if (string.IsNullOrWhiteSpace(nombreElegido)) return;
+
+        if (!SeParecen(nombreEnArchivo, nombreElegido))
+            _avisoNombre = string.Format(L["Imp_NameMismatch"], nombreEnArchivo, nombreElegido);
+    }
+
+    /// <summary>
+    /// Comparación laxa: basta con que compartan un apellido o nombre. Exigir igualdad
+    /// exacta dispararía el aviso por una tilde o un segundo nombre.
+    /// </summary>
+    private static bool SeParecen(string a, string b)
+    {
+        var partesA = Normalizar(a).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var partesB = Normalizar(b).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return partesA.Intersect(partesB).Any();
+    }
+
+    private static string Normalizar(string texto) =>
+        texto.Trim().ToLowerInvariant()
+            .Replace('á', 'a').Replace('é', 'e').Replace('í', 'i')
+            .Replace('ó', 'o').Replace('ú', 'u').Replace('ñ', 'n');
+}

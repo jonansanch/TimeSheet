@@ -10,6 +10,7 @@ public record RegistroHorasDto(
     TimeOnly? HoraSalida2,
     TimeOnly? HoraEntrada3,
     TimeOnly? HoraSalida3,
+    int       ProyectoId,
     string    Cliente,
     string    Proyecto,
     string    Modalidad,

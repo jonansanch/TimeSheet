@@ -18,13 +18,8 @@ public class CreateRegistroHorasCommandValidator : AbstractValidator<CreateRegis
         ReglasBloque(2, x => x.HoraEntrada2, x => x.HoraSalida2);
         ReglasBloque(3, x => x.HoraEntrada3, x => x.HoraSalida3);
 
-        RuleFor(x => x.Cliente)
-            .NotEmpty().WithMessage("El cliente es requerido.")
-            .MaximumLength(200).WithMessage("El cliente no puede superar 200 caracteres.");
-
-        RuleFor(x => x.Proyecto)
-            .NotEmpty().WithMessage("El proyecto es requerido.")
-            .MaximumLength(200).WithMessage("El proyecto no puede superar 200 caracteres.");
+        RuleFor(x => x.ProyectoId)
+            .GreaterThan(0).WithMessage("El proyecto es requerido.");
 
         RuleFor(x => x.Modalidad)
             .NotEmpty().WithMessage("La modalidad es requerida.")

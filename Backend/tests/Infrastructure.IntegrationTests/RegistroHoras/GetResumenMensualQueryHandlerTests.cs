@@ -29,7 +29,7 @@ public class GetResumenMensualQueryHandlerTests
     {
         await using var context = CreateContext();
         context.RegistrosHoras.Add(MakeRegistro(
-            "user-1", Mayo10, "KPG", "Timesheet",
+            "user-1", Mayo10, 1,
             (new TimeOnly(8, 0),  new TimeOnly(12, 0)),    // 240
             (new TimeOnly(13, 0), new TimeOnly(17, 0)),    // 240
             (new TimeOnly(19, 0), new TimeOnly(19, 30)))); //  30
@@ -47,10 +47,10 @@ public class GetResumenMensualQueryHandlerTests
         // Un dia puede tener un registro por proyecto: el calendario evalua el total del dia.
         await using var context = CreateContext();
         context.RegistrosHoras.Add(MakeRegistro(
-            "user-1", Mayo10, "KPG", "Timesheet",
+            "user-1", Mayo10, 1,
             (new TimeOnly(8, 0), new TimeOnly(12, 0)), null, null));
         context.RegistrosHoras.Add(MakeRegistro(
-            "user-1", Mayo10, "Otro Cliente", "Otro Proyecto",
+            "user-1", Mayo10, 2,
             (new TimeOnly(13, 0), new TimeOnly(17, 0)), null, null));
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -64,11 +64,11 @@ public class GetResumenMensualQueryHandlerTests
     public async Task Handle_ShouldIgnoreOtherUsersAndOtherMonths()
     {
         await using var context = CreateContext();
-        context.RegistrosHoras.Add(MakeRegistro("user-1", Mayo10, "A", "P1",
+        context.RegistrosHoras.Add(MakeRegistro("user-1", Mayo10, 3,
             (new TimeOnly(8, 0), new TimeOnly(12, 0)), null, null));
-        context.RegistrosHoras.Add(MakeRegistro("user-2", Mayo10, "B", "P2",
+        context.RegistrosHoras.Add(MakeRegistro("user-2", Mayo10, 4,
             (new TimeOnly(8, 0), new TimeOnly(12, 0)), null, null));
-        context.RegistrosHoras.Add(MakeRegistro("user-1", new DateOnly(2026, 6, 3), "C", "P3",
+        context.RegistrosHoras.Add(MakeRegistro("user-1", new DateOnly(2026, 6, 3), 5,
             (new TimeOnly(8, 0), new TimeOnly(12, 0)), null, null));
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -145,8 +145,7 @@ public class GetResumenMensualQueryHandlerTests
     private static RegistroHorasEntity MakeRegistro(
         string userId,
         DateOnly fecha,
-        string cliente,
-        string proyecto,
+        int proyectoId,
         (TimeOnly Entrada, TimeOnly Salida)? bloque1,
         (TimeOnly Entrada, TimeOnly Salida)? bloque2,
         (TimeOnly Entrada, TimeOnly Salida)? bloque3) =>
@@ -154,7 +153,7 @@ public class GetResumenMensualQueryHandlerTests
             bloque1?.Entrada, bloque1?.Salida,
             bloque2?.Entrada, bloque2?.Salida,
             bloque3?.Entrada, bloque3?.Salida,
-            cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
+            proyectoId, $"Cliente {proyectoId}", $"Proyecto {proyectoId}", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser
     {

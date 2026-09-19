@@ -11,11 +11,10 @@ public class CadenaAprobacionService(ApplicationDbContext context) : ICadenaApro
 {
     public async Task<CadenaAprobacionDto> ResolverAsync(
         string userId,
-        string cliente,
-        string proyecto,
+        int proyectoId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(userId))
+        if (string.IsNullOrWhiteSpace(userId) || proyectoId <= 0)
             return CadenaAprobacionDto.Vacia;
 
         var perfil = await context.Users
@@ -26,18 +25,17 @@ public class CadenaAprobacionService(ApplicationDbContext context) : ICadenaApro
         if (perfil is null)
             return CadenaAprobacionDto.Vacia;
 
-        var nombreCliente  = cliente?.Trim()  ?? string.Empty;
-        var nombreProyecto = proyecto?.Trim() ?? string.Empty;
-
-        var clienteId = await context.Clientes
-            .Where(c => c.Nombre == nombreCliente)
-            .Select(c => (int?)c.Id)
+        // Desde la migracion a ProyectoId el cliente sale del propio proyecto:
+        // ya no hace falta buscarlo por nombre.
+        var proyecto = await context.Proyectos
+            .Where(p => p.Id == proyectoId)
+            .Select(p => new { p.ClienteId, p.SupervisorUserId })
             .FirstOrDefaultAsync(cancellationToken);
 
         return new CadenaAprobacionDto(
-            await ResolverSupervisorPuestoAsync(perfil.PuestoId, clienteId, cancellationToken),
+            await ResolverSupervisorPuestoAsync(perfil.PuestoId, proyecto?.ClienteId, cancellationToken),
             perfil.SupervisorUserId,
-            await ResolverSupervisorProyectoAsync(clienteId, nombreProyecto, cancellationToken));
+            proyecto?.SupervisorUserId);
     }
 
     /// <summary>
@@ -62,22 +60,5 @@ public class CadenaAprobacionService(ApplicationDbContext context) : ICadenaApro
             .OrderByDescending(r => r.ClienteId.HasValue)   // especifica primero
             .Select(r => r.SupervisorUserId)
             .FirstOrDefault();
-    }
-
-    /// <summary>
-    /// Tercera aprobacion. El proyecto se busca dentro del cliente porque su nombre
-    /// solo es unico por cliente.
-    /// </summary>
-    private async Task<string?> ResolverSupervisorProyectoAsync(
-        int? clienteId,
-        string nombreProyecto,
-        CancellationToken cancellationToken)
-    {
-        if (clienteId is null || string.IsNullOrWhiteSpace(nombreProyecto)) return null;
-
-        return await context.Proyectos
-            .Where(p => p.ClienteId == clienteId && p.Nombre == nombreProyecto)
-            .Select(p => p.SupervisorUserId)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 }

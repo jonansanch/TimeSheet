@@ -1,19 +1,17 @@
 using KPG.Timesheet.Application.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace KPG.Timesheet.Application.Features.Sistema.Queries.GetVentanaRetroactividad;
 
-public class GetVentanaRetroactividadQueryHandler : IRequestHandler<GetVentanaRetroactividadQuery, int>
+/// <summary>
+/// Devuelve la ventana <b>efectiva del usuario autenticado</b>, no la global: el formulario
+/// y el calendario de registro deben bloquear exactamente las fechas que el backend rechaza.
+/// La pantalla de parametros usa <see cref="IVentanaRetroactividadService.GetDiasGlobalAsync"/>.
+/// </summary>
+public class GetVentanaRetroactividadQueryHandler(
+    IVentanaRetroactividadService ventana,
+    IUser user)
+    : IRequestHandler<GetVentanaRetroactividadQuery, int>
 {
-    private readonly IApplicationDbContext _context;
-
-    public GetVentanaRetroactividadQueryHandler(IApplicationDbContext context) => _context = context;
-
-    public async Task<int> Handle(GetVentanaRetroactividadQuery request, CancellationToken cancellationToken)
-    {
-        var param = await _context.ParametrosSistema
-            .FirstOrDefaultAsync(p => p.Clave == Domain.Constants.ParametrosSistema.VentanaRetroactividad, cancellationToken);
-
-        return param != null && int.TryParse(param.Valor, out var dias) ? dias : 3;
-    }
+    public Task<int> Handle(GetVentanaRetroactividadQuery request, CancellationToken cancellationToken)
+        => ventana.GetDiasAsync(user.Id, user.Roles, cancellationToken);
 }

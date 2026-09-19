@@ -23,7 +23,7 @@ public class GetCatalogoClientesConProyectosQueryHandler
             join p in _context.Proyectos.Where(p => p.Activo)
                 on c.Id equals p.ClienteId into ps
             from p in ps.DefaultIfEmpty()
-            select new { ClienteId = c.Id, ClienteNombre = c.Nombre, ProyectoNombre = (string?)p.Nombre }
+            select new { ClienteId = c.Id, ClienteNombre = c.Nombre, ProyectoId = (int?)p.Id, ProyectoNombre = (string?)p.Nombre }
         ).OrderBy(x => x.ClienteNombre).ThenBy(x => x.ProyectoNombre)
          .ToListAsync(cancellationToken);
 
@@ -32,7 +32,7 @@ public class GetCatalogoClientesConProyectosQueryHandler
             .Select(g => new ClienteConProyectosDto(
                 g.Key.ClienteId,
                 g.Key.ClienteNombre,
-                g.Where(x => x.ProyectoNombre != null).Select(x => x.ProyectoNombre!).ToList()))
+                g.Where(x => x.ProyectoId != null).Select(x => new ProyectoActivoDto(x.ProyectoId!.Value, x.ProyectoNombre!)).ToList()))
             .ToList();
     }
 }

@@ -1,7 +1,10 @@
 namespace KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
 
 public record ClienteResponse(int Id, string Nombre, bool Activo);
-public record ClienteConProyectosResponse(int Id, string Nombre, List<string> ProyectosActivos);
+/// <summary>Proyecto activo del cliente. Lleva Id porque el registro se guarda por ProyectoId.</summary>
+public record ProyectoActivoResponse(int Id, string Nombre);
+
+public record ClienteConProyectosResponse(int Id, string Nombre, List<ProyectoActivoResponse> ProyectosActivos);
 public record CreateClienteRequest(string Nombre);
 public record UpdateClienteRequest(string Nombre);
 

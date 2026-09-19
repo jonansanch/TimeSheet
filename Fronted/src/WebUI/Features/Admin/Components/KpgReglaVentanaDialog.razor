@@ -1,0 +1,127 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.EventRepeat" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">
+                @(Existente is null ? L["Params_WindowRuleNew"] : L["Params_WindowRuleEdit"])
+            </MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @string.Format(L["Params_WindowRuleHint"], VentanaGlobal)
+            </MudText>
+
+            @if (Existente is null)
+            {
+                @* Persona y rol son la identidad de la regla: al editar solo cambian los días. *@
+                <MudRadioGroup T="Ambito" Value="_ambito" ValueChanged="OnAmbitoChanged">
+                    <MudRadio T="Ambito" Value="@Ambito.Rol" Color="Color.Primary">@L["Params_WindowRuleByRole"]</MudRadio>
+                    <MudRadio T="Ambito" Value="@Ambito.Persona" Color="Color.Primary">@L["Params_WindowRuleByPerson"]</MudRadio>
+                </MudRadioGroup>
+
+                @if (_ambito == Ambito.Rol)
+                {
+                    <MudSelect T="string" Label="@L["Users_ColRole"]" Variant="Variant.Outlined"
+                               @bind-Value="_rol" Required="true" aria-label="@L["Users_ColRole"]">
+                        @foreach (var rol in RolesDisponibles)
+                        {
+                            <MudSelectItem Value="@rol">@rol</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+                else
+                {
+                    <MudSelect T="string" Label="@L["Label_Employee"]" Variant="Variant.Outlined"
+                               @bind-Value="_userId" Required="true" aria-label="@L["Label_Employee"]">
+                        @foreach (var u in Usuarios.Where(u => u.IsActive))
+                        {
+                            <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    @(Existente.Rol is not null
+                        ? $"{L["Users_ColRole"].Value}: {Existente.Rol}"
+                        : NombreUsuario(Existente.UserId))
+                </MudAlert>
+            }
+
+            <MudNumericField T="int"
+                             Label="@L["Params_WindowRuleDays"]"
+                             Variant="Variant.Outlined"
+                             @bind-Value="_dias"
+                             Min="0"
+                             Max="365"
+                             HelperText="@L["Params_WindowRuleDaysHint"]"
+                             aria-label="@L["Params_WindowRuleDays"]" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!EsValido)" OnClick="Submit">
+            @L["Btn_Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public ReglaVentanaResponse? Existente { get; set; }
+    [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
+    [Parameter] public int VentanaGlobal { get; set; }
+
+    private enum Ambito { Rol, Persona }
+
+    private static readonly string[] RolesDisponibles =
+        [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
+
+    private Ambito _ambito = Ambito.Rol;
+    private string? _rol;
+    private string? _userId;
+    private int _dias;
+
+    private bool EsValido => Existente is not null
+        || (_ambito == Ambito.Rol
+            ? !string.IsNullOrWhiteSpace(_rol)
+            : !string.IsNullOrWhiteSpace(_userId));
+
+    protected override void OnInitialized()
+    {
+        _dias = Existente?.Dias ?? VentanaGlobal;
+
+        if (Existente is null) return;
+
+        _ambito = Existente.Rol is not null ? Ambito.Rol : Ambito.Persona;
+        _rol    = Existente.Rol;
+        _userId = Existente.UserId;
+    }
+
+    /// <summary>Al cambiar de ámbito se limpia el otro campo, para no enviar ambos.</summary>
+    private void OnAmbitoChanged(Ambito ambito)
+    {
+        _ambito = ambito;
+        if (ambito == Ambito.Rol) _userId = null; else _rol = null;
+    }
+
+    private string NombreUsuario(string? userId) =>
+        Usuarios.FirstOrDefault(u => u.Id == userId) is { } u
+            ? (u.NombreCompleto ?? u.Email)
+            : userId ?? "-";
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(
+            new GuardarReglaVentanaRequest(
+                _ambito == Ambito.Persona ? _userId : null,
+                _ambito == Ambito.Rol ? _rol : null,
+                _dias)));
+}

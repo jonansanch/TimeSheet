@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using KPG.Timesheet.Application.Common.Behaviours;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Services;
@@ -13,6 +13,7 @@ public static class DependencyInjection
         builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         builder.Services.AddScoped<IParametrosSistemaService, ParametrosSistemaService>();
+        builder.Services.AddScoped<IVentanaRetroactividadService, VentanaRetroactividadService>();
 
         builder.Services.AddMediatR(cfg => {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());

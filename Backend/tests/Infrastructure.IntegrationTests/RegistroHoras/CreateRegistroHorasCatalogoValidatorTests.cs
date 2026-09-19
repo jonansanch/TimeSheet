@@ -5,55 +5,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
 
+/// <summary>
+/// Tras la migracion a ProyectoId, la pertenencia proyecto→cliente la garantiza la FK.
+/// Lo que sigue validandose aqui es que ni el proyecto ni su cliente esten dados de baja.
+/// </summary>
 public class CreateRegistroHorasCatalogoValidatorTests
 {
     [Fact]
-    public async Task Validate_WhenProyectoBelongsToCliente_ShouldPass()
+    public async Task Validate_WhenProyectoIsActive_ShouldPass()
     {
         await using var context = await CreateContextConCatalogoAsync();
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
+        var proyectoId = await IdProyectoAsync(context, "Core Bancario");
 
-        var result = await validator.ValidateAsync(Command("Banco Nacional", "Core Bancario"));
+        var result = await Validar(context, proyectoId);
 
         result.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Validate_WhenProyectoBelongsToAnotherCliente_ShouldFail()
+    public async Task Validate_WhenProyectoDoesNotExist_ShouldFail()
     {
-        // El hueco que cierra esta regla: la UI cascadea, pero un POST directo
-        // podia mezclar el cliente de uno con el proyecto de otro.
         await using var context = await CreateContextConCatalogoAsync();
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
 
-        var result = await validator.ValidateAsync(Command("Banco Nacional", "Sistema RIPS"));
+        var result = await Validar(context, 9999);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateRegistroHorasCommand.Proyecto));
-    }
-
-    [Fact]
-    public async Task Validate_WhenClienteDoesNotExist_ShouldFail()
-    {
-        await using var context = await CreateContextConCatalogoAsync();
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
-
-        var result = await validator.ValidateAsync(Command("Cliente Inventado", "Core Bancario"));
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateRegistroHorasCommand.Cliente));
-    }
-
-    [Fact]
-    public async Task Validate_WhenClienteDoesNotExist_ShouldNotAlsoReportProyecto()
-    {
-        // Un solo error por causa: reportar tambien el proyecto confunde al usuario.
-        await using var context = await CreateContextConCatalogoAsync();
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
-
-        var result = await validator.ValidateAsync(Command("Cliente Inventado", "Core Bancario"));
-
-        result.Errors.Should().ContainSingle();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateRegistroHorasCommand.ProyectoId));
     }
 
     [Fact]
@@ -64,8 +41,7 @@ public class CreateRegistroHorasCatalogoValidatorTests
         proyecto.Desactivar();
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
-        var result = await validator.ValidateAsync(Command("Banco Nacional", "Core Bancario"));
+        var result = await Validar(context, proyecto.Id);
 
         result.IsValid.Should().BeFalse();
     }
@@ -73,46 +49,41 @@ public class CreateRegistroHorasCatalogoValidatorTests
     [Fact]
     public async Task Validate_WhenClienteIsInactive_ShouldFail()
     {
+        // El proyecto sigue activo, pero su cliente no: no deben imputarse horas ahi.
         await using var context = await CreateContextConCatalogoAsync();
         var cliente = await context.Clientes.FirstAsync(c => c.Nombre == "Banco Nacional");
         cliente.Desactivar();
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
-        var result = await validator.ValidateAsync(Command("Banco Nacional", "Core Bancario"));
+        var result = await Validar(context, await IdProyectoAsync(context, "Core Bancario"));
 
         result.IsValid.Should().BeFalse();
     }
 
     [Fact]
-    public async Task Validate_ShouldTrimSurroundingWhitespace()
+    public async Task Validate_WhenProyectoIdIsZero_ShouldNotRunCatalogRules()
     {
+        // El id vacio lo reporta CreateRegistroHorasCommandValidator; aqui no se duplica.
         await using var context = await CreateContextConCatalogoAsync();
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
 
-        var result = await validator.ValidateAsync(Command("  Banco Nacional  ", "  Core Bancario  "));
+        var result = await Validar(context, 0);
 
         result.IsValid.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task Validate_WhenClienteIsEmpty_ShouldNotRunCatalogRules()
-    {
-        // El vacio lo reporta CreateRegistroHorasCommandValidator; aqui no se duplica.
-        await using var context = await CreateContextConCatalogoAsync();
-        var validator = new CreateRegistroHorasCatalogoValidator(context);
+    private static Task<FluentValidation.Results.ValidationResult> Validar(
+        ApplicationDbContext context, int proyectoId) =>
+        new CreateRegistroHorasCatalogoValidator(context).ValidateAsync(Command(proyectoId));
 
-        var result = await validator.ValidateAsync(Command("", "Core Bancario"));
+    private static Task<int> IdProyectoAsync(ApplicationDbContext context, string nombre) =>
+        context.Proyectos.Where(p => p.Nombre == nombre).Select(p => p.Id).FirstAsync();
 
-        result.IsValid.Should().BeTrue();
-    }
-
-    private static CreateRegistroHorasCommand Command(string cliente, string proyecto) =>
+    private static CreateRegistroHorasCommand Command(int proyectoId) =>
         new(new DateOnly(2026, 5, 14),
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
+            proyectoId, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private static async Task<ApplicationDbContext> CreateContextConCatalogoAsync()
     {

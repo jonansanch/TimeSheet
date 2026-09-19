@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Domain.Entities;
 using KPG.Timesheet.Domain.Exceptions;
@@ -27,19 +28,19 @@ public class RegistroHorasImmutabilityTests
     }
 
     [Fact]
-    public async Task SaveChanges_WhenClienteChanges_Succeeds()
+    public async Task SaveChanges_WhenModalidadChanges_Succeeds()
     {
-        // Metadata fields (Cliente, Proyecto, etc.) are mutable to support UpdateMetadata on upsert
+        // Metadata del dia (Modalidad, Recurso, Lugar) sigue siendo mutable via UpdateMetadata.
         await using var context = CreateContext();
         var registro = await SeedRegistroAsync(context);
 
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.Cliente)).CurrentValue = "Otro cliente";
-        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.Cliente)).IsModified = true;
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.Modalidad)).CurrentValue = "Cliente";
+        context.Entry(registro).Property(nameof(KPG.Timesheet.Domain.Entities.RegistroHoras.Modalidad)).IsModified = true;
 
         await context.SaveChangesAsync(CancellationToken.None);
 
         var updated = await context.RegistrosHoras.FindAsync(registro.Id);
-        updated!.Cliente.Should().Be("Otro cliente");
+        updated!.Modalidad.Should().Be("Cliente");
     }
 
     [Fact]
@@ -108,7 +109,7 @@ public class RegistroHorasImmutabilityTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora());
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora(), VentanaService(context));
         var result = await handler.Handle(CommandForDate(fechaFueraVentana), CancellationToken.None);
 
         result.FechaRegistro.Should().Be(fechaFueraVentana);
@@ -132,8 +133,9 @@ public class RegistroHorasImmutabilityTests
             null,
             null,
             null, null,
-            "KPG",
-            "Timesheet",
+            1,
+            "Cliente 1",
+            "Proyecto 1",
             "Remoto",
             "Consultor",
             "Descripcion original",
@@ -145,7 +147,9 @@ public class RegistroHorasImmutabilityTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .AddInterceptors(new RegistroHorasImmutabilityInterceptor())
             .Options;
-        return new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options);
+        CatalogoDePrueba.SembrarAsync(context).GetAwaiter().GetResult();
+        return context;
     }
 
     private static ApplicationDbContext CreateContextWithVentana(int dias)
@@ -165,7 +169,14 @@ public class RegistroHorasImmutabilityTests
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
+
+    /// <summary>
+    /// Servicio real, no un doble: la ventana efectiva depende del parametro global y de
+    /// las reglas por persona o rol, y eso es parte de lo que estos tests ejercitan.
+    /// </summary>
+    private static VentanaRetroactividadService VentanaService(ApplicationDbContext context) =>
+        new(context, new ParametrosSistemaService(context));
 
     private sealed class TestUser : IUser
     {

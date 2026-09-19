@@ -243,7 +243,8 @@ public class ClientesCommandQueryTests
 
         result.Should().ContainSingle();
         result[0].Nombre.Should().Be("KPG");
-        result[0].ProyectosActivos.Should().ContainSingle().Which.Should().Be("Timesheet");
+        result[0].ProyectosActivos.Should().ContainSingle()
+            .Which.Nombre.Should().Be("Timesheet");
     }
 
     // -------------------------------------------------------------------

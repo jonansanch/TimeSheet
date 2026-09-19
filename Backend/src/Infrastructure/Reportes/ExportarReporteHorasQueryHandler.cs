@@ -27,8 +27,8 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
                    ISNULL(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2), 0) +
                    ISNULL(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3), 0)
                ) / 60.0, 2) AS Horas,
-               r.Cliente,
-               r.Proyecto,
+               r.ClienteNombre  AS Cliente,
+               r.ProyectoNombre AS Proyecto,
                r.Modalidad,
                r.Lugar,
                r.Descripcion
@@ -36,8 +36,8 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
         JOIN   AspNetUsers u ON r.UserId = u.Id
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
           AND  (@UserId  IS NULL OR r.UserId  = @UserId)
-          AND  (@ClientePattern IS NULL OR r.Cliente LIKE @ClientePattern ESCAPE '\')
-          AND  (@ProyectoPattern IS NULL OR r.Proyecto LIKE @ProyectoPattern ESCAPE '\')
+          AND  (@ClientePattern IS NULL OR c.Nombre LIKE @ClientePattern ESCAPE '\')
+          AND  (@ProyectoPattern IS NULL OR p.Nombre LIKE @ProyectoPattern ESCAPE '\')
         ORDER  BY r.FechaRegistro DESC, Empleado
         OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY
         """;

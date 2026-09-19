@@ -15,13 +15,20 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
     private readonly IUser _user;
     private readonly IClock _clock;
     private readonly IBitacoraService _bitacora;
+    private readonly IVentanaRetroactividadService _ventana;
 
-    public CreateRegistroHorasCommandHandler(IApplicationDbContext context, IUser user, IClock clock, IBitacoraService bitacora)
+    public CreateRegistroHorasCommandHandler(
+        IApplicationDbContext context,
+        IUser user,
+        IClock clock,
+        IBitacoraService bitacora,
+        IVentanaRetroactividadService ventana)
     {
         _context  = context;
         _user     = user;
         _clock    = clock;
         _bitacora = bitacora;
+        _ventana  = ventana;
     }
 
     public async Task<RegistroHorasDto> Handle(CreateRegistroHorasCommand request, CancellationToken cancellationToken)
@@ -30,10 +37,8 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         if (string.IsNullOrWhiteSpace(userId))
             throw new UnauthorizedAccessException("No existe usuario autenticado para asociar el registro.");
 
-        // Validar ventana de retroactividad
-        var ventanaParam = await _context.ParametrosSistema
-            .FirstOrDefaultAsync(p => p.Clave == Domain.Constants.ParametrosSistema.VentanaRetroactividad, cancellationToken);
-        var windowDays = ventanaParam != null && int.TryParse(ventanaParam.Valor, out var d) ? d : 3;
+        // Ventana de retroactividad efectiva: puede tener excepcion por persona o por rol.
+        var windowDays = await _ventana.GetDiasAsync(userId, _user.Roles, cancellationToken);
 
         var today          = _clock.Today;
         var earliestAllowed = BusinessDayCalculator.GetEarliestAllowedDate(today, windowDays);
@@ -57,13 +62,22 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
 
         var esRetroactivo = request.FechaRegistro < today;
 
+        // Foto de los nombres al momento de registrar: el registro debe conservar como se
+        // llamaban cliente y proyecto aunque luego se renombren en el catalogo.
+        var nombres = await _context.Proyectos
+            .Where(p => p.Id == request.ProyectoId)
+            .Join(_context.Clientes, p => p.ClienteId, c => c.Id,
+                  (p, c) => new { Cliente = c.Nombre, Proyecto = p.Nombre })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new ApplicationValidationException([
+                new ValidationFailure(nameof(request.ProyectoId), "El proyecto seleccionado no existe.")]);
+
         // Intentar encontrar registro existente del mismo día y proyecto
         var existente = await _context.RegistrosHoras
             .FirstOrDefaultAsync(r =>
                 r.UserId == userId &&
                 r.FechaRegistro == request.FechaRegistro &&
-                r.Cliente == request.Cliente &&
-                r.Proyecto == request.Proyecto,
+                r.ProyectoId == request.ProyectoId,
                 cancellationToken);
 
         RegistroHorasEntity registro;
@@ -80,8 +94,9 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
                 request.HoraSalida2,
                 request.HoraEntrada3,
                 request.HoraSalida3,
-                request.Cliente,
-                request.Proyecto,
+                request.ProyectoId,
+                nombres.Cliente,
+                nombres.Proyecto,
                 request.Modalidad,
                 request.Recurso,
                 request.Descripcion,
@@ -92,20 +107,21 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         }
         else
         {
-            // Upsert: agregar los bloques horarios que faltaban
-            if (request.HoraEntrada1.HasValue && request.HoraSalida1.HasValue)
+            // Upsert: los horarios enviados se suman a la jornada del dia, cada uno en el
+            // primer bloque libre. La casilla que uso el formulario no importa: lo unico
+            // que se exige es que no se crucen con lo ya registrado.
+            foreach (var (entrada, salida) in new[]
             {
-                existente.SetBloque(1, request.HoraEntrada1.Value, request.HoraSalida1.Value);
-            }
-            if (request.HoraEntrada2.HasValue && request.HoraSalida2.HasValue)
+                (request.HoraEntrada1, request.HoraSalida1),
+                (request.HoraEntrada2, request.HoraSalida2),
+                (request.HoraEntrada3, request.HoraSalida3)
+            })
             {
-                existente.SetBloque(2, request.HoraEntrada2.Value, request.HoraSalida2.Value);
+                if (entrada.HasValue && salida.HasValue)
+                    existente.AgregarHorario(entrada.Value, salida.Value);
             }
-            if (request.HoraEntrada3.HasValue && request.HoraSalida3.HasValue)
-            {
-                existente.SetBloque(3, request.HoraEntrada3.Value, request.HoraSalida3.Value);
-            }
-            existente.UpdateMetadata(request.Cliente, request.Proyecto, request.Modalidad, request.Recurso, request.Lugar);
+
+            existente.UpdateMetadata(request.Modalidad, request.Recurso, request.Lugar);
             existente.UpdateDescripcion(request.Descripcion);
             registro = existente;
         }
@@ -120,8 +136,7 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
                 registro.TieneHorario1,
                 registro.TieneHorario2,
                 registro.TieneHorario3,
-                registro.Cliente,
-                registro.Proyecto
+                registro.ProyectoId
             },
             cancellationToken);
 
@@ -135,6 +150,7 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         r.HoraEntrada1, r.HoraSalida1,
         r.HoraEntrada2, r.HoraSalida2,
         r.HoraEntrada3, r.HoraSalida3,
-        r.Cliente, r.Proyecto, r.Modalidad, r.Recurso, r.Descripcion, r.Lugar,
+        r.ProyectoId, r.ClienteNombre, r.ProyectoNombre,
+        r.Modalidad, r.Recurso, r.Descripcion, r.Lugar,
         r.EsRetroactivo);
 }

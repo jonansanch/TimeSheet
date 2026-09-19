@@ -24,24 +24,24 @@ public class GetMisRegistrosQueryHandlerTests
     public async Task Handle_WhenUserHasRegistros_ShouldReturnOnlyTheirOwnRecords()
     {
         await using var context = CreateContext();
-        context.RegistrosHoras.Add(MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 10)));
-        context.RegistrosHoras.Add(MakeRegistro("user-2", "Otro", "Otro Proyecto", new DateOnly(2026, 5, 10)));
+        context.RegistrosHoras.Add(MakeRegistro("user-1", 1, new DateOnly(2026, 5, 10)));
+        context.RegistrosHoras.Add(MakeRegistro("user-2", 2, new DateOnly(2026, 5, 10)));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
         var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).Items.ToList();
 
         result.Should().HaveCount(1);
-        result[0].Cliente.Should().Be("KPG");
+        result[0].Cliente.Should().Be("Cliente 1");
     }
 
     [Fact]
     public async Task Handle_WhenUserHasMultipleRegistros_ShouldReturnOrderedByFechaDesc()
     {
         await using var context = CreateContext();
-        context.RegistrosHoras.Add(MakeRegistro("user-1", "A", "P1", new DateOnly(2026, 5, 10)));
-        context.RegistrosHoras.Add(MakeRegistro("user-1", "B", "P2", new DateOnly(2026, 5, 12)));
-        context.RegistrosHoras.Add(MakeRegistro("user-1", "C", "P3", new DateOnly(2026, 5, 11)));
+        context.RegistrosHoras.Add(MakeRegistro("user-1", 3, new DateOnly(2026, 5, 10)));
+        context.RegistrosHoras.Add(MakeRegistro("user-1", 4, new DateOnly(2026, 5, 12)));
+        context.RegistrosHoras.Add(MakeRegistro("user-1", 5, new DateOnly(2026, 5, 11)));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
@@ -57,7 +57,7 @@ public class GetMisRegistrosQueryHandlerTests
     public async Task Handle_WhenRegistroExists_ShouldMapAllRequiredFields()
     {
         await using var context = CreateContext();
-        context.RegistrosHoras.Add(MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 10)));
+        context.RegistrosHoras.Add(MakeRegistro("user-1", 1, new DateOnly(2026, 5, 10)));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
@@ -69,8 +69,9 @@ public class GetMisRegistrosQueryHandlerTests
         item.HoraSalida1.Should().Be(new TimeOnly(13, 0));
         item.HoraEntrada2.Should().BeNull();
         item.HoraSalida2.Should().BeNull();
-        item.Cliente.Should().Be("KPG");
-        item.Proyecto.Should().Be("Timesheet");
+        item.ProyectoId.Should().Be(1);
+        item.Cliente.Should().Be("Cliente 1");
+        item.Proyecto.Should().Be("Proyecto 1");
         item.Modalidad.Should().Be("Remoto");
         item.Descripcion.Should().Be("Desarrollo");
     }
@@ -80,19 +81,20 @@ public class GetMisRegistrosQueryHandlerTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        return new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options);
+        CatalogoDePrueba.SembrarAsync(context).GetAwaiter().GetResult();
+        return context;
     }
 
     private static RegistroHorasEntity MakeRegistro(
         string userId,
-        string cliente,
-        string proyecto,
+        int proyectoId,
         DateOnly fecha) =>
         new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
+            proyectoId, $"Cliente {proyectoId}", $"Proyecto {proyectoId}", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser
     {

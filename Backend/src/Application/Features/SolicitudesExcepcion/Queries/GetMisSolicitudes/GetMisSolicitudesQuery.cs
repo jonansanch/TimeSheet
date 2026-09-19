@@ -9,7 +9,8 @@ public record MiSolicitudDto(
     DateOnly FechaRegistro,
     string Justificacion,
     string Estado,
-    DateTimeOffset Created);
+    DateTimeOffset Created,
+    RegistroAdjuntoDto? Registro = null);
 
 [Authorize]
 public record GetMisSolicitudesQuery : IRequest<IEnumerable<MiSolicitudDto>>;
@@ -30,10 +31,14 @@ public class GetMisSolicitudesQueryHandler : IRequestHandler<GetMisSolicitudesQu
         if (string.IsNullOrWhiteSpace(_user.Id))
             return [];
 
-        return await _context.SolicitudesExcepcion
+        // Se materializa antes de proyectar: el resumen del adjunto se arma en memoria.
+        var solicitudes = await _context.SolicitudesExcepcion
             .Where(s => s.UserId == _user.Id)
             .OrderByDescending(s => s.Created)
-            .Select(s => new MiSolicitudDto(s.Id, s.FechaRegistro, s.Justificacion, s.Estado.ToString(), s.Created))
             .ToListAsync(cancellationToken);
+
+        return solicitudes.Select(s => new MiSolicitudDto(
+            s.Id, s.FechaRegistro, s.Justificacion, s.Estado.ToString(), s.Created,
+            RegistroAdjuntoDto.DesdeSolicitud(s)));
     }
 }

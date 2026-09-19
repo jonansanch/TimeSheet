@@ -19,7 +19,7 @@ public class CadenaAprobacionServiceTests
     {
         await using var context = await CrearEscenarioAsync();
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.SupervisorPuestoUserId.Should().Be(SupPuesto);
         cadena.SupervisorUsuarioUserId.Should().Be(JefeDirecto);
@@ -36,7 +36,7 @@ public class CadenaAprobacionServiceTests
         context.SupervisoresPuesto.Add(new SupervisorPuesto(puesto.Id, SupPuestoBanco, banco.Id));
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.SupervisorPuestoUserId.Should().Be(SupPuestoBanco);
     }
@@ -50,7 +50,7 @@ public class CadenaAprobacionServiceTests
         context.SupervisoresPuesto.Add(new SupervisorPuesto(puesto.Id, SupPuestoBanco, salud.Id));
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.SupervisorPuestoUserId.Should().Be(SupPuesto);
     }
@@ -63,7 +63,7 @@ public class CadenaAprobacionServiceTests
         regla.Desactivar();
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.SupervisorPuestoUserId.Should().BeNull();
     }
@@ -76,7 +76,7 @@ public class CadenaAprobacionServiceTests
         usuario.PuestoId = null;
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.SupervisorPuestoUserId.Should().BeNull();
         cadena.Niveles.Should().Equal(JefeDirecto, SupProyecto);
@@ -90,27 +90,10 @@ public class CadenaAprobacionServiceTests
         proyecto.AsignarSupervisor(null);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.SupervisorProyectoUserId.Should().BeNull();
         cadena.Niveles.Should().Equal(SupPuesto, JefeDirecto);
-    }
-
-    [Fact]
-    public async Task Resolver_WhenProjectNameExistsUnderAnotherClient_ShouldNotMatchIt()
-    {
-        // El nombre de proyecto solo es unico por cliente: buscarlo suelto traeria
-        // el supervisor equivocado.
-        await using var context = await CrearEscenarioAsync();
-        var salud = await context.Clientes.FirstAsync(c => c.Nombre == "Ministerio de Salud");
-        var homonimo = new Proyecto(salud.Id, "Core Bancario");
-        homonimo.AsignarSupervisor("user-otro-supervisor");
-        context.Proyectos.Add(homonimo);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
-
-        cadena.SupervisorProyectoUserId.Should().Be(SupProyecto);
     }
 
     [Fact]
@@ -121,7 +104,7 @@ public class CadenaAprobacionServiceTests
         usuario.SupervisorUserId = SupPuesto;   // jefe directo == supervisor del puesto
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var cadena = await Resolver(context, Empleado, "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, await IdCoreBancarioAsync(context));
 
         cadena.Niveles.Should().Equal(SupPuesto, SupProyecto);
     }
@@ -131,27 +114,30 @@ public class CadenaAprobacionServiceTests
     {
         await using var context = await CrearEscenarioAsync();
 
-        var cadena = await Resolver(context, "user-inexistente", "Banco Nacional", "Core Bancario");
+        var cadena = await Resolver(context, "user-inexistente", await IdCoreBancarioAsync(context));
 
         cadena.Niveles.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task Resolver_WhenClienteIsUnknown_ShouldStillResolveUserSupervisor()
+    public async Task Resolver_WhenProyectoDoesNotExist_ShouldStillResolveUserSupervisor()
     {
         await using var context = await CrearEscenarioAsync();
 
-        var cadena = await Resolver(context, Empleado, "Cliente Inventado", "Core Bancario");
+        var cadena = await Resolver(context, Empleado, 9999);
 
         cadena.SupervisorUsuarioUserId.Should().Be(JefeDirecto);
         cadena.SupervisorProyectoUserId.Should().BeNull();
-        // Sin cliente conocido solo aplica la regla general del puesto.
+        // Sin proyecto conocido no hay cliente, asi que solo aplica la regla general del puesto.
         cadena.SupervisorPuestoUserId.Should().Be(SupPuesto);
     }
 
+    private static Task<int> IdCoreBancarioAsync(ApplicationDbContext context) =>
+        context.Proyectos.Where(p => p.Nombre == "Core Bancario").Select(p => p.Id).FirstAsync();
+
     private static Task<Application.Common.Interfaces.CadenaAprobacionDto> Resolver(
-        ApplicationDbContext context, string userId, string cliente, string proyecto) =>
-        new CadenaAprobacionService(context).ResolverAsync(userId, cliente, proyecto);
+        ApplicationDbContext context, string userId, int proyectoId) =>
+        new CadenaAprobacionService(context).ResolverAsync(userId, proyectoId);
 
     private static async Task<ApplicationDbContext> CrearEscenarioAsync()
     {

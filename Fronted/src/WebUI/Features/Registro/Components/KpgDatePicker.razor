@@ -15,7 +15,6 @@
     [Parameter] public int WindowDays { get; set; } = 3;
     [Parameter] public DateTime? Date { get; set; }
     [Parameter] public EventCallback<(DateTime? Date, DateAvailability Availability)> OnDateSelected { get; set; }
-    [Parameter] public EventCallback<DateOnly> OnExceptionRequested { get; set; }
 
     private string GetDateClass(DateTime date)
     {
@@ -44,9 +43,9 @@
         var earliest = BusinessDayCalculator.GetEarliestAllowedDate(today, WindowDays);
         var availability = BusinessDayCalculator.GetAvailability(d, today, earliest);
 
-        if (availability == DateAvailability.OutOfWindow)
-            await OnExceptionRequested.InvokeAsync(d);
-        else
-            await OnDateSelected.InvokeAsync((value, availability));
+        // Una fecha fuera de ventana tambien se propaga: el empleado llena el registro
+        // completo y lo envia junto con la justificacion. Antes se abria el dialogo de
+        // inmediato y la fecha se perdia, asi que habia que teclear todo dos veces.
+        await OnDateSelected.InvokeAsync((value, availability));
     }
 }

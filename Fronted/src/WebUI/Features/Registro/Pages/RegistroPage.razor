@@ -93,10 +93,10 @@
         await CargarCalendarioAsync();
     }
 
-    private void HandleDiaSeleccionado(DateOnly fecha)
+    private async Task HandleDiaSeleccionado(DateOnly fecha)
     {
         _fechaSeleccionada = fecha;
-        _shiftForm.SetFecha(fecha, _diasConExcepcionAprobada);
+        await _shiftForm.SetFechaAsync(fecha, _diasConExcepcionAprobada);
     }
 
     private async Task HandleRegistroGuardado(DateOnly fecha)

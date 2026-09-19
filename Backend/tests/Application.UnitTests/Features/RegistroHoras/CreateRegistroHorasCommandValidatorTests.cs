@@ -13,8 +13,7 @@ public class CreateRegistroHorasCommandValidatorTests
     {
         var command = ValidCommand() with
         {
-            Cliente     = string.Empty,
-            Proyecto    = string.Empty,
+            ProyectoId  = 0,
             Modalidad   = string.Empty,
             Recurso     = string.Empty,
             Descripcion = string.Empty,
@@ -24,8 +23,7 @@ public class CreateRegistroHorasCommandValidatorTests
         var result = await _validator.ValidateAsync(command);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Cliente));
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Proyecto));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.ProyectoId));
         result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Modalidad));
         result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Recurso));
         result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Descripcion));
@@ -73,7 +71,7 @@ public class CreateRegistroHorasCommandValidatorTests
             null, null,
             new TimeOnly(14, 0), new TimeOnly(13, 0),
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
         var result = await _validator.ValidateAsync(command);
 
@@ -89,7 +87,7 @@ public class CreateRegistroHorasCommandValidatorTests
             null, null,
             null, null,
             new TimeOnly(20, 0), new TimeOnly(19, 0),
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
         var result = await _validator.ValidateAsync(command);
 
@@ -124,7 +122,7 @@ public class CreateRegistroHorasCommandValidatorTests
             new TimeOnly(8, 0),  new TimeOnly(12, 0),
             new TimeOnly(13, 0), new TimeOnly(17, 0),
             new TimeOnly(19, 0), new TimeOnly(21, 0),
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
         var result = await _validator.ValidateAsync(command);
 
@@ -139,7 +137,7 @@ public class CreateRegistroHorasCommandValidatorTests
             null, null,
             null, null,
             new TimeOnly(19, 0), new TimeOnly(21, 0),
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
         var result = await _validator.ValidateAsync(command);
 
@@ -155,8 +153,7 @@ public class CreateRegistroHorasCommandValidatorTests
             null,
             null,
             null,
-            "KPG",
-            "Timesheet",
+            1,
             "Remoto",
             "Consultor",
             "Desarrollo",

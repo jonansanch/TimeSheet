@@ -22,15 +22,34 @@ public class Sistema : IEndpointGroup
         };
 
         groupBuilder.MapGet("ventana-retroactividad", GetVentanaRetroactividad).RequireAuthorization(anyAuth);
+        groupBuilder.MapGet("ventana-retroactividad/global", GetVentanaRetroactividadGlobal).RequireAuthorization(adminOnly);
         groupBuilder.MapPut("ventana-retroactividad", UpdateVentanaRetroactividad).RequireAuthorization(adminOnly);
+        groupBuilder.MapGet("periodo-aprobacion", GetPeriodoAprobacion).RequireAuthorization(anyAuth);
         groupBuilder.MapGet("umbral-notificacion", GetUmbralNotificacion).RequireAuthorization(anyAuth);
         groupBuilder.MapPut("umbral-notificacion", UpdateUmbralNotificacion).RequireAuthorization(adminOnly);
     }
 
-    [EndpointSummary("Obtener ventana de registro retroactivo")]
+    [EndpointSummary("Obtener ventana de registro retroactivo del usuario autenticado")]
+    [EndpointDescription("Ya aplica las excepciones por persona o por rol; es la ventana real que el backend hara cumplir.")]
     private static async Task<IResult> GetVentanaRetroactividad(ISender sender, CancellationToken cancellationToken)
     {
         var ventana = await sender.Send(new GetVentanaRetroactividadQuery(), cancellationToken);
+        return Results.Ok(new { ventana });
+    }
+
+    [EndpointSummary("Obtener el periodo de aprobacion")]
+    [EndpointDescription("Corte con el que el supervisor revisa: Semanal o Quincenal.")]
+    private static async Task<IResult> GetPeriodoAprobacion(ISender sender, CancellationToken cancellationToken)
+    {
+        var periodo = await sender.Send(new GetPeriodoAprobacionQuery(), cancellationToken);
+        return Results.Ok(new { periodo });
+    }
+
+    [EndpointSummary("Obtener ventana de registro retroactivo global")]
+    [EndpointDescription("Valor base del sistema, sin excepciones aplicadas. Es el que edita la pantalla de parametros.")]
+    private static async Task<IResult> GetVentanaRetroactividadGlobal(ISender sender, CancellationToken cancellationToken)
+    {
+        var ventana = await sender.Send(new GetVentanaRetroactividadGlobalQuery(), cancellationToken);
         return Results.Ok(new { ventana });
     }
 

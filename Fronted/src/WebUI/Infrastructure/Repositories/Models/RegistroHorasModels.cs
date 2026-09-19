@@ -8,8 +8,7 @@ public record CreateRegistroHorasRequest(
     TimeOnly? HoraSalida2,
     TimeOnly? HoraEntrada3,
     TimeOnly? HoraSalida3,
-    string    Cliente,
-    string    Proyecto,
+    int       ProyectoId,
     string    Modalidad,
     string    Recurso,
     string    Descripcion,
@@ -25,6 +24,7 @@ public record RegistroHorasResponse(
     TimeOnly? HoraSalida2,
     TimeOnly? HoraEntrada3,
     TimeOnly? HoraSalida3,
+    int       ProyectoId,
     string    Cliente,
     string    Proyecto,
     string    Modalidad,
@@ -34,6 +34,7 @@ public record RegistroHorasResponse(
     bool      EsRetroactivo);
 
 public record RegistroRecienteResponse(
+    int    ProyectoId,
     string Cliente,
     string Proyecto,
     string Modalidad,
@@ -64,6 +65,7 @@ public record HistorialRegistroResponse(
     TimeOnly? HoraSalida2,
     TimeOnly? HoraEntrada3,
     TimeOnly? HoraSalida3,
+    int       ProyectoId,
     string    Cliente,
     string    Proyecto,
     string    Modalidad,

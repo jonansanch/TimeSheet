@@ -1,0 +1,68 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Apr_RejectTitle"]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @string.Format(L["Apr_RejectSubtitle"], NombreEmpleado, Fecha.ToString("dd/MM/yyyy"))
+            </MudText>
+
+            <MudAlert Severity="Severity.Info" Dense="true">@L["Apr_RejectGoesBack"]</MudAlert>
+
+            <MudTextField @ref="_campo"
+                          T="string"
+                          Label="@L["Apr_RejectReason"]"
+                          Variant="Variant.Outlined"
+                          Lines="4"
+                          Immediate="true"
+                          MaxLength="@MaxComentario"
+                          Counter="@MaxComentario"
+                          @bind-Value="_comentario"
+                          Required="true"
+                          RequiredError="@L["Apr_RejectReasonRequired"]"
+                          HelperText="@L["Apr_RejectReasonHint"]"
+                          aria-label="@L["Apr_RejectReason"]" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Error"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            @L["Apr_Reject"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string NombreEmpleado { get; set; } = string.Empty;
+    [Parameter] public DateOnly Fecha { get; set; }
+
+    private const int MaxComentario = 1000;
+
+    private MudTextField<string>? _campo;
+    private string _comentario = string.Empty;
+
+    /// <summary>El comentario es obligatorio: el empleado necesita saber qué corregir.</summary>
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_comentario) && _comentario.Length <= MaxComentario;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _campo is not null)
+            await _campo.FocusAsync();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(_comentario.Trim()));
+}

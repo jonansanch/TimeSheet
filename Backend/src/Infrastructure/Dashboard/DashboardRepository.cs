@@ -13,30 +13,35 @@ namespace KPG.Timesheet.Infrastructure.Dashboard;
 
 public class DashboardRepository(IDbConnection db) : IDashboardRepository
 {
+    // Los agregados agrupan por la clave del catalogo y etiquetan con el nombre ACTUAL:
+    // si un proyecto se renombra, sus horas siguen sumando en una sola fila. El nombre
+    // historico se conserva en el propio registro y se usa en reportes de detalle.
     private const string SqlGerencial = """
-        SELECT r.Cliente,
+        SELECT c.Nombre AS Cliente,
                ROUND((
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
+        JOIN   Proyectos p ON p.Id = r.ProyectoId
+        JOIN   Clientes  c ON c.Id = p.ClienteId
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
-          AND  r.Cliente <> ''
-        GROUP  BY r.Cliente
+        GROUP  BY c.Nombre
         ORDER  BY TotalHoras DESC;
 
-        SELECT r.Proyecto,
-               r.Cliente,
+        SELECT p.Nombre AS Proyecto,
+               c.Nombre AS Cliente,
                ROUND((
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                ) / 60.0, 1) AS TotalHoras
         FROM   RegistrosHoras r
+        JOIN   Proyectos p ON p.Id = r.ProyectoId
+        JOIN   Clientes  c ON c.Id = p.ClienteId
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
-          AND  r.Proyecto <> ''
-        GROUP  BY r.Proyecto, r.Cliente
+        GROUP  BY p.Nombre, c.Nombre
         ORDER  BY TotalHoras DESC;
         """;
 
@@ -87,13 +92,14 @@ public class DashboardRepository(IDbConnection db) : IDashboardRepository
             SELECT
                 COUNT(*)                                                              AS TotalRegistros,
                 ROUND((
-                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntrada1, HoraSalida1)), 0) +
-                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntrada2, HoraSalida2)), 0) +
-                    ISNULL(SUM(DATEDIFF(MINUTE, HoraEntrada3, HoraSalida3)), 0)
+                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada1, r.HoraSalida1)), 0) +
+                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada2, r.HoraSalida2)), 0) +
+                    ISNULL(SUM(DATEDIFF(MINUTE, r.HoraEntrada3, r.HoraSalida3)), 0)
                 ) / 60.0, 1)                                                         AS TotalHoras,
-                COUNT(DISTINCT CASE WHEN Cliente <> '' THEN Cliente END)              AS ClientesActivos
-            FROM   RegistrosHoras
-            WHERE  FechaRegistro BETWEEN @Desde AND @Hasta
+                COUNT(DISTINCT p.ClienteId)                                           AS ClientesActivos
+            FROM   RegistrosHoras r
+            JOIN   Proyectos p ON p.Id = r.ProyectoId
+            WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
         ),
         -- CTE 2: IDs de empleados y supervisores activos (conjunto pequeño, ≤ 30 filas).
         EmpleadosSup AS (

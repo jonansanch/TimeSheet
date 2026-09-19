@@ -27,18 +27,14 @@
         <KpgDatePicker Label="@L["Label_Date"]"
                        WindowDays="@_windowDays"
                        Date="@_fecha"
-                       OnDateSelected="HandleDateSelected"
-                       OnExceptionRequested="HandleExceptionRequested" />
+                       OnDateSelected="HandleDateSelected" />
 
-        @if (_dateAvailability == DateAvailability.OutOfWindow && _fecha.HasValue)
+        @if (EsFueraDeVentana)
         {
+            @* El registro ya no se bloquea: se llena completo y viaja con la justificacion. *@
             <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
                 @string.Format(L["Reg_ExceptionWarning"], _windowDays)
-                <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small"
-                           OnClick="@(() => HandleExceptionRequested(DateOnly.FromDateTime(_fecha!.Value)))"
-                           Class="ml-2">
-                    @L["Btn_RequestException"]
-                </MudButton>
+                <MudText Typo="Typo.body2" Class="mt-1">@L["Reg_ExceptionFillForm"]</MudText>
             </MudAlert>
         }
 
@@ -84,13 +80,32 @@
 
         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
 
+            @* Lo ya registrado de ese dia y proyecto: sin esto el usuario reescribia el
+               Horario 1 sin saber que estaba ocupado y solo veia un error generico. *@
+            @if (_registroExistente is not null)
+            {
+                <MudAlert Severity="@(TodosLosHorariosOcupados ? Severity.Warning : Severity.Info)"
+                          Dense="true" Class="mt-2">
+                    @(TodosLosHorariosOcupados ? L["Reg_DayFull"] : L["Reg_DayHasRecord"])
+                </MudAlert>
+            }
+
             @* ── Horarios 1 / 2 / 3 ────────────────────────── *@
             @for (var i = 1; i <= TotalHorarios; i++)
             {
                 var numero = i;
-                <MudText Typo="Typo.subtitle2" Class="@(numero == 1 ? "mb-1 mt-2" : "mb-1 mt-3")" Color="Color.Primary">
-                    @L[$"Reg_Shift{numero}"]
-                </MudText>
+                var ocupado = BloqueOcupado(numero);
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"
+                          Class="@(numero == 1 ? "mb-1 mt-2" : "mb-1 mt-3")">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">@L[$"Reg_Shift{numero}"]</MudText>
+                    @if (ocupado)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined"
+                                 Icon="@Icons.Material.Filled.Lock">
+                            @L["Reg_ShiftAlreadySaved"]
+                        </MudChip>
+                    }
+                </MudStack>
                 <MudGrid Spacing="2">
                     <MudItem xs="12" md="6">
                         <MudTextField T="string"
@@ -98,9 +113,10 @@
                                       Variant="Variant.Outlined"
                                       InputType="InputType.Time"
                                       step="@CuartoHoraStep"
-                                      Value="@TsToStr(_model.GetEntrada(numero))"
+                                      Disabled="@ocupado"
+                                      Value="@(ocupado ? TsToStr(EntradaGuardada(numero)) : TsToStr(_model.GetEntrada(numero)))"
                                       ValueChanged="@(v => _model.SetEntrada(numero, ParseTs(v)))"
-                                      Error="@NoEsCuartoDeHora(_model.GetEntrada(numero))"
+                                      Error="@(!ocupado && NoEsCuartoDeHora(_model.GetEntrada(numero)))"
                                       ErrorText="@L["Reg_QuarterHourOnly"]"
                                       aria-label="@($"{L["Label_Entry"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
                     </MudItem>
@@ -110,9 +126,10 @@
                                       Variant="Variant.Outlined"
                                       InputType="InputType.Time"
                                       step="@CuartoHoraStep"
-                                      Value="@TsToStr(_model.GetSalida(numero))"
+                                      Disabled="@ocupado"
+                                      Value="@(ocupado ? TsToStr(SalidaGuardada(numero)) : TsToStr(_model.GetSalida(numero)))"
                                       ValueChanged="@(v => _model.SetSalida(numero, ParseTs(v)))"
-                                      Error="@(IsInvalidBloque(numero) || NoEsCuartoDeHora(_model.GetSalida(numero)))"
+                                      Error="@(!ocupado && (IsInvalidBloque(numero) || NoEsCuartoDeHora(_model.GetSalida(numero))))"
                                       ErrorText="@(IsInvalidBloque(numero) ? L["Reg_ExitAfterEntry"] : L["Reg_QuarterHourOnly"])"
                                       aria-label="@($"{L["Label_Exit"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
                     </MudItem>
@@ -130,27 +147,38 @@
             <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">@L["Reg_DayData"]</MudText>
             <MudGrid Spacing="2">
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="string"
-                                     Label="@L["Label_Client"]"
-                                     Variant="Variant.Outlined"
-                                     Value="@_model.Cliente"
-                                     ValueChanged="@(v => HandleClienteChanged(v))"
-                                     SearchFunc="@SearchClientesAsync"
-                                     Required="true"
-                                     RequiredError="@L["Reg_ClientRequired"]"
-                                     CoerceValue="true"
-                                     Immediate="false" />
+                    <MudSelect T="int?"
+                               Label="@L["Label_Client"]"
+                               Variant="Variant.Outlined"
+                               Value="@_model.ClienteId"
+                               ValueChanged="HandleClienteChanged"
+                               Required="true"
+                               RequiredError="@L["Reg_ClientRequired"]"
+                               aria-label="@L["Label_Client"]">
+                        @foreach (var c in _catalogoClientes)
+                        {
+                            <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudAutocomplete T="string"
-                                     Label="@L["Label_Project"]"
-                                     Variant="Variant.Outlined"
-                                     @bind-Value="_model.Proyecto"
-                                     SearchFunc="@SearchProyectosAsync"
-                                     Required="true"
-                                     RequiredError="@L["Reg_ProjectRequired"]"
-                                     CoerceValue="true"
-                                     Immediate="false" />
+                    @* Sin cliente elegido no se ofrece ningun proyecto: antes se listaban
+                       los de todos los clientes y se podia armar una pareja invalida. *@
+                    <MudSelect T="int?"
+                               Label="@L["Label_Project"]"
+                               Variant="Variant.Outlined"
+                               Value="@_model.ProyectoId"
+                               ValueChanged="HandleProyectoChanged"
+                               Disabled="@(_model.ClienteId is null)"
+                               Required="true"
+                               RequiredError="@L["Reg_ProjectRequired"]"
+                               HelperText="@(_model.ClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
+                               aria-label="@L["Label_Project"]">
+                        @foreach (var p in ProyectosDelCliente)
+                        {
+                            <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudText id="modalidad-label" Typo="Typo.body2" Class="mb-1">@L["Label_Modality"] *</MudText>
@@ -210,7 +238,7 @@
             </MudGrid>
 
             <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
+                       Color="@(EsFueraDeVentana ? Color.Warning : Color.Primary)"
                        FullWidth="true"
                        Disabled="@_isSaving"
                        OnClick="SaveAsync"
@@ -222,7 +250,7 @@
                 }
                 else
                 {
-                    <span>@L["Reg_SaveShift"]</span>
+                    <span>@TextoBotonGuardar</span>
                 }
             </MudButton>
         </MudForm>
@@ -253,9 +281,8 @@
 
     private readonly DayFormModel _model = new();
 
-    private static readonly string[] ClientesFallback  = ["KPG", "Cliente interno", "Cliente externo"];
-    private static readonly string[] ProyectosFallback = ["Timesheet", "Soporte operativo", "Consultoría"];
-    private static readonly string[] ModalidadesFallback = ["Presencial", "Remoto", "Híbrido"];
+    // Solo se usa si el catalogo no responde; debe reflejar las modalidades vigentes.
+    private static readonly string[] ModalidadesFallback = ["Cliente", "Remoto"];
     private static readonly string[] RecursosFallback  = ["Consultor", "Analista", "Líder técnico"];
     private static readonly string[] LugaresFallback   = ["Presencial Oficina", "Presencial Viaje", "Presencial Cliente", "Remoto"];
 
@@ -312,66 +339,93 @@
             await VoiceInput.InitAsync();
     }
 
-    private void HandleSuggestionSelected(RegistroRecienteResponse s)
+    private async Task HandleSuggestionSelected(RegistroRecienteResponse s)
     {
-        _model.Cliente    = s.Cliente;
-        _model.Proyecto   = s.Proyecto;
+        // La sugerencia trae el ProyectoId, asi que tambien se resuelve su cliente.
+        _model.ProyectoId = s.ProyectoId;
+        _model.ClienteId  = _catalogoClientes
+            .FirstOrDefault(c => c.ProyectosActivos.Any(p => p.Id == s.ProyectoId))?.Id;
         _model.Modalidad  = s.Modalidad;
         _model.Recurso    = s.Recurso;
         _model.Lugar      = s.Lugar;
         _model.Descripcion = s.Descripcion;
+        await CargarRegistroExistenteAsync();
+    }
+
+    private IEnumerable<ProyectoActivoResponse> ProyectosDelCliente =>
+        _catalogoClientes.FirstOrDefault(c => c.Id == _model.ClienteId)?.ProyectosActivos
+        ?? Enumerable.Empty<ProyectoActivoResponse>();
+
+    /// <summary>Al cambiar de cliente se limpia el proyecto: ya no pertenece al nuevo cliente.</summary>
+    private void HandleClienteChanged(int? clienteId)
+    {
+        _model.ClienteId     = clienteId;
+        _model.ProyectoId    = null;
+        _registroExistente   = null;
         StateHasChanged();
     }
 
-    private Task<IEnumerable<string>> SearchClientesAsync(string text, CancellationToken token)
+    private async Task HandleProyectoChanged(int? proyectoId)
     {
-        var opciones = _sugerenciasRecientes
-            .Select(s => s.Cliente)
-            .Concat(_catalogoClientes.Count > 0
-                ? _catalogoClientes.Select(c => c.Nombre)
-                : ClientesFallback)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-
-        return Task.FromResult(string.IsNullOrWhiteSpace(text)
-            ? opciones
-            : opciones.Where(c => c.Contains(text, StringComparison.OrdinalIgnoreCase)));
+        _model.ProyectoId = proyectoId;
+        await CargarRegistroExistenteAsync();
     }
 
-    private Task<IEnumerable<string>> SearchProyectosAsync(string text, CancellationToken token)
+    // ── Registro ya existente de ese dia y proyecto ───────────────────────────
+
+    /// <summary>
+    /// El backend hace upsert: un dia y proyecto admiten hasta tres horarios, pero un
+    /// horario ya guardado no se puede pisar. Saber cual esta ocupado evita que el usuario
+    /// vuelva a llenar el Horario 1 y choque contra un error que no explica nada.
+    /// </summary>
+    private HistorialRegistroResponse? _registroExistente;
+
+    private bool BloqueOcupado(int numero) => EntradaGuardada(numero).HasValue;
+
+    private bool TodosLosHorariosOcupados =>
+        Enumerable.Range(1, TotalHorarios).All(BloqueOcupado);
+
+    private TimeSpan? EntradaGuardada(int numero) => _registroExistente is null ? null : numero switch
     {
-        var sugsCliente = string.IsNullOrWhiteSpace(_model.Cliente)
-            ? Enumerable.Empty<string>()
-            : _sugerenciasRecientes
-                .Where(s => s.Cliente.Equals(_model.Cliente, StringComparison.OrdinalIgnoreCase))
-                .Select(s => s.Proyecto)
-                .Distinct(StringComparer.OrdinalIgnoreCase);
+        1 => _registroExistente.HoraEntrada1?.ToTimeSpan(),
+        2 => _registroExistente.HoraEntrada2?.ToTimeSpan(),
+        3 => _registroExistente.HoraEntrada3?.ToTimeSpan(),
+        _ => null
+    };
 
-        IEnumerable<string> opciones;
-        if (!string.IsNullOrWhiteSpace(_model.Cliente))
-        {
-            var entrada = _catalogoClientes
-                .FirstOrDefault(c => c.Nombre.Equals(_model.Cliente, StringComparison.OrdinalIgnoreCase));
-            var base_ = entrada is not null
-                ? entrada.ProyectosActivos.AsEnumerable()
-                : sugsCliente.Any() ? sugsCliente : ProyectosFallback.AsEnumerable();
-            opciones = sugsCliente.Concat(base_).Distinct(StringComparer.OrdinalIgnoreCase);
-        }
-        else
-        {
-            opciones = _catalogoClientes.Count > 0
-                ? _catalogoClientes.SelectMany(c => c.ProyectosActivos).Distinct(StringComparer.OrdinalIgnoreCase)
-                : ProyectosFallback;
-        }
-
-        return Task.FromResult(string.IsNullOrWhiteSpace(text)
-            ? opciones
-            : opciones.Where(p => p.Contains(text, StringComparison.OrdinalIgnoreCase)));
-    }
-
-    private void HandleClienteChanged(string? value)
+    private TimeSpan? SalidaGuardada(int numero) => _registroExistente is null ? null : numero switch
     {
-        _model.Cliente  = value;
-        _model.Proyecto = null;
+        1 => _registroExistente.HoraSalida1?.ToTimeSpan(),
+        2 => _registroExistente.HoraSalida2?.ToTimeSpan(),
+        3 => _registroExistente.HoraSalida3?.ToTimeSpan(),
+        _ => null
+    };
+
+    private async Task CargarRegistroExistenteAsync()
+    {
+        _registroExistente = null;
+
+        if (_fecha is null || _model.ProyectoId is null)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        var fecha = DateOnly.FromDateTime(_fecha.Value);
+        try
+        {
+            // Se consulta solo ese dia; el filtro por proyecto se hace aqui porque el dia
+            // puede tener varios registros, uno por proyecto.
+            var historial = await RegistroHorasRepository.GetHistorialAsync(1, 50, fecha, fecha);
+            _registroExistente = historial.Items.FirstOrDefault(r => r.ProyectoId == _model.ProyectoId);
+
+            // Los horarios ya guardados no se reenvian: el backend los rechazaria.
+            if (_registroExistente is not null)
+                for (var n = 1; n <= TotalHorarios; n++)
+                    if (BloqueOcupado(n)) { _model.SetEntrada(n, null); _model.SetSalida(n, null); }
+        }
+        catch { /* si falla la consulta se sigue sin el aviso, el backend igual valida */ }
+
         StateHasChanged();
     }
 
@@ -432,7 +486,7 @@
         StateHasChanged();
     }
 
-    private void HandleDateSelected((DateTime? Date, DateAvailability Availability) selection)
+    private async Task HandleDateSelected((DateTime? Date, DateAvailability Availability) selection)
     {
         _fecha            = selection.Date;
         _dateAvailability = selection.Availability;
@@ -441,26 +495,66 @@
         _sinTurno         = false;
         _errorMessage     = null;
         _excepcionEnviada = false;
+        await CargarRegistroExistenteAsync();
     }
 
-    private async Task HandleExceptionRequested(DateOnly fecha)
-    {
-        var parameters = new DialogParameters<KpgExceptionDialog> { { x => x.Fecha, fecha } };
-        var options    = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog     = await DialogService.ShowAsync<KpgExceptionDialog>(string.Empty, parameters, options);
-        var result     = await dialog.Result;
+    private bool EsFueraDeVentana => _dateAvailability == DateAvailability.OutOfWindow && _fecha.HasValue;
 
-        if (result is { Canceled: false, Data: string justificacion } && !string.IsNullOrWhiteSpace(justificacion))
+    /// <summary>El boton dice lo que realmente va a pasar: guardar, agregar o pedir permiso.</summary>
+    private string TextoBotonGuardar =>
+        EsFueraDeVentana            ? L["Reg_SendWithRequest"].Value :
+        _registroExistente is not null ? L["Reg_AddShift"].Value
+                                    : L["Reg_SaveShift"].Value;
+
+    /// <summary>
+    /// Pide la justificacion y envia la solicitud con el registro adjunto. Al aprobarse,
+    /// el backend crea el registro solo: el empleado no vuelve a llenar el formulario.
+    /// </summary>
+    private async Task EnviarSolicitudConRegistroAsync(DateOnly fecha)
+    {
+        var parameters = new DialogParameters<KpgExceptionDialog>
         {
-            try
+            { x => x.Fecha, fecha },
+            { x => x.TraeRegistro, true }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog  = await DialogService.ShowAsync<KpgExceptionDialog>(string.Empty, parameters, options);
+        var result  = await dialog.Result;
+
+        if (result is not { Canceled: false, Data: string justificacion } || string.IsNullOrWhiteSpace(justificacion))
+            return;
+
+        _isSaving     = true;
+        _errorMessage = null;
+
+        try
+        {
+            var creada = await SolicitudExcepcionRepository.CreateAsync(
+                new CreateSolicitudExcepcionRequest(
+                    fecha, justificacion,
+                    _model.ProyectoId,
+                    ToTimeOnly(_model.HoraEntrada1), ToTimeOnly(_model.HoraSalida1),
+                    ToTimeOnly(_model.HoraEntrada2), ToTimeOnly(_model.HoraSalida2),
+                    ToTimeOnly(_model.HoraEntrada3), ToTimeOnly(_model.HoraSalida3),
+                    _model.Modalidad, _model.Recurso, _model.Lugar, _model.Descripcion));
+
+            if (creada is null)
             {
-                await SolicitudExcepcionRepository.CreateAsync(
-                    new CreateSolicitudExcepcionRequest(fecha, justificacion));
-                _excepcionEnviada = true;
-                _excepcionFecha   = fecha;
+                _errorMessage = L["Exc_ErrorSend"];
+                return;
             }
-            catch { _errorMessage = L["Exc_ErrorSend"]; }
+
+            _excepcionEnviada = true;
+            _excepcionFecha   = fecha;
+
+            // El registro quedo en manos del aprobador: limpiar evita reenviar lo mismo.
+            _model.Reset();
+            _touchedModalidad = false;
+            _form.ResetValidation();
         }
+        catch (UnauthorizedAccessException) { _errorMessage = L["Error_SessionExpired"]; }
+        catch { _errorMessage = L["Exc_ErrorSend"]; }
+        finally { _isSaving = false; }
     }
 
     private async Task SaveAsync()
@@ -469,13 +563,27 @@
         await _form.Validate();
         _sinTurno = false;
 
+        // Sin bloques libres no hay nada que enviar: el dia ya tiene sus tres horarios.
+        if (TodosLosHorariosOcupados) { _errorMessage = L["Reg_DayFull"]; return; }
+
         if (!TieneAlMenosUnTurno()) { _sinTurno = true; return; }
         if (HayBloqueInvalido()) return;
         if (HayMinutoInvalido()) return;
         if (!_form.IsValid) return;
+        if (_model.ProyectoId is null) return;
         if (string.IsNullOrWhiteSpace(_model.Modalidad)) return;
-        if (_dateAvailability == DateAvailability.OutOfWindow) return;
         if (!_fecha.HasValue) return;
+
+        // Fuera de ventana el registro no se guarda directo, pero tampoco se pierde:
+        // viaja adjunto a la solicitud, ya validado con las mismas reglas de arriba.
+        if (EsFueraDeVentana)
+        {
+            _guardado         = false;
+            _response         = null;
+            _excepcionEnviada = false;
+            await EnviarSolicitudConRegistroAsync(DateOnly.FromDateTime(_fecha.Value));
+            return;
+        }
 
         // El resultado del guardado anterior debe limpiarse ANTES de intentar el nuevo:
         // si no, un guardado fallido deja visible el banner de exito del anterior con el
@@ -495,24 +603,29 @@
                 ToTimeOnly(_model.HoraSalida2),
                 ToTimeOnly(_model.HoraEntrada3),
                 ToTimeOnly(_model.HoraSalida3),
-                _model.Cliente!,
-                _model.Proyecto!,
+                _model.ProyectoId!.Value,
                 _model.Modalidad!,
                 _model.Recurso!,
                 _model.Descripcion!,
                 _model.Lugar!);
 
-            _response = await RegistroHorasRepository.CreateAsync(request);
-            if (_response is null)
+            var (creado, error) = await RegistroHorasRepository.CreateAsync(request);
+            if (creado is null)
             {
-                _errorMessage = L["Reg_ErrorSave"];
+                // El motivo que da el backend ("el horario 1 ya fue registrado") le dice al
+                // usuario que hacer; el texto generico lo dejaba adivinando.
+                _errorMessage = error ?? L["Reg_ErrorSave"];
+                await CargarRegistroExistenteAsync();
                 return;
             }
+
+            _response = creado;
             _guardado = true;
 
             // Limpiar el formulario evita que el usuario reenvie el mismo dia/proyecto,
             // que el backend rechaza por inmutabilidad del bloque ya registrado.
             _model.Reset();
+            _registroExistente = null;
             _touchedModalidad = false;
             _form.ResetValidation();
 
@@ -527,7 +640,7 @@
     private static TimeOnly? ToTimeOnly(TimeSpan? value) =>
         value.HasValue ? TimeOnly.FromTimeSpan(value.Value) : null;
 
-    public void SetFecha(DateOnly fecha, List<DateOnly>? excepcionesAprobadas = null)
+    public async Task SetFechaAsync(DateOnly fecha, List<DateOnly>? excepcionesAprobadas = null)
     {
         _fecha    = fecha.ToDateTime(TimeOnly.MinValue);
         var today   = DateOnly.FromDateTime(DateTime.Today);
@@ -540,7 +653,7 @@
         _guardado         = false;
         _errorMessage     = null;
         _excepcionEnviada = false;
-        StateHasChanged();
+        await CargarRegistroExistenteAsync();
     }
 
     // ── Voz ───────────────────────────────────────────────────────────────────
@@ -576,6 +689,8 @@
         {
             var result = VoiceParser.Parse(transcript, BuildVoiceCatalog());
             ApplyVoiceResult(result);
+            // El dictado pudo cambiar fecha o proyecto: hay que releer lo ya registrado.
+            await CargarRegistroExistenteAsync();
         }
         catch { }
 
@@ -603,7 +718,7 @@
     private VoiceCatalog BuildVoiceCatalog() => new()
     {
         Clientes            = _catalogoClientes.Select(c => c.Nombre).ToList(),
-        ProyectosPorCliente = _catalogoClientes.ToDictionary(c => c.Nombre, c => c.ProyectosActivos),
+        ProyectosPorCliente = _catalogoClientes.ToDictionary(c => c.Nombre, c => c.ProyectosActivos.Select(p => p.Nombre).ToList()),
         Modalidades         = _modalidades,
         Recursos            = _recursos,
         Lugares             = _lugares
@@ -621,8 +736,17 @@
         if (r.HoraEntrada3.HasValue) _model.HoraEntrada3 = r.HoraEntrada3.Value.ToTimeSpan();
         if (r.HoraSalida3.HasValue)  _model.HoraSalida3  = r.HoraSalida3.Value.ToTimeSpan();
 
-        if (r.Cliente is not null)  HandleClienteChanged(r.Cliente);
-        if (r.Proyecto is not null) _model.Proyecto = r.Proyecto;
+        if (r.Cliente is not null)
+        {
+            var cliente = _catalogoClientes.FirstOrDefault(
+                c => c.Nombre.Equals(r.Cliente, StringComparison.OrdinalIgnoreCase));
+            HandleClienteChanged(cliente?.Id);
+        }
+        if (r.Proyecto is not null)
+        {
+            _model.ProyectoId = ProyectosDelCliente.FirstOrDefault(
+                p => p.Nombre.Equals(r.Proyecto, StringComparison.OrdinalIgnoreCase))?.Id;
+        }
         if (r.Modalidad is not null) { _model.Modalidad = r.Modalidad; _touchedModalidad = true; }
         if (r.Recurso is not null)  _model.Recurso     = r.Recurso;
         if (r.Lugar is not null)    _model.Lugar       = r.Lugar;
@@ -636,8 +760,8 @@
         var faltantes = new List<string>();
         if (_fecha is null)                                                        faltantes.Add("Fecha");
         if (!TieneAlMenosUnTurno())                                               faltantes.Add("Horas");
-        if (string.IsNullOrWhiteSpace(_model.Cliente))                            faltantes.Add("Cliente");
-        if (string.IsNullOrWhiteSpace(_model.Proyecto))                           faltantes.Add("Proyecto");
+        if (_model.ClienteId is null)                                             faltantes.Add("Cliente");
+        if (_model.ProyectoId is null)                                            faltantes.Add("Proyecto");
         if (string.IsNullOrWhiteSpace(_model.Modalidad))                          faltantes.Add("Modalidad");
         if (string.IsNullOrWhiteSpace(_model.Recurso))                            faltantes.Add("Recurso");
         if (string.IsNullOrWhiteSpace(_model.Lugar))                              faltantes.Add("Lugar");
@@ -659,8 +783,8 @@
         public TimeSpan? HoraSalida2  { get; set; }
         public TimeSpan? HoraEntrada3 { get; set; }
         public TimeSpan? HoraSalida3  { get; set; }
-        public string?   Cliente     { get; set; }
-        public string?   Proyecto    { get; set; }
+        public int?      ClienteId   { get; set; }
+        public int?      ProyectoId  { get; set; }
         public string?   Modalidad   { get; set; }
         public string?   Recurso     { get; set; }
         public string?   Descripcion { get; set; }
@@ -702,7 +826,8 @@
             HoraEntrada1 = HoraSalida1 = null;
             HoraEntrada2 = HoraSalida2 = null;
             HoraEntrada3 = HoraSalida3 = null;
-            Cliente = Proyecto = Modalidad = Recurso = Descripcion = Lugar = null;
+            ClienteId = ProyectoId = null;
+            Modalidad = Recurso = Descripcion = Lugar = null;
         }
     }
 }

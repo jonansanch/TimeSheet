@@ -108,6 +108,9 @@ public static class DependencyInjection
         builder.Services.AddScoped<INotificacionesRepository, NotificacionesRepository>();
         builder.Services.AddScoped<IReportesRepository, ReportesRepository>();
         builder.Services.AddScoped<ICadenaAprobacionService, KPG.Timesheet.Infrastructure.Organizacion.CadenaAprobacionService>();
+        builder.Services.AddScoped<IAprobacionesRepository, KPG.Timesheet.Infrastructure.Organizacion.AprobacionesRepository>();
+        builder.Services.AddScoped<INotificadorAprobacion, KPG.Timesheet.Infrastructure.Notificaciones.NotificadorAprobacion>();
+        builder.Services.AddScoped<ITimesheetImportParser, TimesheetImportParser>();
 
         // Registrar handlers de MediatR que viven en Infrastructure (export handlers: Excel/PDF)
         builder.Services.AddMediatR(cfg =>

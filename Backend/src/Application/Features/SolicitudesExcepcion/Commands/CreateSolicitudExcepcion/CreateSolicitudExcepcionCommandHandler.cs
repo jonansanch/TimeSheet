@@ -24,6 +24,29 @@ public class CreateSolicitudExcepcionCommandHandler : IRequestHandler<CreateSoli
             throw new UnauthorizedAccessException("No existe usuario autenticado para asociar la solicitud.");
 
         var solicitud = new SolicitudExcepcion(userId, request.FechaRegistro, request.Justificacion);
+
+        if (request.TraeRegistro)
+        {
+            // Se guarda la foto de los nombres igual que en un registro normal: si el
+            // proyecto se renombra antes de aprobar, el registro conservara como se llamaba.
+            var proyecto = await _context.Proyectos
+                .Where(p => p.Id == request.ProyectoId && p.Activo)
+                .Join(_context.Clientes.Where(c => c.Activo), p => p.ClienteId, c => c.Id,
+                      (p, c) => new { Cliente = c.Nombre, Proyecto = p.Nombre })
+                .FirstOrDefaultAsync(cancellationToken)
+                ?? throw new Common.Exceptions.ValidationException([
+                    new FluentValidation.Results.ValidationFailure(
+                        nameof(request.ProyectoId),
+                        "El proyecto seleccionado no existe, esta inactivo o su cliente esta inactivo.")]);
+
+            solicitud.AdjuntarRegistro(
+                request.ProyectoId!.Value, proyecto.Cliente, proyecto.Proyecto,
+                request.HoraEntrada1, request.HoraSalida1,
+                request.HoraEntrada2, request.HoraSalida2,
+                request.HoraEntrada3, request.HoraSalida3,
+                request.Modalidad!, request.Recurso!, request.Lugar!, request.Descripcion!);
+        }
+
         _context.SolicitudesExcepcion.Add(solicitud);
         await _bitacora.RegistrarAsync(
             TipoEventoBitacora.SolicitudExcepcionCreada,

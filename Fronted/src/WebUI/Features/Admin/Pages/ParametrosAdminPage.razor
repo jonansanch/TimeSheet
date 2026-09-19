@@ -1,6 +1,9 @@
 @page "/admin/parametros/configuracion"
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IParametroSistemaRepository SistemaRepo
+@inject IReglaVentanaRepository ReglasRepo
+@inject IUserAdminRepository UsuariosRepo
+@inject IDialogService DialogService
 @inject IStringLocalizer<SharedResource> L
 @inject ISnackbar Snackbar
 
@@ -50,6 +53,79 @@
                 </MudItem>
             </MudGrid>
         </MudPaper>
+
+        @* ── Excepciones a la ventana ──────────────────────────────────── *@
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Spacing="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                    <div>
+                        <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Params_WindowRulesTitle"]</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Params_WindowRulesSubtitle"]</MudText>
+                    </div>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               Disabled="_isSaving"
+                               OnClick="@(() => AbrirReglaAsync(null))">
+                        @L["Params_WindowRuleNew"]
+                    </MudButton>
+                </MudStack>
+
+                @if (_reglas.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">@L["Params_WindowRulesEmpty"]</MudAlert>
+                }
+                else
+                {
+                    <MudDataGrid T="ReglaVentanaResponse" Items="_reglas" Dense="true"
+                                 Filterable="false" SortMode="SortMode.None" RowsPerPage="50">
+                        <Columns>
+                            <TemplateColumn Title="@L["Params_WindowRuleApplies"]" Sortable="false">
+                                <CellTemplate>
+                                    @if (context.Item.Rol is not null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">
+                                            @L["Users_ColRole"]: @context.Item.Rol
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <span>@NombreUsuario(context.Item.UserId)</span>
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="@L["Params_WindowRuleDays"]" Sortable="false">
+                                <CellTemplate>@context.Item.Dias</CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
+                                <CellTemplate>
+                                    <KpgEstadoChip Activo="@context.Item.Activo" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
+                                <CellTemplate>
+                                    <MudTooltip Text="@(L["Btn_Edit"].Value)">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Color="Color.Primary" Size="Size.Small"
+                                                       aria-label="@L["Btn_Edit"]"
+                                                       Disabled="_isSaving"
+                                                       OnClick="@(() => AbrirReglaAsync(context.Item))" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="@(context.Item.Activo ? L["Btn_Deactivate"].Value : L["Btn_Activate"].Value)">
+                                        <MudIconButton Icon="@(context.Item.Activo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
+                                                       Color="@(context.Item.Activo ? Color.Warning : Color.Success)"
+                                                       Size="Size.Small"
+                                                       aria-label="@(context.Item.Activo ? L["Btn_Deactivate"] : L["Btn_Activate"])"
+                                                       Disabled="_isSaving"
+                                                       OnClick="@(() => ToggleReglaAsync(context.Item))" />
+                                    </MudTooltip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                }
+            </MudStack>
+        </MudPaper>
     }
 </MudStack>
 
@@ -65,16 +141,23 @@
     private bool _isSaving;
     private int  _ventana = 3;
     private int  _umbral  = 3;
+    private List<ReglaVentanaResponse> _reglas = [];
+    private List<UserAdminResponse> _usuarios = [];
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var vTask = SistemaRepo.GetVentanaRetroactividadAsync();
+            // El valor GLOBAL, no el efectivo del admin: es el que esta pantalla edita.
+            var vTask = SistemaRepo.GetVentanaRetroactividadGlobalAsync();
             var uTask = SistemaRepo.GetUmbralNotificacionAsync();
-            await Task.WhenAll(vTask, uTask);
-            _ventana = await vTask;
-            _umbral  = await uTask;
+            var rTask = ReglasRepo.GetAllAsync();
+            var usTask = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
+            await Task.WhenAll(vTask, uTask, rTask, usTask);
+            _ventana  = await vTask;
+            _umbral   = await uTask;
+            _reglas   = await rTask;
+            _usuarios = (await usTask).Items;
         }
         catch { Snackbar.Add(L["Params_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
@@ -91,6 +174,58 @@
                 Snackbar.Add(errV ?? errU ?? L["Params_ErrorSave"].Value, Severity.Error);
             else
                 Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
+        }
+        finally { _isSaving = false; }
+    }
+
+    private string NombreUsuario(string? userId) =>
+        _usuarios.FirstOrDefault(u => u.Id == userId) is { } u
+            ? (u.NombreCompleto ?? u.Email)
+            : userId ?? "-";
+
+    private async Task AbrirReglaAsync(ReglaVentanaResponse? existente)
+    {
+        var parameters = new DialogParameters<KpgReglaVentanaDialog>
+        {
+            { x => x.Existente, existente },
+            { x => x.Usuarios, _usuarios },
+            { x => x.VentanaGlobal, _ventana }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialog = await DialogService.ShowAsync<KpgReglaVentanaDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not GuardarReglaVentanaRequest request)
+            return;
+
+        _isSaving = true;
+        try
+        {
+            var (ok, _, error) = existente is null
+                ? await ReglasRepo.CrearAsync(request)
+                : await ReglasRepo.ActualizarAsync(existente.Id, request);
+
+            if (ok)
+            {
+                _reglas = await ReglasRepo.GetAllAsync();
+                Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["Params_ErrorSave"].Value, Severity.Error);
+            }
+        }
+        finally { _isSaving = false; }
+    }
+
+    private async Task ToggleReglaAsync(ReglaVentanaResponse item)
+    {
+        _isSaving = true;
+        try
+        {
+            var (ok, _) = await ReglasRepo.ToggleAsync(item.Id);
+            if (ok) _reglas = await ReglasRepo.GetAllAsync();
+            else Snackbar.Add(L["Params_ErrorSave"].Value, Severity.Error);
         }
         finally { _isSaving = false; }
     }

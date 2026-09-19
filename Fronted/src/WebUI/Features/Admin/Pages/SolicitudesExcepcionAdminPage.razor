@@ -55,6 +55,34 @@
                         </CellTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.Justificacion" Title="@L["Exc_ColJustification"]" Sortable="false" />
+                    <TemplateColumn Title="@L["Exc_ColRecord"]" Sortable="false">
+                        <CellTemplate>
+                            @* Aprobar ya no es solo autorizar la fecha: crea este registro. *@
+                            @if (context.Item.Registro is { } reg)
+                            {
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined"
+                                                 Icon="@Icons.Material.Filled.AttachFile">
+                                            @KpgFormat.Horas(reg.TotalHoras) h
+                                        </MudChip>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <div style="text-align:left;max-width:320px;">
+                                            <div><b>@reg.Cliente</b> — @reg.Proyecto</div>
+                                            <div>@reg.Horario</div>
+                                            <div>@reg.Modalidad · @reg.Recurso · @reg.Lugar</div>
+                                            <div>@reg.Descripcion</div>
+                                        </div>
+                                    </TooltipContent>
+                                </MudTooltip>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="@L["Exc_ColStatus"]" Sortable="false">
                         <CellTemplate>
                             <MudChip T="string"
@@ -134,6 +162,12 @@
     private async Task ConfirmarAprobarAsync(SolicitudExcepcionAdminResponse item)
     {
         _msgBoxContent = string.Format(L["Exc_ApproveConfirm"], item.SolicitanteEmail, item.FechaRegistro.ToString("dd/MM/yyyy"));
+
+        // Con registro adjunto la aprobacion lo crea: conviene decirlo antes de confirmar.
+        if (item.Registro is { } reg)
+            _msgBoxContent += " " + string.Format(
+                L["Exc_ApproveCreatesRecord"], reg.Proyecto, KpgFormat.Horas(reg.TotalHoras));
+
         _msgBoxColor = Color.Success;
         StateHasChanged();
 

@@ -2,6 +2,8 @@ using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateUmbralNotificaci
 using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateVentanaRetroactividad;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetUmbralNotificacion;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetVentanaRetroactividad;
+using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +12,18 @@ namespace KPG.Timesheet.Infrastructure.IntegrationTests.Sistema;
 
 public class SistemaParametrosTests
 {
+    /// <summary>Servicio real: la resolucion de la ventana forma parte de lo que se prueba.</summary>
+    private static VentanaRetroactividadService Ventana(ApplicationDbContext context) =>
+        new(context, new ParametrosSistemaService(context));
+
+    /// <summary>Sin usuario autenticado la ventana efectiva es la global.</summary>
+    private sealed class TestUser(string? id) : IUser
+    {
+        public string? Id => id;
+        public string? Email => null;
+        public List<string>? Roles => [];
+    }
+
     // -------------------------------------------------------------------
     // GetVentanaRetroactividadQueryHandler
     // -------------------------------------------------------------------
@@ -24,7 +38,7 @@ public class SistemaParametrosTests
             Valor = "5"
         });
         await context.SaveChangesAsync(CancellationToken.None);
-        var handler = new GetVentanaRetroactividadQueryHandler(context);
+        var handler = new GetVentanaRetroactividadQueryHandler(Ventana(context), new TestUser(null));
 
         var resultado = await handler.Handle(new GetVentanaRetroactividadQuery(), CancellationToken.None);
 
@@ -35,7 +49,7 @@ public class SistemaParametrosTests
     public async Task GetVentanaRetroactividad_SinParametro_ReturnsDefault3()
     {
         await using var context = CreateContext();
-        var handler = new GetVentanaRetroactividadQueryHandler(context);
+        var handler = new GetVentanaRetroactividadQueryHandler(Ventana(context), new TestUser(null));
 
         var resultado = await handler.Handle(new GetVentanaRetroactividadQuery(), CancellationToken.None);
 

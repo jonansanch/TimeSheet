@@ -32,6 +32,8 @@ public class GetMisRegistrosQueryHandler : IRequestHandler<GetMisRegistrosQuery,
 
         var totalCount = await baseQuery.CountAsync(cancellationToken);
 
+        // Se muestran los nombres guardados en el registro (foto del momento), no los
+        // actuales del catalogo: el historial debe reflejar como se llamaban entonces.
         var items = await baseQuery
             .OrderByDescending(r => r.FechaRegistro)
             .Skip(skip)
@@ -45,8 +47,9 @@ public class GetMisRegistrosQueryHandler : IRequestHandler<GetMisRegistrosQuery,
                 r.HoraSalida2,
                 r.HoraEntrada3,
                 r.HoraSalida3,
-                r.Cliente,
-                r.Proyecto,
+                r.ProyectoId,
+                r.ClienteNombre,
+                r.ProyectoNombre,
                 r.Modalidad,
                 r.Recurso,
                 r.Descripcion))

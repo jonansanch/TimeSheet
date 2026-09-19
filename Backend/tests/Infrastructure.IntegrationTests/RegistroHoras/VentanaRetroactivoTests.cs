@@ -1,5 +1,6 @@
 using FluentValidation.Results;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +71,7 @@ public class VentanaRetroactivoTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var context = new ApplicationDbContext(options);
+        CatalogoDePrueba.SembrarAsync(context).GetAwaiter().GetResult();
         context.ParametrosSistema.Add(new KPG.Timesheet.Domain.Entities.ParametroSistema
         {
             Clave = KPG.Timesheet.Domain.Constants.ParametrosSistema.VentanaRetroactividad,
@@ -80,14 +82,21 @@ public class VentanaRetroactivoTests
     }
 
     private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context, DateOnly today) =>
-        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora());
+        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora(), VentanaService(context));
 
     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
         new(fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
+
+    /// <summary>
+    /// Servicio real, no un doble: la ventana efectiva depende del parametro global y de
+    /// las reglas por persona o rol, y eso es parte de lo que estos tests ejercitan.
+    /// </summary>
+    private static VentanaRetroactividadService VentanaService(ApplicationDbContext context) =>
+        new(context, new ParametrosSistemaService(context));
 
     private sealed class TestUser : IUser
     {

@@ -7,4 +7,5 @@ public record SolicitudExcepcionAdminDto(
     DateOnly FechaRegistro,
     string Justificacion,
     string Estado,
-    DateTimeOffset Created);
+    DateTimeOffset Created,
+    RegistroAdjuntoDto? Registro = null);

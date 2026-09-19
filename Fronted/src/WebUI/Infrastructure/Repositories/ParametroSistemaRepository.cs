@@ -32,6 +32,36 @@ public class ParametroSistemaRepository : IParametroSistemaRepository
         return result?.Ventana ?? 3;
     }
 
+    public async Task<int> GetVentanaRetroactividadGlobalAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return 3;
+
+        using var request = CreateMessage(HttpMethod.Get, "api/sistema/ventana-retroactividad/global");
+        var response = await _http.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return 3;
+
+        var result = await response.Content.ReadFromJsonAsync<VentanaRetroactividadResponse>(
+            cancellationToken: cancellationToken);
+        return result?.Ventana ?? 3;
+    }
+
+    public async Task<string> GetPeriodoAprobacionAsync(CancellationToken ct = default)
+    {
+        const string porDefecto = "Semanal";
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken)) return porDefecto;
+
+        using var request = CreateMessage(HttpMethod.Get, "api/sistema/periodo-aprobacion");
+        var response = await _http.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode) return porDefecto;
+
+        var result = await response.Content.ReadFromJsonAsync<PeriodoAprobacionResponse>(cancellationToken: ct);
+        return string.IsNullOrWhiteSpace(result?.Periodo) ? porDefecto : result.Periodo;
+    }
+
+    private sealed record PeriodoAprobacionResponse(string Periodo);
+
     public async Task<(bool Ok, string? Error)> UpdateVentanaRetroactividadAsync(int dias, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))

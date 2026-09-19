@@ -21,6 +21,17 @@ public class ParametrosSistemaService(IApplicationDbContext context) : IParametr
             : valorPorDefecto;
     }
 
+    public async Task<string> GetTextoAsync(
+        string clave,
+        string valorPorDefecto,
+        CancellationToken cancellationToken = default)
+    {
+        var parametro = await context.ParametrosSistema
+            .FirstOrDefaultAsync(p => p.Clave == clave, cancellationToken);
+
+        return string.IsNullOrWhiteSpace(parametro?.Valor) ? valorPorDefecto : parametro.Valor.Trim();
+    }
+
     public async Task<int> GetMinutosDiaCompletoAsync(CancellationToken cancellationToken = default)
     {
         var horas = await GetIntAsync(

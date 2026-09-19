@@ -12,11 +12,13 @@ public class RegistroHorasImmutabilityInterceptor : SaveChangesInterceptor
     private static readonly HashSet<string> SiemprePermitidos =
     [
         nameof(RegistroHoras.Descripcion),
-        nameof(RegistroHoras.Cliente),
-        nameof(RegistroHoras.Proyecto),
         nameof(RegistroHoras.Modalidad),
         nameof(RegistroHoras.Recurso),
         nameof(RegistroHoras.Lugar),
+        // El avance por la cadena de aprobacion es justamente lo que debe poder cambiar.
+        nameof(RegistroHoras.Estado),
+        nameof(RegistroHoras.EstadoPrevioAlRechazo),
+        nameof(RegistroHoras.ComentarioRechazo),
         nameof(BaseAuditableEntity.LastModified),
         nameof(BaseAuditableEntity.LastModifiedBy)
     ];

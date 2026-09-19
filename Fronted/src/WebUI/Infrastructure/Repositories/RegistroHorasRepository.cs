@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
 using KPG.Timesheet.WebUI.Shared.Services;
 
@@ -16,7 +17,8 @@ public class RegistroHorasRepository : IRegistroHorasRepository
         _authState = authState;
     }
 
-    public async Task<RegistroHorasResponse?> CreateAsync(CreateRegistroHorasRequest request, CancellationToken cancellationToken = default)
+    public async Task<(RegistroHorasResponse? Registro, string? Error)> CreateAsync(
+        CreateRegistroHorasRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
             throw new UnauthorizedAccessException("No hay token de acceso activo.");
@@ -27,9 +29,33 @@ public class RegistroHorasRepository : IRegistroHorasRepository
 
         var response = await _http.SendAsync(httpRequest, cancellationToken);
         if (!response.IsSuccessStatusCode)
-            return null;
+            return (null, await ReadErrorAsync(response, cancellationToken));
 
-        return await response.Content.ReadFromJsonAsync<RegistroHorasResponse>(cancellationToken: cancellationToken);
+        var registro = await response.Content.ReadFromJsonAsync<RegistroHorasResponse>(cancellationToken: cancellationToken);
+        return (registro, null);
+    }
+
+    /// <summary>Extrae el detalle del ProblemDetails para mostrar el motivo real del rechazo.</summary>
+    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            var raw = await response.Content.ReadAsStringAsync(ct);
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            using var doc = JsonDocument.Parse(raw);
+            if (doc.RootElement.TryGetProperty("errors", out var errores))
+            {
+                var mensajes = errores.EnumerateObject()
+                    .SelectMany(p => p.Value.EnumerateArray().Select(v => v.GetString()))
+                    .Where(m => !string.IsNullOrWhiteSpace(m));
+                var texto = string.Join(" ", mensajes);
+                if (!string.IsNullOrWhiteSpace(texto)) return texto;
+            }
+
+            return doc.RootElement.TryGetProperty("detail", out var detail) ? detail.GetString() : null;
+        }
+        catch { return null; }
     }
 
     public async Task<List<RegistroRecienteResponse>> GetRecientesAsync(int top = 5, CancellationToken cancellationToken = default)

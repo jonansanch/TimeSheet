@@ -7,4 +7,5 @@ public record SolicitudExcepcionAdminResponse(
     DateOnly FechaRegistro,
     string Justificacion,
     string Estado,
-    DateTimeOffset Created);
+    DateTimeOffset Created,
+    RegistroAdjuntoResponse? Registro = null);

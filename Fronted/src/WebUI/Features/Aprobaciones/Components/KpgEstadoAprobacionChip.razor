@@ -1,0 +1,35 @@
+@inject IStringLocalizer<SharedResource> L
+
+@* El color indica de un vistazo si algo espera acción (ámbar), avanzó (azul),
+   terminó (verde) o volvió al empleado (rojo). *@
+<MudTooltip Text="@Detalle">
+    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Style="@Estilo">
+        @Texto
+    </MudChip>
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired] public EstadoAprobacion Estado { get; set; }
+    [Parameter] public int? NivelPendiente { get; set; }
+
+    private string Texto => Estado switch
+    {
+        EstadoAprobacion.Pendiente      => L["Apr_StatePending"].Value,
+        EstadoAprobacion.AprobadoNivel1 => L["Apr_StateLevel1"].Value,
+        EstadoAprobacion.AprobadoNivel2 => L["Apr_StateLevel2"].Value,
+        EstadoAprobacion.Aprobado       => L["Apr_StateApproved"].Value,
+        _                                => L["Apr_StateRejected"].Value
+    };
+
+    private string Detalle => NivelPendiente is { } nivel
+        ? string.Format(L["Apr_StateWaitingLevel"], nivel)
+        : Texto;
+
+    private string Estilo => Estado switch
+    {
+        EstadoAprobacion.Aprobado  => "background-color:#2E7D32;color:#fff;font-weight:600;",
+        EstadoAprobacion.Rechazado => "background-color:#C62828;color:#fff;font-weight:600;",
+        EstadoAprobacion.Pendiente => "background-color:#F9A825;color:#fff;font-weight:600;",
+        _                           => "background-color:#0D3B5E;color:#fff;font-weight:600;"
+    };
+}

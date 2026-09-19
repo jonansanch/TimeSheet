@@ -32,6 +32,7 @@ public class GetSolicitudesExcepcionQueryHandler
             s.Id, s.UserId,
             emails.GetValueOrDefault(s.UserId, s.UserId),
             s.FechaRegistro, s.Justificacion,
-            s.Estado.ToString(), s.Created));
+            s.Estado.ToString(), s.Created,
+            RegistroAdjuntoDto.DesdeSolicitud(s)));
     }
 }

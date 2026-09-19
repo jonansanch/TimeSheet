@@ -15,7 +15,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenRegistroExists_AndBelongsToUser_ShouldDeleteIt()
     {
         await using var context = CreateContext();
-        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 10));
+        var registro = MakeRegistro("user-1", 1, new DateOnly(2026, 5, 10));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
         var id = registro.Id;
@@ -41,7 +41,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenRegistroBelongsToOtherUser_ShouldThrowForbiddenAccessException()
     {
         await using var context = CreateContext();
-        var registro = MakeRegistro("user-2", "KPG", "Timesheet", new DateOnly(2026, 5, 10));
+        var registro = MakeRegistro("user-2", 1, new DateOnly(2026, 5, 10));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -56,7 +56,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenDeleted_ShouldNotAppearInSubsequentQuery()
     {
         await using var context = CreateContext();
-        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 10));
+        var registro = MakeRegistro("user-1", 1, new DateOnly(2026, 5, 10));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
         var id = registro.Id;
@@ -74,7 +74,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenAdminEliminaRegistroAjeno_Succeeds()
     {
         await using var context = CreateContext();
-        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 14));
+        var registro = MakeRegistro("user-1", 1, new DateOnly(2026, 5, 14));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -89,7 +89,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenSupervisorEliminaRegistroAjeno_Succeeds()
     {
         await using var context = CreateContext();
-        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 14));
+        var registro = MakeRegistro("user-1", 1, new DateOnly(2026, 5, 14));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -104,7 +104,7 @@ public class DeleteRegistroHorasCommandHandlerTests
     public async Task Handle_WhenEmpleadoEliminaRegistroAjeno_ThrowsForbiddenAccessException()
     {
         await using var context = CreateContext();
-        var registro = MakeRegistro("user-1", "KPG", "Timesheet", new DateOnly(2026, 5, 14));
+        var registro = MakeRegistro("user-1", 1, new DateOnly(2026, 5, 14));
         context.RegistrosHoras.Add(registro);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -119,16 +119,18 @@ public class DeleteRegistroHorasCommandHandlerTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        return new ApplicationDbContext(options);
+        var context = new ApplicationDbContext(options);
+        CatalogoDePrueba.SembrarAsync(context).GetAwaiter().GetResult();
+        return context;
     }
 
     private static RegistroHorasEntity MakeRegistro(
-        string userId, string cliente, string proyecto, DateOnly fecha) =>
+        string userId, int proyectoId, DateOnly fecha) =>
         new(userId, fecha,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            cliente, proyecto, "Remoto", "Consultor", "Desarrollo", "Bogota");
+            proyectoId, $"Cliente {proyectoId}", $"Proyecto {proyectoId}", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private sealed class TestUser : IUser
     {

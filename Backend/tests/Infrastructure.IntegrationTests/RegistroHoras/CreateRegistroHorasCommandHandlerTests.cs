@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Domain.Entities;
 using KPG.Timesheet.Infrastructure.Data;
@@ -14,7 +15,7 @@ public class CreateRegistroHorasCommandHandlerTests
     public async Task Handle_WhenValid_ShouldPersistRegistroForAuthenticatedUser()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 
@@ -30,7 +31,7 @@ public class CreateRegistroHorasCommandHandlerTests
     public async Task Handle_WhenSameDateSecondCall_ShouldUpsertAddingPMBlock()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
 
         // First call: AM block only
         await handler.Handle(ValidCommand(), CancellationToken.None);
@@ -41,7 +42,7 @@ public class CreateRegistroHorasCommandHandlerTests
             null, null,
             new TimeOnly(13, 0), new TimeOnly(17, 0),
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
         await handler.Handle(pmCommand, CancellationToken.None);
 
         // Must remain a single record with both blocks
@@ -61,13 +62,13 @@ public class CreateRegistroHorasCommandHandlerTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora());
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
         var command = new CreateRegistroHorasCommand(
             fechaFuera,
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -81,6 +82,7 @@ public class CreateRegistroHorasCommandHandlerTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var context = new ApplicationDbContext(options);
+        CatalogoDePrueba.SembrarAsync(context).GetAwaiter().GetResult();
         context.ParametrosSistema.Add(new KPG.Timesheet.Domain.Entities.ParametroSistema
         {
             Clave = KPG.Timesheet.Domain.Constants.ParametrosSistema.VentanaRetroactividad,
@@ -98,12 +100,18 @@ public class CreateRegistroHorasCommandHandlerTests
             null,
             null,
             null, null,
-            "KPG",
-            "Timesheet",
+            1,
             "Remoto",
             "Consultor",
             "Desarrollo",
             "Bogota");
+
+    /// <summary>
+    /// Servicio real, no un doble: la ventana efectiva depende del parametro global y de
+    /// las reglas por persona o rol, y eso es parte de lo que estos tests ejercitan.
+    /// </summary>
+    private static VentanaRetroactividadService VentanaService(ApplicationDbContext context) =>
+        new(context, new ParametrosSistemaService(context));
 
     private sealed class TestUser : IUser
     {

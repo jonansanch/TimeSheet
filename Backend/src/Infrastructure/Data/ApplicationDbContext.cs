@@ -23,6 +23,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<NotificacionEnviada> NotificacionesEnviadas => Set<NotificacionEnviada>();
     public DbSet<BitacoraAuditoria> BitacoraAuditoria => Set<BitacoraAuditoria>();
     public DbSet<SupervisorPuesto> SupervisoresPuesto => Set<SupervisorPuesto>();
+    public DbSet<ReglaVentanaRetroactividad> ReglasVentanaRetroactividad => Set<ReglaVentanaRetroactividad>();
+    public DbSet<AprobacionRegistro> AprobacionesRegistro => Set<AprobacionRegistro>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

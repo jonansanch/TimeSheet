@@ -85,6 +85,7 @@ public class ApplicationDbContextInitialiser
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.VentanaRetroactividad, "3");
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DiasUmbralNotificacion, "3");
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.HorasDiaCompleto, "8");
+        await EnsureParametroAsync(Domain.Constants.ParametrosSistema.PeriodoAprobacion, "Semanal");
 
         // ── Catálogos ────────────────────────────────────────────────────────
         await SeedCatalogosAsync();
@@ -188,6 +189,13 @@ public class ApplicationDbContextInitialiser
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var registros = new List<RegistroHoras>();
 
+        // El registro guarda ProyectoId: el seed resuelve los nombres una sola vez.
+        var proyectosPorNombre = await (
+            from p in _context.Proyectos
+            join c in _context.Clientes on p.ClienteId equals c.Id
+            select new { Clave = c.Nombre + "|" + p.Nombre, p.Id })
+            .ToDictionaryAsync(x => x.Clave, x => x.Id, CancellationToken.None);
+
         // Días hábiles de las últimas 9 semanas (Mon-Fri)
         var diasHabiles = Enumerable.Range(1, 63)
             .Select(i => hoy.AddDays(-i))
@@ -199,13 +207,13 @@ public class ApplicationDbContextInitialiser
         {
             registros.Add(Reg(emp1Id, dia,
                 new(8, 0), new(12, 0), new(13, 0), new(17, 0),
-                "Banco Nacional", "Core Bancario", "Cliente", "Desarrollador",
+                ProyectoId(proyectosPorNombre, "Banco Nacional", "Core Bancario"), "Cliente", "Desarrollador",
                 "Análisis y desarrollo de módulo de pagos.", "Presencial Oficina",
                 esRetroactivo: dia < hoy));
         }
         registros.Add(Reg(emp1Id, hoy,
             new(8, 0), new(12, 0), null, null,
-            "Banco Nacional", "Banca Digital", "Cliente", "Desarrollador",
+            ProyectoId(proyectosPorNombre, "Banco Nacional", "Banca Digital"), "Cliente", "Desarrollador",
             "Diseño de flujo de autenticación biométrica.", "Presencial Oficina"));
 
         // ── Ana García: AM siempre, PM en 3 de cada 4 semanas ───────────────
@@ -217,14 +225,14 @@ public class ApplicationDbContextInitialiser
                 new(8, 30), new(12, 30),
                 tienePM ? new TimeOnly(14, 0) : null,
                 tienePM ? new TimeOnly(18, 0) : null,
-                "Ministerio de Salud", "Sistema RIPS", "Cliente", "Analista",
+                ProyectoId(proyectosPorNombre, "Ministerio de Salud", "Sistema RIPS"), "Cliente", "Analista",
                 "Validación de reglas de facturación electrónica.", "Presencial Cliente",
                 esRetroactivo: dia < hoy));
             anaIdx++;
         }
         registros.Add(Reg(emp2Id, hoy,
             new(8, 30), new(12, 30), null, null,
-            "Ministerio de Salud", "Portal Ciudadano", "Cliente", "Analista",
+            ProyectoId(proyectosPorNombre, "Ministerio de Salud", "Portal Ciudadano"), "Cliente", "Analista",
             "Capacitación usuarios clave módulo de citas.", "Presencial Cliente"));
 
         // ── Carlos Ruiz: último registro hace 2 semanas (para notificación) ──
@@ -232,7 +240,7 @@ public class ApplicationDbContextInitialiser
         {
             registros.Add(Reg(emp3Id, dia,
                 new(7, 0), new(11, 0), new(13, 0), new(17, 0),
-                "Petrocol", "SAP FI", "Cliente", "Consultor SAP",
+                ProyectoId(proyectosPorNombre, "Petrocol", "SAP FI"), "Cliente", "Consultor SAP",
                 "Configuración de centros de costo proyecto offshore.", "Presencial Cliente",
                 esRetroactivo: true));
         }
@@ -242,13 +250,13 @@ public class ApplicationDbContextInitialiser
         {
             registros.Add(Reg(supervisorId, dia,
                 new(8, 0), new(12, 0), null, null,
-                "KPG Interno", "Gestión de Equipo", "Remoto", "Lider tecnico",
+                ProyectoId(proyectosPorNombre, "KPG Interno", "Gestión de Equipo"), "Remoto", "Lider tecnico",
                 "Revisión de avances y seguimiento del equipo.", "Remoto",
                 esRetroactivo: dia < hoy));
         }
         registros.Add(Reg(supervisorId, hoy,
             new(8, 0), new(12, 0), null, null,
-            "KPG Interno", "Gestión de Equipo", "Remoto", "Lider tecnico",
+            ProyectoId(proyectosPorNombre, "KPG Interno", "Gestión de Equipo"), "Remoto", "Lider tecnico",
             "Reunión de planificación semanal.", "Remoto"));
 
         // ── Admin: esta semana ────────────────────────────────────────────────
@@ -256,7 +264,7 @@ public class ApplicationDbContextInitialiser
         {
             registros.Add(Reg(adminId, dia,
                 new(9, 0), new(13, 0), null, null,
-                "KPG Interno", "Administración", "Remoto", "Consultor",
+                ProyectoId(proyectosPorNombre, "KPG Interno", "Administración"), "Remoto", "Consultor",
                 "Configuración y administración del sistema.", "Remoto",
                 esRetroactivo: dia < hoy));
         }
@@ -286,17 +294,26 @@ public class ApplicationDbContextInitialiser
         await _context.SaveChangesAsync(CancellationToken.None);
     }
 
+    /// <summary>Resuelve el proyecto del seed por (cliente, proyecto); falla claro si falta en el catalogo.</summary>
+    private static (int Id, string Cliente, string Proyecto) ProyectoId(
+        Dictionary<string, int> porNombre, string cliente, string proyecto) =>
+        porNombre.TryGetValue(cliente + "|" + proyecto, out var id)
+            ? (id, cliente, proyecto)
+            : throw new InvalidOperationException(
+                $"El seed referencia el proyecto '{proyecto}' del cliente '{cliente}', que no existe en el catalogo.");
+
     private static RegistroHoras Reg(
         string userId, DateOnly fecha,
         TimeOnly? entrada1, TimeOnly? salida1,
         TimeOnly? entrada2, TimeOnly? salida2,
-        string cliente, string proyecto, string modalidad, string recurso,
+        (int Id, string Cliente, string Proyecto) proyecto, string modalidad, string recurso,
         string descripcion, string lugar,
         bool esRetroactivo = false,
         TimeOnly? entrada3 = null, TimeOnly? salida3 = null) =>
         new(userId, fecha,
             entrada1, salida1, entrada2, salida2, entrada3, salida3,
-            cliente, proyecto, modalidad, recurso, descripcion, lugar, esRetroactivo);
+            proyecto.Id, proyecto.Cliente, proyecto.Proyecto,
+            modalidad, recurso, descripcion, lugar, esRetroactivo);
 
     // ── EnsureTimesheetTablesAsync (DDL idempotente) ──────────────────────────
 
@@ -356,13 +373,17 @@ public class ApplicationDbContextInitialiser
                     [HoraSalida2]  time NULL,
                     [HoraEntrada3] time NULL,
                     [HoraSalida3]  time NULL,
-                    [Cliente]      nvarchar(200) NOT NULL,
-                    [Proyecto]     nvarchar(200) NOT NULL,
+                    [ProyectoId]   int NOT NULL,
+                    [ClienteNombre]  nvarchar(200) NOT NULL,
+                    [ProyectoNombre] nvarchar(200) NOT NULL,
                     [Modalidad]    nvarchar(100) NOT NULL,
                     [Recurso]      nvarchar(100) NOT NULL,
                     [Descripcion]  nvarchar(1000) NOT NULL,
                     [Lugar]        nvarchar(200) NOT NULL,
                     [EsRetroactivo] bit NOT NULL DEFAULT 0,
+                    [Estado] int NOT NULL DEFAULT 0,
+                    [EstadoPrevioAlRechazo] int NULL,
+                    [ComentarioRechazo] nvarchar(1000) NULL,
                     [Created]      datetimeoffset NOT NULL,
                     [CreatedBy]    nvarchar(max) NULL,
                     [LastModified]  datetimeoffset NOT NULL,
@@ -370,8 +391,8 @@ public class ApplicationDbContextInitialiser
                     CONSTRAINT [PK_RegistrosHoras] PRIMARY KEY ([Id])
                 );
 
-                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto]
-                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [Cliente], [Proyecto]);
+                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_ProyectoId]
+                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [ProyectoId]);
             END
             """);
 
@@ -488,15 +509,22 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
+        // Borra los sobrantes que el UPDATE de arriba acaba de fusionar. Lleva EL MISMO guard
+        // que aquel porque es su continuacion: sin guard corria en cada arranque y, con el
+        // modelo actual (un registro por proyecto y dia), habria borrado todos los registros
+        // de un dia menos el primero — datos legitimos, no duplicados.
         await _context.Database.ExecuteSqlRawAsync("""
-            DELETE r
-            FROM [dbo].[RegistrosHoras] r
-            WHERE EXISTS (
-                SELECT 1 FROM [dbo].[RegistrosHoras] r2
-                WHERE r2.UserId = r.UserId
-                  AND r2.FechaRegistro = r.FechaRegistro
-                  AND r2.Id < r.Id
-            )
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'HoraEntradaAM') IS NOT NULL
+            BEGIN
+                DELETE r
+                FROM [dbo].[RegistrosHoras] r
+                WHERE EXISTS (
+                    SELECT 1 FROM [dbo].[RegistrosHoras] r2
+                    WHERE r2.UserId = r.UserId
+                      AND r2.FechaRegistro = r.FechaRegistro
+                      AND r2.Id < r.Id
+                )
+            END
             """);
 
         // Migracion registro unico diario — paso 6: crear indice unico por usuario/dia/proyecto
@@ -512,15 +540,22 @@ public class ApplicationDbContextInitialiser
             END
             """);
 
+        // Red de seguridad: normalmente el indice ya lo crearon la creacion de la tabla o la
+        // migracion a ProyectoId. Solo actua si falta de verdad.
+        // El guard pregunta por el MISMO nombre que crea: antes preguntaba por el nombre
+        // viejo (_Cliente_Proyecto) y creaba el nuevo, asi que en una BD ya migrada intentaba
+        // crearlo por segunda vez y el arranque reventaba.
+        // Tambien exige que exista ProyectoId: en una BD aun sin migrar la columna no esta.
         await _context.Database.ExecuteSqlRawAsync("""
-            IF NOT EXISTS (
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'ProyectoId') IS NOT NULL
+               AND NOT EXISTS (
                 SELECT 1 FROM sys.indexes
-                WHERE name = N'IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto'
+                WHERE name = N'IX_RegistrosHoras_UserId_FechaRegistro_ProyectoId'
                   AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
             )
             BEGIN
-                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto]
-                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [Cliente], [Proyecto]);
+                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_ProyectoId]
+                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [ProyectoId]);
             END
             """);
 
@@ -609,6 +644,34 @@ public class ApplicationDbContextInitialiser
             IF COL_LENGTH(N'[dbo].[Proyectos]', N'SupervisorUserId') IS NULL
             BEGIN
                 ALTER TABLE [dbo].[Proyectos] ADD [SupervisorUserId] nvarchar(450) NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[ReglasVentanaRetroactividad]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[ReglasVentanaRetroactividad] (
+                    [Id] int NOT NULL IDENTITY,
+                    [UserId] nvarchar(450) NULL,
+                    [Rol] nvarchar(100) NULL,
+                    [Dias] int NOT NULL,
+                    [Activo] bit NOT NULL DEFAULT 1,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_ReglasVentanaRetroactividad] PRIMARY KEY ([Id])
+                );
+
+                -- Filtrados: la columna que no aplica queda NULL, y un unique normal
+                -- trataria esos NULL como iguales dejando una sola regla en la tabla.
+                CREATE UNIQUE INDEX [IX_ReglasVentanaRetroactividad_UserId]
+                    ON [dbo].[ReglasVentanaRetroactividad] ([UserId])
+                    WHERE [UserId] IS NOT NULL;
+
+                CREATE UNIQUE INDEX [IX_ReglasVentanaRetroactividad_Rol]
+                    ON [dbo].[ReglasVentanaRetroactividad] ([Rol])
+                    WHERE [Rol] IS NOT NULL;
             END
             """);
 
@@ -729,6 +792,184 @@ public class ApplicationDbContextInitialiser
                     CONSTRAINT [PK_Modalidades] PRIMARY KEY ([Id])
                 );
                 CREATE UNIQUE INDEX [IX_Modalidades_Nombre] ON [dbo].[Modalidades] ([Nombre]);
+            END
+            """);
+
+        // ── Migracion a ProyectoId ───────────────────────────────────────────
+        // RegistrosHoras guardaba Cliente y Proyecto como texto suelto. Se sustituyen por
+        // la clave del proyecto, que ya lleva su cliente. Pasos separados para que el
+        // backfill ocurra con la columna creada y antes de volverla obligatoria.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'ProyectoId') IS NULL
+               AND COL_LENGTH(N'[dbo].[RegistrosHoras]', N'Proyecto') IS NOT NULL
+            BEGIN
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [ProyectoId] int NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'Proyecto') IS NOT NULL
+            BEGIN
+                EXEC('
+                    UPDATE r
+                    SET    r.ProyectoId = p.Id
+                    FROM   [dbo].[RegistrosHoras] r
+                    JOIN   [dbo].[Clientes]  c ON c.Nombre = r.Cliente
+                    JOIN   [dbo].[Proyectos] p ON p.Nombre = r.Proyecto AND p.ClienteId = c.Id
+                    WHERE  r.ProyectoId IS NULL
+                ');
+            END
+            """);
+
+        // Si algo no emparejo, el despliegue debe fallar aqui y no dejar la tabla a medias.
+        // El diagnostico previo (Docs/operations/diagnostico-parejas-cliente-proyecto.sql)
+        // debe dar 0 filas invalidas antes de desplegar.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'Proyecto') IS NOT NULL
+            BEGIN
+                DECLARE @huerfanos int;
+                EXEC sp_executesql
+                    N'SELECT @c = COUNT(*) FROM [dbo].[RegistrosHoras] WHERE ProyectoId IS NULL',
+                    N'@c int OUTPUT', @c = @huerfanos OUTPUT;
+
+                IF @huerfanos > 0
+                BEGIN
+                    DECLARE @msg nvarchar(400) = CONCAT(
+                        'Migracion a ProyectoId abortada: ', @huerfanos,
+                        ' registro(s) con pareja (Cliente, Proyecto) inexistente en el catalogo. ',
+                        'Ejecutar Docs/operations/diagnostico-parejas-cliente-proyecto.sql y corregirlos.');
+                    THROW 50001, @msg, 1;
+                END
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'Proyecto') IS NOT NULL
+            BEGIN
+                IF EXISTS (SELECT 1 FROM sys.indexes
+                           WHERE name = N'IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto'
+                             AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]'))
+                    DROP INDEX [IX_RegistrosHoras_UserId_FechaRegistro_Cliente_Proyecto] ON [dbo].[RegistrosHoras];
+
+                ALTER TABLE [dbo].[RegistrosHoras] ALTER COLUMN [ProyectoId] int NOT NULL;
+
+                -- Las columnas de texto NO se borran: se renombran y pasan a ser la foto
+                -- del nombre en el momento del registro. Asi el historico conserva como se
+                -- llamaba el cliente/proyecto aunque luego se renombren en el catalogo.
+                EXEC sp_rename N'[dbo].[RegistrosHoras].[Cliente]',  N'ClienteNombre',  'COLUMN';
+                EXEC sp_rename N'[dbo].[RegistrosHoras].[Proyecto]', N'ProyectoNombre', 'COLUMN';
+
+                ALTER TABLE [dbo].[RegistrosHoras]
+                    ADD CONSTRAINT [FK_RegistrosHoras_Proyectos] FOREIGN KEY ([ProyectoId])
+                        REFERENCES [dbo].[Proyectos] ([Id]);
+
+                CREATE UNIQUE INDEX [IX_RegistrosHoras_UserId_FechaRegistro_ProyectoId]
+                    ON [dbo].[RegistrosHoras] ([UserId], [FechaRegistro], [ProyectoId]);
+            END
+            """);
+
+        // Respaldo: una BD que ya hubiera corrido una version anterior de esta migracion
+        // pudo quedarse sin las columnas de texto. Se recrean desde el catalogo; el nombre
+        // sera el actual, no el historico, pero es lo mejor recuperable.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'ProyectoId') IS NOT NULL
+               AND COL_LENGTH(N'[dbo].[RegistrosHoras]', N'ClienteNombre') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [ClienteNombre]  nvarchar(200) NULL;
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [ProyectoNombre] nvarchar(200) NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'ClienteNombre') IS NOT NULL
+            BEGIN
+                EXEC('
+                    UPDATE r
+                    SET    r.ClienteNombre  = c.Nombre,
+                           r.ProyectoNombre = p.Nombre
+                    FROM   [dbo].[RegistrosHoras] r
+                    JOIN   [dbo].[Proyectos] p ON p.Id = r.ProyectoId
+                    JOIN   [dbo].[Clientes]  c ON c.Id = p.ClienteId
+                    WHERE  r.ClienteNombre IS NULL OR r.ProyectoNombre IS NULL
+                ');
+
+                IF NOT EXISTS (SELECT 1 FROM [dbo].[RegistrosHoras]
+                               WHERE ClienteNombre IS NULL OR ProyectoNombre IS NULL)
+                BEGIN
+                    ALTER TABLE [dbo].[RegistrosHoras] ALTER COLUMN [ClienteNombre]  nvarchar(200) NOT NULL;
+                    ALTER TABLE [dbo].[RegistrosHoras] ALTER COLUMN [ProyectoNombre] nvarchar(200) NOT NULL;
+                END
+            END
+            """);
+
+        // ── Registro adjunto a la solicitud de excepcion (Fase 2) ────────────
+        // Nullable: las solicitudes anteriores no llevan registro y siguen siendo validas.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[SolicitudesExcepcion]', N'ProyectoId') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[SolicitudesExcepcion] ADD
+                    [ProyectoId]     int NULL,
+                    [ClienteNombre]  nvarchar(200) NULL,
+                    [ProyectoNombre] nvarchar(200) NULL,
+                    [HoraEntrada1]   time NULL,
+                    [HoraSalida1]    time NULL,
+                    [HoraEntrada2]   time NULL,
+                    [HoraSalida2]    time NULL,
+                    [HoraEntrada3]   time NULL,
+                    [HoraSalida3]    time NULL,
+                    [Modalidad]      nvarchar(100) NULL,
+                    [Recurso]        nvarchar(100) NULL,
+                    [Lugar]          nvarchar(200) NULL,
+                    [Descripcion]    nvarchar(1000) NULL;
+            END
+            """);
+
+        // ── Cadena de aprobacion (Fase 5) ────────────────────────────────────
+        // Los registros previos quedan en Pendiente (0), que es el estado inicial correcto:
+        // nadie los ha revisado todavia.
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH(N'[dbo].[RegistrosHoras]', N'Estado') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[RegistrosHoras]
+                    ADD [Estado] int NOT NULL CONSTRAINT [DF_RegistrosHoras_Estado] DEFAULT(0);
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [EstadoPrevioAlRechazo] int NULL;
+                ALTER TABLE [dbo].[RegistrosHoras] ADD [ComentarioRechazo] nvarchar(1000) NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF NOT EXISTS (
+                SELECT 1 FROM sys.indexes
+                WHERE name = N'IX_RegistrosHoras_Estado_FechaRegistro'
+                  AND object_id = OBJECT_ID(N'[dbo].[RegistrosHoras]')
+            )
+            BEGIN
+                CREATE INDEX [IX_RegistrosHoras_Estado_FechaRegistro]
+                    ON [dbo].[RegistrosHoras] ([Estado], [FechaRegistro]);
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[AprobacionesRegistro]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[AprobacionesRegistro] (
+                    [Id] int NOT NULL IDENTITY,
+                    [RegistroHorasId] int NOT NULL,
+                    [Accion] nvarchar(50) NOT NULL,
+                    [Nivel] int NULL,
+                    [ActorUserId] nvarchar(450) NOT NULL,
+                    [Comentario] nvarchar(1000) NULL,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_AprobacionesRegistro] PRIMARY KEY ([Id]),
+                    CONSTRAINT [FK_AprobacionesRegistro_RegistrosHoras] FOREIGN KEY ([RegistroHorasId])
+                        REFERENCES [dbo].[RegistrosHoras] ([Id]) ON DELETE CASCADE
+                );
+
+                CREATE INDEX [IX_AprobacionesRegistro_RegistroHorasId]
+                    ON [dbo].[AprobacionesRegistro] ([RegistroHorasId]);
             END
             """);
 

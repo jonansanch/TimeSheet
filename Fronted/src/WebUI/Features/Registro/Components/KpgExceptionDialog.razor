@@ -16,6 +16,15 @@
         <MudText Typo="Typo.body1" Class="mb-4">
             @L["Exc_OutOfWindowMsg"]
         </MudText>
+
+        @if (TraeRegistro)
+        {
+            @* Que el empleado sepa que no tendra que volver a llenar el formulario. *@
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4"
+                      Icon="@Icons.Material.Filled.AttachFile">
+                @L["Exc_AttachedRecord"]
+            </MudAlert>
+        }
         <MudTextField @ref="_justificacionField"
                       T="string"
                       Label="@L["Label_Justification"]"
@@ -42,6 +51,9 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public DateOnly Fecha { get; set; }
+
+    /// <summary>True cuando la solicitud lleva adjunto el registro que el empleado ya lleno.</summary>
+    [Parameter] public bool TraeRegistro { get; set; }
 
     private MudTextField<string> _justificacionField = default!;
     private string _justificacion = string.Empty;

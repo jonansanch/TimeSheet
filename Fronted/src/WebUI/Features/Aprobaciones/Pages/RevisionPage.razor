@@ -1,0 +1,395 @@
+@page "/aprobaciones"
+@attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@using KPG.Timesheet.WebUI.Features.Aprobaciones.Components
+@inject IAprobacionRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+@inject IClienteRepository ClienteRepo
+@inject IParametroSistemaRepository ParametroRepo
+@inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L["Apr_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="3">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Apr_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Apr_Subtitle"]</MudText>
+    </div>
+
+    @* ── Navegación de periodo + filtros ──────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3">
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                <MudTooltip Text="@(L["Apr_PreviousPeriod"].Value)">
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                                   Disabled="_isLoading"
+                                   aria-label="@L["Apr_PreviousPeriod"]"
+                                   OnClick="@(() => DesplazarPeriodoAsync(-1))" />
+                </MudTooltip>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;min-width:210px;text-align:center;">
+                    @_desde.ToString("dd/MM/yyyy") – @_hasta.ToString("dd/MM/yyyy")
+                </MudText>
+                <MudTooltip Text="@(L["Apr_NextPeriod"].Value)">
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                                   Disabled="_isLoading"
+                                   aria-label="@L["Apr_NextPeriod"]"
+                                   OnClick="@(() => DesplazarPeriodoAsync(1))" />
+                </MudTooltip>
+
+                <MudButton Variant="Variant.Text" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Today"
+                           Disabled="_isLoading"
+                           OnClick="VolverAlPeriodoActualAsync">
+                    @L["Apr_CurrentPeriod"]
+                </MudButton>
+
+                <MudSpacer />
+
+                <MudSwitch T="bool" Value="_incluirRevisados" ValueChanged="OnIncluirRevisadosAsync"
+                           Color="Color.Primary" Label="@L["Apr_ShowReviewed"]" />
+            </MudStack>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect T="string" Label="@L["Label_Employee"]" Variant="Variant.Outlined"
+                               Margin="Margin.Dense" Clearable="true"
+                               Value="_filtroUserId" ValueChanged="OnFiltroUsuarioAsync"
+                               aria-label="@L["Label_Employee"]">
+                        @foreach (var u in _usuarios)
+                        {
+                            <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect T="int?" Label="@L["Label_Client"]" Variant="Variant.Outlined"
+                               Margin="Margin.Dense" Clearable="true"
+                               Value="_filtroClienteId" ValueChanged="OnFiltroClienteAsync"
+                               aria-label="@L["Label_Client"]">
+                        @foreach (var c in _clientes)
+                        {
+                            <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect T="int?" Label="@L["Label_Project"]" Variant="Variant.Outlined"
+                               Margin="Margin.Dense" Clearable="true"
+                               Value="_filtroProyectoId" ValueChanged="OnFiltroProyectoAsync"
+                               Disabled="@(_filtroClienteId is null)"
+                               HelperText="@(_filtroClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
+                               aria-label="@L["Label_Project"]">
+                        @foreach (var p in ProyectosDelCliente)
+                        {
+                            <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3" Class="d-flex align-center">
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
+                        @_respuesta.TotalRegistros @L["Rep_Records"]
+                    </MudChip>
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">
+                        @KpgFormat.Horas(_respuesta.TotalHoras, 1) h
+                    </MudChip>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </MudPaper>
+
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton Rows="6" />
+    }
+    else if (_respuesta.Dias.Count == 0)
+    {
+        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.DoneAll">
+            <MudText Typo="Typo.body1">@L["Apr_NothingPending"]</MudText>
+            <MudText Typo="Typo.body2">@L["Apr_NothingPendingHint"]</MudText>
+        </MudAlert>
+    }
+    else
+    {
+        @foreach (var dia in _respuesta.Dias)
+        {
+            <MudPaper Elevation="1" Class="pa-3">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" Size="Size.Small" />
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@dia.NombreEmpleado</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                @dia.Fecha.ToString("dddd dd/MM/yyyy")
+                            </MudText>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                                @KpgFormat.HorasMinutos(dia.TotalMinutos) h
+                            </MudChip>
+                        </MudStack>
+
+                        @{
+                            var accionables = dia.Registros.Where(EsAccionable).ToList();
+                        }
+                        @if (accionables.Count > 0)
+                        {
+                            <MudStack Row="true" Spacing="1">
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Check"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => AprobarDiaAsync(dia, accionables))">
+                                    @(accionables.Count == dia.Registros.Count
+                                        ? L["Apr_ApproveDay"].Value
+                                        : string.Format(L["Apr_ApproveMine"], accionables.Count))
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Close"
+                                           Disabled="_isProcesando"
+                                           OnClick="@(() => RechazarDiaAsync(dia, accionables))">
+                                    @L["Apr_Reject"]
+                                </MudButton>
+                            </MudStack>
+                        }
+                    </MudStack>
+
+                    <MudDivider />
+
+                    @foreach (var r in dia.Registros)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap" Class="pl-2">
+                            <KpgEstadoAprobacionChip Estado="@r.Estado" NivelPendiente="@r.NivelPendiente" />
+                            <MudText Typo="Typo.body2" Style="min-width:200px;">
+                                <b>@r.Cliente</b> — @r.Proyecto
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@r.Recurso · @r.Modalidad</MudText>
+                            <MudText Typo="Typo.caption">@KpgFormat.HorasMinutos(r.TotalMinutos) h</MudText>
+                            <MudSpacer />
+                            @if (!EsAccionable(r) && PuedeRevertir(r))
+                            {
+                                <MudTooltip Text="@(r.Estado == EstadoAprobacion.Rechazado
+                                                    ? L["Apr_UndoReject"].Value
+                                                    : L["Apr_UndoApprove"].Value)">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                                                   Size="Size.Small"
+                                                   Color="Color.Warning"
+                                                   Disabled="_isProcesando"
+                                                   aria-label="@L["Apr_UndoApprove"]"
+                                                   OnClick="@(() => RevertirAsync(r))" />
+                                </MudTooltip>
+                            }
+                        </MudStack>
+
+                        @if (!string.IsNullOrWhiteSpace(r.Descripcion))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="pl-2 mb-1">
+                                @r.Descripcion
+                            </MudText>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(r.ComentarioRechazo))
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="ml-2 mb-1">
+                                <b>@L["Apr_RejectReason"]:</b> @r.ComentarioRechazo
+                            </MudAlert>
+                        }
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Apr_Title"].Value, null, disabled: true)
+    ];
+
+    private PendientesAprobacionResponse _respuesta = new(default, default, 0, 0, []);
+    private List<UserAdminResponse> _usuarios = [];
+    private List<ClienteConProyectosResponse> _clientes = [];
+
+    private DateOnly _desde;
+    private DateOnly _hasta;
+    private string? _filtroUserId;
+    private int? _filtroClienteId;
+    private int? _filtroProyectoId;
+    private bool _incluirRevisados;
+    private bool _isLoading = true;
+    private bool _isProcesando;
+
+    /// <summary>7 o 14 según <c>PeriodoAprobacion</c>; se lee al iniciar.</summary>
+    private int _diasPorPeriodo = 7;
+
+    /// <summary>Ancho real del rango mostrado, que es lo que se desplaza al navegar.</summary>
+    private int DiasPeriodo => _hasta.DayNumber - _desde.DayNumber + 1;
+
+    private IEnumerable<ProyectoActivoResponse> ProyectosDelCliente =>
+        _clientes.FirstOrDefault(c => c.Id == _filtroClienteId)?.ProyectosActivos
+        ?? Enumerable.Empty<ProyectoActivoResponse>();
+
+    /// <summary>Solo se puede actuar sobre lo que está esperando a este revisor ahora mismo.</summary>
+    private static bool EsAccionable(RegistroPendienteResponse r) =>
+        r.NivelPendiente is not null && r.NivelPendiente == r.NivelDelRevisor;
+
+    /// <summary>
+    /// Revertir corresponde a quien actuó: un rechazo lo deshace quien rechazó, y una
+    /// aprobación quien aprobó ese nivel. El backend lo vuelve a comprobar.
+    /// </summary>
+    private static bool PuedeRevertir(RegistroPendienteResponse r) =>
+        r.Estado == EstadoAprobacion.Rechazado
+        || (int)r.Estado == r.NivelDelRevisor;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var usuarios = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
+            var clientes = ClienteRepo.GetCatalogoAsync();
+            var periodo  = ParametroRepo.GetPeriodoAprobacionAsync();
+            await Task.WhenAll(usuarios, clientes, periodo);
+            _usuarios = (await usuarios).Items;
+            _clientes = await clientes;
+            _diasPorPeriodo = string.Equals(await periodo, "Quincenal", StringComparison.OrdinalIgnoreCase) ? 14 : 7;
+        }
+        catch { /* los filtros quedan vacíos; la revisión sigue siendo usable */ }
+
+        // El periodo arranca en el lunes de la semana en curso; si el corte es quincenal
+        // abarca dos semanas desde ahi.
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        _desde = hoy.AddDays(-(((int)hoy.DayOfWeek + 6) % 7));
+        _hasta = _desde.AddDays(_diasPorPeriodo - 1);
+
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _respuesta = await Repo.GetPendientesAsync(
+                _desde, _hasta, _filtroUserId, _filtroClienteId, _filtroProyectoId, _incluirRevisados);
+        }
+        catch { Snackbar.Add(L["Apr_ErrorLoad"].Value, Severity.Error); }
+        finally { _isLoading = false; }
+    }
+
+    private async Task DesplazarPeriodoAsync(int direccion)
+    {
+        var dias = DiasPeriodo * direccion;
+        _desde = _desde.AddDays(dias);
+        _hasta = _hasta.AddDays(dias);
+        await CargarAsync();
+    }
+
+    private async Task VolverAlPeriodoActualAsync()
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        _desde = hoy.AddDays(-(((int)hoy.DayOfWeek + 6) % 7));
+        _hasta = _desde.AddDays(_diasPorPeriodo - 1);
+        await CargarAsync();
+    }
+
+    private async Task OnIncluirRevisadosAsync(bool valor)
+    {
+        _incluirRevisados = valor;
+        await CargarAsync();
+    }
+
+    private async Task OnFiltroUsuarioAsync(string? valor)
+    {
+        _filtroUserId = valor;
+        await CargarAsync();
+    }
+
+    private async Task OnFiltroClienteAsync(int? valor)
+    {
+        _filtroClienteId = valor;
+        _filtroProyectoId = null;   // el proyecto anterior ya no pertenece a este cliente
+        await CargarAsync();
+    }
+
+    private async Task OnFiltroProyectoAsync(int? valor)
+    {
+        _filtroProyectoId = valor;
+        await CargarAsync();
+    }
+
+    /// <summary>
+    /// Aprueba solo los registros del día que le corresponden a este revisor: un día
+    /// puede repartirse entre proyectos con supervisores distintos.
+    /// </summary>
+    private async Task AprobarDiaAsync(DiaPendienteResponse dia, List<RegistroPendienteResponse> accionables)
+    {
+        _isProcesando = true;
+        try
+        {
+            var errores = new List<string>();
+            foreach (var r in accionables)
+            {
+                var (ok, _, error) = await Repo.AprobarAsync(r.Id);
+                if (!ok) errores.Add(error ?? L["Apr_ErrorAction"].Value);
+            }
+
+            if (errores.Count == 0)
+                Snackbar.Add(string.Format(L["Apr_ApprovedOk"], dia.NombreEmpleado), Severity.Success);
+            else
+                Snackbar.Add(errores[0], Severity.Error);
+
+            await CargarAsync();
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task RechazarDiaAsync(DiaPendienteResponse dia, List<RegistroPendienteResponse> accionables)
+    {
+        var parameters = new DialogParameters<KpgRechazoDialog>
+        {
+            { x => x.NombreEmpleado, dia.NombreEmpleado },
+            { x => x.Fecha, dia.Fecha }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialog = await DialogService.ShowAsync<KpgRechazoDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not string comentario)
+            return;
+
+        _isProcesando = true;
+        try
+        {
+            var errores = new List<string>();
+            foreach (var r in accionables)
+            {
+                var (ok, _, error) = await Repo.RechazarAsync(r.Id, comentario);
+                if (!ok) errores.Add(error ?? L["Apr_ErrorAction"].Value);
+            }
+
+            if (errores.Count == 0)
+                Snackbar.Add(L["Apr_RejectedOk"].Value, Severity.Success);
+            else
+                Snackbar.Add(errores[0], Severity.Error);
+
+            await CargarAsync();
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task RevertirAsync(RegistroPendienteResponse registro)
+    {
+        _isProcesando = true;
+        try
+        {
+            var (ok, _, error) = registro.Estado == EstadoAprobacion.Rechazado
+                ? await Repo.RevertirRechazoAsync(registro.Id)
+                : await Repo.RevertirAprobacionAsync(registro.Id);
+
+            if (ok) Snackbar.Add(L["Apr_UndoneOk"].Value, Severity.Success);
+            else    Snackbar.Add(error ?? L["Apr_ErrorAction"].Value, Severity.Error);
+
+            await CargarAsync();
+        }
+        finally { _isProcesando = false; }
+    }
+}

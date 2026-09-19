@@ -8,8 +8,7 @@ public interface ICadenaAprobacionService
 {
     Task<CadenaAprobacionDto> ResolverAsync(
         string userId,
-        string cliente,
-        string proyecto,
+        int proyectoId,
         CancellationToken cancellationToken = default);
 }
 

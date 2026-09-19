@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
+using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistrosRango;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.UpdateDescripcionRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
@@ -22,12 +23,14 @@ public class RegistroHoras : IEndpointGroup
             Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}"
         };
 
+        // El rol habilita la pantalla; que el registro sea suyo lo comprueba el handler.
         var supervisorAdmin = new AuthorizeAttribute
         {
-            Roles = $"{Roles.Supervisor},{Roles.Admin}"
+            Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}"
         };
 
         groupBuilder.MapPost(Create).RequireAuthorization(auth);
+        groupBuilder.MapPost("rango", CreateRango).RequireAuthorization(auth);
         groupBuilder.MapGet("", GetMisRegistros).RequireAuthorization(auth);
         groupBuilder.MapGet("recientes", GetRecientes).RequireAuthorization(auth);
         groupBuilder.MapGet("resumen-mensual", GetResumenMensual).RequireAuthorization(auth);
@@ -92,6 +95,17 @@ public class RegistroHoras : IEndpointGroup
         return Results.Created($"/api/registros-horas/{result.Id}", result);
     }
 
+    [EndpointSummary("Registrar el mismo dia en un rango de fechas")]
+    [EndpointDescription("Crea el mismo registro para cada dia habil del rango. Omite domingos, fechas futuras, dias ya registrados en ese proyecto y dias fuera de la ventana sin excepcion aprobada, y devuelve el detalle de lo omitido.")]
+    [ProducesResponseType<RegistrosRangoResultadoDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public static async Task<IResult> CreateRango(
+        [FromBody] CreateRegistrosRangoCommand command,
+        ISender sender,
+        CancellationToken cancellationToken)
+        => Results.Ok(await sender.Send(command, cancellationToken));
+
     [EndpointSummary("Eliminar registro de horas propio")]
     [EndpointDescription("Elimina un registro del usuario autenticado. Retorna 403 si el registro pertenece a otro usuario.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -119,7 +133,8 @@ public class RegistroHoras : IEndpointGroup
         ISender sender,
         CancellationToken cancellationToken)
     {
-        await sender.Send(new UpdateDescripcionRegistroHorasCommand(id, body.Descripcion), cancellationToken);
+        await sender.Send(new UpdateDescripcionRegistroHorasCommand(
+            id, body.Descripcion, body.Modalidad, body.Recurso, body.Lugar), cancellationToken);
         return Results.NoContent();
     }
 
@@ -137,4 +152,8 @@ public class RegistroHoras : IEndpointGroup
     }
 }
 
-public record UpdateDescripcionRequest(string Descripcion);
+public record UpdateDescripcionRequest(
+    string Descripcion,
+    string? Modalidad = null,
+    string? Recurso = null,
+    string? Lugar = null);

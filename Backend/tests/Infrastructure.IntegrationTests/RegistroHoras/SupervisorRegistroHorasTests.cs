@@ -1,4 +1,5 @@
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.DeleteRegistroHoras;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
@@ -17,7 +18,7 @@ public class SupervisorRegistroHorasTests
     public async Task Handle_WhenSupervisorCreatesRegistro_ShouldPersistWithSupervisorUserId()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>());
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>(), VentanaService(context));
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 
@@ -40,7 +41,7 @@ public class SupervisorRegistroHorasTests
         var result = await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None);
 
         result.Items.Should().HaveCount(1);
-        result.Items.Single().Cliente.Should().Be("KPG");
+        result.Items.Single().Cliente.Should().Be("Cliente 1");
     }
 
     [Fact]
@@ -77,6 +78,7 @@ public class SupervisorRegistroHorasTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var context = new ApplicationDbContext(options);
+        CatalogoDePrueba.SembrarAsync(context).GetAwaiter().GetResult();
         context.ParametrosSistema.Add(new KPG.Timesheet.Domain.Entities.ParametroSistema
         {
             Clave = KPG.Timesheet.Domain.Constants.ParametrosSistema.VentanaRetroactividad,
@@ -91,14 +93,21 @@ public class SupervisorRegistroHorasTests
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Cliente 1", "Proyecto 1", "Remoto", "Consultor", "Desarrollo", "Bogota");
 
     private static CreateRegistroHorasCommand ValidCommand() =>
         new(new DateOnly(2026, 5, 14),
             new TimeOnly(8, 0), new TimeOnly(13, 0),
             null, null,
             null, null,
-            "KPG", "Timesheet", "Remoto", "Consultor", "Desarrollo", "Bogota");
+            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
+
+    /// <summary>
+    /// Servicio real, no un doble: la ventana efectiva depende del parametro global y de
+    /// las reglas por persona o rol, y eso es parte de lo que estos tests ejercitan.
+    /// </summary>
+    private static VentanaRetroactividadService VentanaService(ApplicationDbContext context) =>
+        new(context, new ParametrosSistemaService(context));
 
     private sealed class TestUser : IUser
     {

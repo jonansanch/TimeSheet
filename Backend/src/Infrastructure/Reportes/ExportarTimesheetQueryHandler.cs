@@ -25,8 +25,8 @@ public class ExportarTimesheetQueryHandler(IDbConnection db)
                r.HoraSalida2  AS Salida2,
                r.HoraEntrada3 AS Entrada3,
                r.HoraSalida3  AS Salida3,
-               r.Cliente,
-               r.Proyecto,
+               r.ClienteNombre  AS Cliente,
+               r.ProyectoNombre AS Proyecto,
                r.Modalidad,
                r.Recurso,
                r.Descripcion
