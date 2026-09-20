@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @using KPG.Timesheet.WebUI.Features.Aprobaciones.Components
 @inject IAprobacionRepository Repo
-@inject IUserAdminRepository UsuariosRepo
+@inject IRegistroHorasRepository RegistroHorasRepo
 @inject IClienteRepository ClienteRepo
 @inject IParametroSistemaRepository ParametroRepo
 @inject IDialogService DialogService
@@ -57,9 +57,9 @@
                                Margin="Margin.Dense" Clearable="true"
                                Value="_filtroUserId" ValueChanged="OnFiltroUsuarioAsync"
                                aria-label="@L["Label_Employee"]">
-                        @foreach (var u in _usuarios)
+                        @foreach (var u in _empleados)
                         {
-                            <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                            <MudSelectItem Value="@u.UserId">@u.Nombre</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -164,6 +164,20 @@
                             <MudText Typo="Typo.caption" Color="Color.Secondary">@r.Recurso · @r.Modalidad</MudText>
                             <MudText Typo="Typo.caption">@KpgFormat.HorasMinutos(r.TotalMinutos) h</MudText>
                             <MudSpacer />
+                            @* Tercera salida del revisor: si la descripcion es floja pero el
+                               dia esta bien, la corrige aqui en vez de devolver el registro
+                               y esperar a que el empleado lo reenvie. *@
+                            @if (EsAccionable(r))
+                            {
+                                <MudTooltip Text="@L["Apr_EditDescription"]">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   Color="Color.Primary"
+                                                   Disabled="_isProcesando"
+                                                   aria-label="@L["Apr_EditDescription"]"
+                                                   OnClick="@(() => EditarDescripcionAsync(r))" />
+                                </MudTooltip>
+                            }
                             @if (!EsAccionable(r) && PuedeRevertir(r))
                             {
                                 <MudTooltip Text="@(r.Estado == EstadoAprobacion.Rechazado
@@ -206,7 +220,12 @@
     ];
 
     private PendientesAprobacionResponse _respuesta = new(default, default, 0, 0, []);
-    private List<UserAdminResponse> _usuarios = [];
+    /// <summary>
+    /// Solo a quienes este revisor les aprueba algun nivel. Antes se cargaba la lista
+    /// completa de usuarios: se podia filtrar por gente que nunca iba a aparecer, y le
+    /// exponia a un supervisor los nombres de todo el personal.
+    /// </summary>
+    private List<EmpleadoRevisableResponse> _empleados = [];
     private List<ClienteConProyectosResponse> _clientes = [];
 
     private DateOnly _desde;
@@ -244,11 +263,11 @@
     {
         try
         {
-            var usuarios = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
-            var clientes = ClienteRepo.GetCatalogoAsync();
-            var periodo  = ParametroRepo.GetPeriodoAprobacionAsync();
-            await Task.WhenAll(usuarios, clientes, periodo);
-            _usuarios = (await usuarios).Items;
+            var empleados = Repo.GetEmpleadosRevisablesAsync();
+            var clientes  = ClienteRepo.GetCatalogoAsync();
+            var periodo   = ParametroRepo.GetPeriodoAprobacionAsync();
+            await Task.WhenAll(empleados, clientes, periodo);
+            _empleados = await empleados;
             _clientes = await clientes;
             _diasPorPeriodo = string.Equals(await periodo, "Quincenal", StringComparison.OrdinalIgnoreCase) ? 14 : 7;
         }
@@ -373,6 +392,45 @@
 
             await CargarAsync();
         }
+        finally { _isProcesando = false; }
+    }
+
+    /// <summary>
+    /// Corrige la descripcion sin sacar al registro de la cadena. Los horarios y el
+    /// proyecto no se tocan: el revisor aclara lo que dice el dia, no lo reescribe.
+    /// El backend revalida que quien edita sea uno de los tres supervisores del registro.
+    /// </summary>
+    private async Task EditarDescripcionAsync(RegistroPendienteResponse registro)
+    {
+        var parameters = new DialogParameters<KpgEditDescripcionDialog>
+        {
+            { x => x.DescripcionActual, registro.Descripcion ?? string.Empty },
+            { x => x.SoloDescripcion,   true }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialog = await DialogService.ShowAsync<KpgEditDescripcionDialog>(
+            L["Apr_EditDescription"].Value, parameters, options);
+        var result = await dialog.Result;
+
+        if (result is not { Canceled: false, Data: KpgEditDescripcionDialog.EdicionRegistro edicion })
+            return;
+
+        _isProcesando = true;
+        try
+        {
+            var ok = await RegistroHorasRepo.UpdateDescripcionAsync(registro.Id, edicion.Descripcion);
+            if (ok)
+            {
+                Snackbar.Add(L["Apr_DescriptionUpdated"].Value, Severity.Success);
+                await CargarAsync();
+            }
+            else
+            {
+                Snackbar.Add(L["Apr_EditError"].Value, Severity.Error);
+            }
+        }
+        catch { Snackbar.Add(L["Apr_EditError"].Value, Severity.Error); }
         finally { _isProcesando = false; }
     }
 

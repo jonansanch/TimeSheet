@@ -12,6 +12,7 @@ public class GetReporteHorasQueryHandler(IReportesRepository repository)
             request.UserId,
             request.Cliente,
             request.Proyecto,
+            request.Recurso,
             request.PageNumber,
             request.PageSize,
             request.SortBy,

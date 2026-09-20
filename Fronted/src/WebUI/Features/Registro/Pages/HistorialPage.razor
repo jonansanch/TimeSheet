@@ -1,6 +1,8 @@
 @page "/mis-registros"
 @attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@using KPG.Timesheet.WebUI.Features.Aprobaciones.Components
 @inject IRegistroHorasRepository RegistroHorasRepository
+@inject IAprobacionRepository AprobacionRepo
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject CurrentUserService CurrentUserService
@@ -61,6 +63,9 @@
         </MudStack>
     </MudPaper>
 
+    @* El scroll horizontal queda como respaldo para pantallas angostas: en monitores
+       normales el contenedor ya da el ancho suficiente. *@
+    <div style="overflow-x:auto;">
     <MudDataGrid @ref="_grid"
                  T="HistorialRegistroResponse"
                  ServerData="CargarDatosAsync"
@@ -126,10 +131,53 @@
             <PropertyColumn Property="x => x.Proyecto" Title="@L["Label_Project"]" />
             <PropertyColumn Property="x => x.Recurso" Title="@L["Label_Resource"]" Sortable="false" />
             <PropertyColumn Property="x => x.Modalidad" Title="@L["Label_Modality"]" Sortable="false" />
-            <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false" />
+            <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false"
+                            HeaderStyle="min-width:220px;" CellStyle="min-width:220px;" />
+            <TemplateColumn Title="@L["Label_Status"]" Sortable="false"
+                            HeaderStyle="min-width:160px;" CellStyle="min-width:160px;">
+                <CellTemplate>
+                    @* Sin esto el empleado recibia el correo de rechazo y su propia
+                       pantalla no le decia nada: ni el estado ni el motivo. *@
+                    <MudStack Spacing="1">
+                        <KpgEstadoAprobacionChip Estado="@context.Item.Estado"
+                                                 NivelPendiente="@NivelPendiente(context.Item.Estado)" />
+
+                        @* Quien firmo cada nivel: "Aprobado" a secas no dice por donde
+                           paso el registro ni quien lo reviso. *@
+                        @foreach (var firma in context.Item.Firmas)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @($"N{firma.Nivel} ✓ {firma.Actor}")
+                            </MudText>
+                        }
+
+                        @if (context.Item.EsRechazado && !string.IsNullOrWhiteSpace(context.Item.ComentarioRechazo))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Error" Style="max-width:260px;">
+                                @context.Item.ComentarioRechazo
+                            </MudText>
+                        }
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
-                    @if (_puedeEditar)
+                    @* Un dia rechazado se corrige y se reenvia: la cadena recomienza desde
+                       el primer nivel. Es la unica salida que tiene el empleado. *@
+                    @if (context.Item.EsRechazado)
+                    {
+                        <MudTooltip Text="@L["Hist_Resend"]">
+                            <MudIconButton Icon="@Icons.Material.Filled.Send"
+                                           Color="Color.Warning"
+                                           Size="Size.Small"
+                                           aria-label="@L["Hist_Resend"]"
+                                           Disabled="_isEditing"
+                                           OnClick="@(() => ReenviarAsync(context.Item))" />
+                        </MudTooltip>
+                    }
+                    @* Lo aprobado en los tres niveles ya no se toca: editarlo invalidaria
+                       en silencio las firmas. El backend lo rechaza igual. *@
+                    @if (_puedeEditar && !context.Item.EstaCerrado)
                     {
                         <MudTooltip Text="@(L["Btn_Edit"].Value)">
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
@@ -140,14 +188,17 @@
                                            OnClick="@(() => AbrirEditarDescripcionAsync(context.Item))" />
                         </MudTooltip>
                     }
-                    <MudTooltip Text="@(L["Btn_Delete"].Value)">
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error"
-                                       Size="Size.Small"
-                                       aria-label="@L["Btn_Delete"]"
-                                       Disabled="_isDeleting"
-                                       OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
-                    </MudTooltip>
+                    @if (!context.Item.EstaCerrado)
+                    {
+                        <MudTooltip Text="@(L["Btn_Delete"].Value)">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           aria-label="@L["Btn_Delete"]"
+                                           Disabled="_isDeleting"
+                                           OnClick="@(() => ConfirmarEliminarAsync(context.Item))" />
+                        </MudTooltip>
+                    }
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -155,6 +206,7 @@
             <MudDataGridPager T="HistorialRegistroResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
         </PagerContent>
     </MudDataGrid>
+    </div>
 
     @if (_totalCount > 0)
     {
@@ -262,11 +314,47 @@
         }
     }
 
+    /// <summary>Nivel que corresponde revisar, para que el chip diga a quien le toca.</summary>
+    private static int? NivelPendiente(EstadoAprobacion estado) => estado switch
+    {
+        EstadoAprobacion.Pendiente      => 1,
+        EstadoAprobacion.AprobadoNivel1 => 2,
+        EstadoAprobacion.AprobadoNivel2 => 3,
+        _                               => null
+    };
+
+    /// <summary>
+    /// Devuelve el registro corregido a la cadena, que recomienza desde el primer nivel:
+    /// los aprobadores anteriores tienen que ver la correccion.
+    /// </summary>
+    private async Task ReenviarAsync(HistorialRegistroResponse item)
+    {
+        _isEditing = true;
+        try
+        {
+            var (ok, _, error) = await AprobacionRepo.ReenviarAsync(item.Id);
+            if (ok)
+            {
+                Snackbar.Add(L["Hist_Resent"].Value, Severity.Success);
+                await _grid!.ReloadServerData();
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["Hist_ErrorUpdate"].Value, Severity.Error);
+            }
+        }
+        catch { Snackbar.Add(L["Hist_ErrorUpdate"].Value, Severity.Error); }
+        finally { _isEditing = false; }
+    }
+
     private async Task AbrirEditarDescripcionAsync(HistorialRegistroResponse item)
     {
         var parameters = new DialogParameters<KpgEditDescripcionDialog>
         {
-            { x => x.DescripcionActual, item.Descripcion }
+            { x => x.DescripcionActual, item.Descripcion },
+            { x => x.ModalidadActual,   item.Modalidad },
+            { x => x.RecursoActual,     item.Recurso },
+            { x => x.LugarActual,       item.Lugar }
         };
         var options = new DialogOptions
         {
@@ -275,18 +363,21 @@
             CloseOnEscapeKey = true
         };
         var dialog = await DialogService.ShowAsync<KpgEditDescripcionDialog>(
-            L["Hist_EditDescription"], parameters, options);
+            L["Hist_EditRecord"], parameters, options);
         var result = await dialog.Result;
-        if (result is { Canceled: false, Data: string nuevaDescripcion })
-            await GuardarDescripcionAsync(item, nuevaDescripcion);
+        if (result is { Canceled: false, Data: KpgEditDescripcionDialog.EdicionRegistro edicion })
+            await GuardarEdicionAsync(item, edicion);
     }
 
-    private async Task GuardarDescripcionAsync(HistorialRegistroResponse item, string nuevaDescripcion)
+    private async Task GuardarEdicionAsync(
+        HistorialRegistroResponse item,
+        KpgEditDescripcionDialog.EdicionRegistro edicion)
     {
         _isEditing = true;
         try
         {
-            var ok = await RegistroHorasRepository.UpdateDescripcionAsync(item.Id, nuevaDescripcion);
+            var ok = await RegistroHorasRepository.UpdateDescripcionAsync(
+                item.Id, edicion.Descripcion, edicion.Modalidad, edicion.Recurso, edicion.Lugar);
             if (ok)
             {
                 Snackbar.Add(L["Hist_DescUpdated"].Value, Severity.Success);

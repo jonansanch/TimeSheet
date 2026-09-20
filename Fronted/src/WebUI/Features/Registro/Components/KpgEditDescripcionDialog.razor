@@ -1,24 +1,77 @@
+@inject CatalogosCacheService CatalogosCache
 @inject IStringLocalizer<SharedResource> L
 
 <MudDialog>
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" />
-            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Hist_EditDescription"]</MudText>
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Hist_EditRecord"]</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
-        <MudTextField @ref="_descripcionField"
-                      T="string"
-                      Label="@L["Label_Description"]"
-                      Variant="Variant.Outlined"
-                      Lines="4"
-                      @bind-Value="_descripcion"
-                      MaxLength="1000"
-                      Counter="1000"
-                      Required="true"
-                      RequiredError="@L["Reg_DescriptionRequired"]"
-                      aria-label="@L["Label_Description"]" />
+        <MudStack Spacing="3">
+            @* Los horarios y el proyecto no se editan: identifican al registro y son
+               inmutables una vez guardados. Solo cambia lo que describe el dia. *@
+            <MudAlert Severity="Severity.Info" Dense="true">
+                @(SoloDescripcion ? L["Apr_EditOnlyDescription"] : L["Hist_EditOnlyMetadata"])
+            </MudAlert>
+
+            <MudTextField @ref="_descripcionField"
+                          T="string"
+                          Label="@L["Label_Description"]"
+                          Variant="Variant.Outlined"
+                          Lines="4"
+                          @bind-Value="_descripcion"
+                          MaxLength="1000"
+                          Counter="1000"
+                          Required="true"
+                          RequiredError="@L["Reg_DescriptionRequired"]"
+                          aria-label="@L["Label_Description"]" />
+
+            @* Desde la revision solo se aclara la descripcion: la modalidad, el recurso y
+               el lugar los declara quien trabajo el dia, no quien lo aprueba. *@
+            <MudGrid Spacing="2" Class="@(SoloDescripcion ? "d-none" : null)">
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string"
+                               Label="@L["Label_Modality"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_modalidad"
+                               aria-label="@L["Label_Modality"]">
+                        @foreach (var m in _modalidades)
+                        {
+                            <MudSelectItem Value="@m">@m</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string"
+                               Label="@L["Label_Resource"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_recurso"
+                               aria-label="@L["Label_Resource"]">
+                        @foreach (var r in _recursos)
+                        {
+                            <MudSelectItem Value="@r">@r</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="string"
+                               Label="@L["Label_Place"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               @bind-Value="_lugar"
+                               aria-label="@L["Label_Place"]">
+                        @foreach (var l in _lugares)
+                        {
+                            <MudSelectItem Value="@l">@l</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
@@ -33,10 +86,28 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
     [Parameter] public string DescripcionActual { get; set; } = string.Empty;
+    [Parameter] public string? ModalidadActual { get; set; }
+    [Parameter] public string? RecursoActual { get; set; }
+    [Parameter] public string? LugarActual { get; set; }
+
+    /// <summary>
+    /// En true oculta los metadatos y deja solo la descripcion. Lo usa la pantalla de
+    /// revision: el supervisor aclara lo que dice el dia, no redefine como se trabajo.
+    /// </summary>
+    [Parameter] public bool SoloDescripcion { get; set; }
 
     private MudTextField<string> _descripcionField = default!;
-    private string _descripcion = string.Empty;
+
+    private string  _descripcion = string.Empty;
+    private string? _modalidad;
+    private string? _recurso;
+    private string? _lugar;
+
+    private List<string> _modalidades = [];
+    private List<string> _recursos    = [];
+    private List<string> _lugares     = [];
 
     private bool EsValida =>
         !string.IsNullOrWhiteSpace(_descripcion) && _descripcion.Length <= 1000;
@@ -44,6 +115,31 @@
     protected override void OnParametersSet()
     {
         _descripcion = DescripcionActual;
+        _modalidad   = ModalidadActual;
+        _recurso     = RecursoActual;
+        _lugar       = LugarActual;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _modalidades = (await CatalogosCache.GetModalidadesActivasAsync()).Select(m => m.Nombre).ToList(); }
+        catch { }
+        try { _recursos = (await CatalogosCache.GetEmpleadosActivosAsync()).Select(e => e.Nombre).ToList(); }
+        catch { }
+        try { _lugares = (await CatalogosCache.GetLugaresTrabajoActivosAsync()).Select(l => l.Nombre).ToList(); }
+        catch { }
+
+        // El valor guardado puede no estar en el catalogo activo (se desactivo despues de
+        // registrarlo). Se agrega para no perderlo en silencio al abrir el dialogo.
+        Conservar(_modalidades, _modalidad);
+        Conservar(_recursos,    _recurso);
+        Conservar(_lugares,     _lugar);
+    }
+
+    private static void Conservar(List<string> catalogo, string? valor)
+    {
+        if (!string.IsNullOrWhiteSpace(valor) && !catalogo.Contains(valor))
+            catalogo.Insert(0, valor);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -54,5 +150,10 @@
 
     private void Cancel() => MudDialog.Cancel();
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok(_descripcion));
+    private void Submit() => MudDialog.Close(DialogResult.Ok(SoloDescripcion
+        ? new EdicionRegistro(_descripcion, null, null, null)
+        : new EdicionRegistro(_descripcion, _modalidad, _recurso, _lugar)));
+
+    /// <summary>Lo que el diálogo devuelve: null en un metadato significa "dejalo como estaba".</summary>
+    public record EdicionRegistro(string Descripcion, string? Modalidad, string? Recurso, string? Lugar);
 }

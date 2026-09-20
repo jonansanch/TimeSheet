@@ -10,6 +10,7 @@ public interface IReportesRepository
         string? userId,
         string? cliente,
         string? proyecto,
+        string? recurso,
         int pageNumber,
         int pageSize,
         string? sortBy,

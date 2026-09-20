@@ -22,11 +22,12 @@ public class Reportes : IEndpointGroup
         groupBuilder.MapGet("horas", GetReporteHoras).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("horas/excel", ExportarExcel).RequireAuthorization(supervisorAndAbove);
         groupBuilder.MapGet("horas/pdf", ExportarPdf).RequireAuthorization(supervisorAndAbove);
-        groupBuilder.MapGet("timesheet/excel", ExportarTimesheet).RequireAuthorization(supervisorAndAbove);
+        groupBuilder.MapGet("timesheet/excel", ExportarTimesheetExcel).RequireAuthorization(supervisorAndAbove);
+        groupBuilder.MapGet("timesheet/pdf", ExportarTimesheetPdf).RequireAuthorization(supervisorAndAbove);
     }
 
     [EndpointSummary("Reporte de horas con filtros")]
-    [EndpointDescription("Retorna una página de registros de horas filtrados por período, empleado, cliente y proyecto.")]
+    [EndpointDescription("Retorna una página de registros de horas filtrados por período, empleado, cliente, proyecto y recurso.")]
     [ProducesResponseType<ReporteHorasResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -39,6 +40,7 @@ public class Reportes : IEndpointGroup
         [FromQuery] string? userId = null,
         [FromQuery] string? cliente = null,
         [FromQuery] string? proyecto = null,
+        [FromQuery] string? recurso = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? sortBy = null,
@@ -63,6 +65,7 @@ public class Reportes : IEndpointGroup
             userId,
             cliente,
             proyecto,
+            recurso,
             pageNumber,
             pageSize,
             sortBy,
@@ -83,8 +86,9 @@ public class Reportes : IEndpointGroup
         [FromQuery] DateOnly? hasta = null,
         [FromQuery] string? userId = null,
         [FromQuery] string? cliente = null,
-        [FromQuery] string? proyecto = null)
-        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, ExportFormato.Excel);
+        [FromQuery] string? proyecto = null,
+        [FromQuery] string? recurso = null)
+        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, recurso, ExportFormato.Excel);
 
     [EndpointSummary("Exportar reporte de horas a PDF")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -98,20 +102,50 @@ public class Reportes : IEndpointGroup
         [FromQuery] DateOnly? hasta = null,
         [FromQuery] string? userId = null,
         [FromQuery] string? cliente = null,
-        [FromQuery] string? proyecto = null)
-        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, ExportFormato.Pdf);
+        [FromQuery] string? proyecto = null,
+        [FromQuery] string? recurso = null)
+        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, recurso, ExportFormato.Pdf);
 
     [EndpointSummary("Exportar timesheet mensual por empleado en Excel")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public static async Task<IResult> ExportarTimesheet(
+    public static async Task<IResult> ExportarTimesheetExcel(
         ISender sender,
         CancellationToken cancellationToken,
         [FromQuery] string? userId = null,
         [FromQuery] int? mes = null,
-        [FromQuery] int? anio = null)
+        [FromQuery] int? anio = null,
+        [FromQuery] string? cliente = null,
+        [FromQuery] string? proyecto = null,
+        [FromQuery] string? recurso = null)
+        => await ExportarTimesheet(
+            sender, cancellationToken, userId, mes, anio, cliente, proyecto, recurso, ExportFormato.Excel);
+
+    [EndpointSummary("Exportar timesheet mensual por empleado en PDF")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> ExportarTimesheetPdf(
+        ISender sender,
+        CancellationToken cancellationToken,
+        [FromQuery] string? userId = null,
+        [FromQuery] int? mes = null,
+        [FromQuery] int? anio = null,
+        [FromQuery] string? cliente = null,
+        [FromQuery] string? proyecto = null,
+        [FromQuery] string? recurso = null)
+        => await ExportarTimesheet(
+            sender, cancellationToken, userId, mes, anio, cliente, proyecto, recurso, ExportFormato.Pdf);
+
+    private static async Task<IResult> ExportarTimesheet(
+        ISender sender,
+        CancellationToken cancellationToken,
+        string? userId, int? mes, int? anio,
+        string? cliente, string? proyecto, string? recurso,
+        ExportFormato formato)
     {
         if (string.IsNullOrWhiteSpace(userId))
             return Results.BadRequest("Se requiere el parámetro 'userId'.");
@@ -123,7 +157,8 @@ public class Reportes : IEndpointGroup
         if (mesEfectivo < 1 || mesEfectivo > 12)
             return Results.BadRequest("'mes' debe estar entre 1 y 12.");
 
-        var query  = new ExportarTimesheetQuery(userId, mesEfectivo, anioEfectivo);
+        var query = new ExportarTimesheetQuery(
+            userId, mesEfectivo, anioEfectivo, cliente, proyecto, recurso, formato);
         var result = await sender.Send(query, cancellationToken);
         return Results.File(result.Contenido, result.ContentType, result.FileName);
     }
@@ -132,7 +167,7 @@ public class Reportes : IEndpointGroup
         ISender sender,
         CancellationToken cancellationToken,
         DateOnly? desde, DateOnly? hasta,
-        string? userId, string? cliente, string? proyecto,
+        string? userId, string? cliente, string? proyecto, string? recurso,
         ExportFormato formato)
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
@@ -142,7 +177,8 @@ public class Reportes : IEndpointGroup
         if (desdeEfectivo > hastaEfectivo)
             return Results.BadRequest("'desde' no puede ser posterior a 'hasta'.");
 
-        var query = new ExportarReporteHorasQuery(desdeEfectivo, hastaEfectivo, userId, cliente, proyecto, formato);
+        var query = new ExportarReporteHorasQuery(
+            desdeEfectivo, hastaEfectivo, userId, cliente, proyecto, recurso, formato);
         var result = await sender.Send(query, cancellationToken);
         return Results.File(result.Contenido, result.ContentType, result.FileName);
     }

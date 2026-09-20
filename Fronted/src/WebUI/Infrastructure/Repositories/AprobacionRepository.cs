@@ -46,6 +46,9 @@ public class AprobacionRepository(HttpClient http, AuthStateService authState) :
     public Task<(bool Ok, EstadoRegistroResponse? Estado, string? Error)> RevertirRechazoAsync(int id, CancellationToken ct = default) =>
         EnviarAsync<object?>($"api/aprobaciones/{id}/revertir-rechazo", null, ct);
 
+    public Task<(bool Ok, EstadoRegistroResponse? Estado, string? Error)> ReenviarAsync(int id, CancellationToken ct = default) =>
+        EnviarAsync<object?>($"api/aprobaciones/{id}/reenviar", null, ct);
+
     public async Task<(bool Ok, ImportacionResultadoResponse? Resultado, string? Error)> ImportarAsync(
         Stream archivo,
         string nombreArchivo,
@@ -90,6 +93,23 @@ public class AprobacionRepository(HttpClient http, AuthStateService authState) :
 
         var estado = await response.Content.ReadFromJsonAsync<EstadoRegistroResponse>(cancellationToken: ct);
         return (estado is not null, estado, null);
+    }
+
+    public async Task<List<EmpleadoRevisableResponse>> GetEmpleadosRevisablesAsync(
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(authState.AccessToken)) return [];
+
+        try
+        {
+            using var message = CreateMessage(HttpMethod.Get, "api/aprobaciones/empleados");
+            var response = await http.SendAsync(message, ct);
+            if (!response.IsSuccessStatusCode) return [];
+
+            return await response.Content.ReadFromJsonAsync<List<EmpleadoRevisableResponse>>(
+                cancellationToken: ct) ?? [];
+        }
+        catch { return []; }
     }
 
     private HttpRequestMessage CreateMessage(HttpMethod method, string url)

@@ -25,6 +25,7 @@ builder.Services.AddLocalization();
 
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IRegistroHorasRepository, RegistroHorasRepository>();
+builder.Services.AddScoped<IVozRepository, VozRepository>();
 builder.Services.AddScoped<IParametroSistemaRepository, ParametroSistemaRepository>();
 builder.Services.AddScoped<ISolicitudExcepcionRepository, SolicitudExcepcionRepository>();
 builder.Services.AddScoped<ISolicitudExcepcionAdminRepository, SolicitudExcepcionAdminRepository>();

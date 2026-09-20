@@ -112,6 +112,12 @@ public static class DependencyInjection
         builder.Services.AddScoped<INotificadorAprobacion, KPG.Timesheet.Infrastructure.Notificaciones.NotificadorAprobacion>();
         builder.Services.AddScoped<ITimesheetImportParser, TimesheetImportParser>();
 
+        // Interpretacion de voz por IA. La key llega por variable de entorno; sin ella el
+        // servicio queda "no disponible" y el frontend usa su parser de reglas.
+        builder.Services.Configure<KPG.Timesheet.Infrastructure.Voz.AnthropicSettings>(
+            builder.Configuration.GetSection("Anthropic"));
+        builder.Services.AddScoped<IInterpreteVoz, KPG.Timesheet.Infrastructure.Voz.ClaudeInterpreteVoz>();
+
         // Registrar handlers de MediatR que viven en Infrastructure (export handlers: Excel/PDF)
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(SmtpEmailService).Assembly));

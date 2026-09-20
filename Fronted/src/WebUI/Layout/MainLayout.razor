@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
 @implements IDisposable
 @inject KpgAuthStateProvider AuthProvider
 @inject SessionTimeoutService SessionTimeout
@@ -70,7 +71,10 @@
     </MudDrawer>
 
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Class="py-6 px-6" Style="max-width:1200px;">
+        @* Las pantallas de tablas necesitan todo el ancho: con el tope de lectura de
+           1200px el renglon se corta y hay que hacer scroll horizontal. El resto lo
+           conserva, porque un formulario o un texto a 2000px se lee mal. *@
+        <MudContainer MaxWidth="MaxWidth.False" Class="py-6 px-6" Style="@EstiloContenedor">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -82,6 +86,33 @@
                          OnLogoutClicked="HandleLogout" />
 
 @code {
+    /// <summary>
+    /// Rutas con grillas anchas, que se ven mal recortadas a 1200px. Es una lista
+    /// explicita y no una regla automatica: agregar una pantalla aqui debe ser una
+    /// decision, no un efecto secundario.
+    /// </summary>
+    private static readonly string[] RutasAnchas =
+    [
+        "/mis-registros",
+        "/aprobaciones",
+        "/reportes",
+        "/admin/bitacora",
+        "/admin/usuarios",
+        "/solicitudes-excepcion",
+        "/mis-solicitudes"
+    ];
+
+    private string EstiloContenedor
+    {
+        get
+        {
+            var ruta = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/');
+            return RutasAnchas.Any(r => ruta.StartsWith(r, StringComparison.OrdinalIgnoreCase))
+                ? "max-width:100%;"
+                : "max-width:1200px;";
+        }
+    }
+
     private bool _drawerOpen = true;
     private bool _showWarning;
     private DateTime _expiresAt;
@@ -106,7 +137,13 @@
     {
         SessionTimeout.OnWarning += HandleWarningAsync;
         SessionTimeout.OnExpired += HandleExpiredAsync;
+
+        // El ancho depende de la ruta: sin esto queda el de la pantalla anterior
+        // hasta que algo mas provoque un redibujado.
+        Navigation.LocationChanged += HandleRutaCambiada;
     }
+
+    private void HandleRutaCambiada(object? _, LocationChangedEventArgs __) => StateHasChanged();
 
     private async Task HandleWarningAsync()
     {
@@ -154,5 +191,6 @@
     {
         SessionTimeout.OnWarning -= HandleWarningAsync;
         SessionTimeout.OnExpired -= HandleExpiredAsync;
+        Navigation.LocationChanged -= HandleRutaCambiada;
     }
 }

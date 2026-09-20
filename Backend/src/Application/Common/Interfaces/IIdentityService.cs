@@ -10,6 +10,9 @@ public interface IIdentityService
 
     Task<Dictionary<string, string>> GetUserEmailsAsync(IEnumerable<string> userIds, CancellationToken cancellationToken = default);
 
+    /// <summary>Nombre completo de cada usuario, con el correo como respaldo.</summary>
+    Task<Dictionary<string, string>> GetUserNamesAsync(IEnumerable<string> userIds, CancellationToken cancellationToken = default);
+
     Task<UsersPageDto> GetUsersAsync(
         int pageNumber,
         int pageSize,
@@ -61,4 +64,5 @@ public record UserCredentialsResult(
     string Email,
     IReadOnlyList<string> Roles,
     string? NombreCompleto,
-    string? SupervisorNombre);
+    string? SupervisorNombre,
+    string? PuestoNombre = null);

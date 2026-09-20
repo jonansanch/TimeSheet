@@ -64,6 +64,27 @@ public class JwtTokenServiceTests
              .Should().BeEquivalentTo("Empleado", "Supervisor");
     }
 
+    [Fact]
+    public void GenerateAccessToken_ConPuesto_ShouldIncluirElClaim()
+    {
+        // El formulario de registro precarga el Recurso desde este claim.
+        var token = Leer(CreateService().GenerateAccessToken(
+            "user-1", "juan@kpg.com", ["Empleado"], "Juan Pérez", "Ana Jefa", "Consultor SAP"));
+
+        Claim(token, JwtTokenService.ClaimPuesto).Should().Be("Consultor SAP");
+    }
+
+    [Fact]
+    public void GenerateAccessToken_SinPuesto_ShouldOmitirElClaim()
+    {
+        // Hoy casi nadie tiene puesto asignado: el claim se omite y el formulario
+        // sigue dejando elegir el recurso a mano, en vez de quedar bloqueado.
+        var token = Leer(CreateService().GenerateAccessToken(
+            "user-1", "juan@kpg.com", ["Empleado"], "Juan Pérez"));
+
+        token.Claims.Should().NotContain(c => c.Type == JwtTokenService.ClaimPuesto);
+    }
+
     private static JwtTokenService CreateService() =>
         new(Options.Create(new JwtSettings
         {

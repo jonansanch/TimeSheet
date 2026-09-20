@@ -65,19 +65,29 @@
     {
         var ids = _nodos.Select(n => n.UserId).ToHashSet(StringComparer.Ordinal);
 
+        // La cabeza de la organizacion es su propio jefe. Sin este descarte se volveria
+        // hija de si misma: desapareceria de las raices y el arbol se dibujaria infinito.
+        bool EsSuPropioJefe(OrganigramaNodoResponse n) => n.SupervisorUserId == n.UserId;
+
+        bool TieneJefeVisible(OrganigramaNodoResponse n) =>
+            n.SupervisorUserId is not null && !EsSuPropioJefe(n) && ids.Contains(n.SupervisorUserId);
+
         _hijosPorSupervisor = _nodos
-            .Where(n => n.SupervisorUserId is not null && ids.Contains(n.SupervisorUserId))
+            .Where(TieneJefeVisible)
             .GroupBy(n => n.SupervisorUserId!)
             .ToDictionary(g => g.Key, g => g.OrderBy(n => n.Nombre).ToList(), StringComparer.Ordinal);
 
-        // Sin jefe = raiz. Con un jefe que no esta en la lista (inactivo o borrado) el
-        // nodo quedaria invisible, asi que tambien se trata como raiz y se avisa.
+        // Con un jefe que no esta en la lista (inactivo o borrado) el nodo quedaria
+        // invisible, asi que se trata como raiz y se avisa. Ser su propio jefe no es
+        // eso: es la cabeza, y va como raiz sin aviso.
         _huerfanos = _nodos
-            .Where(n => n.SupervisorUserId is not null && !ids.Contains(n.SupervisorUserId))
+            .Where(n => n.SupervisorUserId is not null
+                     && !EsSuPropioJefe(n)
+                     && !ids.Contains(n.SupervisorUserId))
             .ToList();
 
         _raices = _nodos
-            .Where(n => n.SupervisorUserId is null || !ids.Contains(n.SupervisorUserId))
+            .Where(n => !TieneJefeVisible(n))
             .OrderBy(n => n.Nombre)
             .ToList();
     }

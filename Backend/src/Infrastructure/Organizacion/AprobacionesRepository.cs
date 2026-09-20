@@ -93,6 +93,42 @@ public class AprobacionesRepository(IDbConnection db) : IAprobacionesRepository
         ORDER  BY b.NombreEmpleado, b.FechaRegistro, b.ProyectoNombre;
         """;
 
+    /// <summary>
+    /// A quien le revisa este usuario. Se deriva de la misma cadena que la consulta de
+    /// pendientes —no de la lista de usuarios— y no depende del periodo: el filtro debe
+    /// ofrecer siempre a la misma gente, aunque esta semana no hayan registrado.
+    /// </summary>
+    private const string SqlEmpleados = """
+        SELECT DISTINCT u.Id                              AS UserId,
+               ISNULL(u.NombreCompleto, u.Email)          AS Nombre
+        FROM   AspNetUsers u
+        CROSS  JOIN Proyectos p
+        OUTER  APPLY (
+            SELECT TOP 1 s.SupervisorUserId
+            FROM   SupervisoresPuesto s
+            WHERE  s.Activo = 1
+              AND  s.PuestoId = u.PuestoId
+              AND  (s.ClienteId IS NULL OR s.ClienteId = p.ClienteId)
+            ORDER  BY CASE WHEN s.ClienteId IS NULL THEN 1 ELSE 0 END
+        ) sup
+        WHERE  u.IsActive = 1
+          AND  p.Activo = 1
+          AND  (sup.SupervisorUserId = @Revisor
+             OR u.SupervisorUserId   = @Revisor
+             OR p.SupervisorUserId   = @Revisor)
+        ORDER  BY Nombre;
+        """;
+
+    public async Task<IReadOnlyList<EmpleadoRevisableDto>> GetEmpleadosRevisablesAsync(
+        string revisorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var filas = await db.QueryAsync<EmpleadoRevisableDto>(new CommandDefinition(
+            SqlEmpleados, new { Revisor = revisorUserId }, cancellationToken: cancellationToken));
+
+        return filas.ToList();
+    }
+
     public async Task<PendientesAprobacionResponse> GetPendientesAsync(
         string revisorUserId,
         GetPendientesAprobacionQuery filtros,

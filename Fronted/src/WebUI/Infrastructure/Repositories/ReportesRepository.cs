@@ -23,6 +23,7 @@ public class ReportesRepository : IReportesRepository
         string? userId = null,
         string? cliente = null,
         string? proyecto = null,
+        string? recurso = null,
         int pageNumber = 1,
         int pageSize = 10,
         string? sortBy = null,
@@ -36,6 +37,7 @@ public class ReportesRepository : IReportesRepository
         if (!string.IsNullOrWhiteSpace(userId))   sb.Append($"&userId={Uri.EscapeDataString(userId)}");
         if (!string.IsNullOrWhiteSpace(cliente))  sb.Append($"&cliente={Uri.EscapeDataString(cliente)}");
         if (!string.IsNullOrWhiteSpace(proyecto)) sb.Append($"&proyecto={Uri.EscapeDataString(proyecto)}");
+        if (!string.IsNullOrWhiteSpace(recurso))  sb.Append($"&recurso={Uri.EscapeDataString(recurso)}");
         if (!string.IsNullOrWhiteSpace(sortBy))   sb.Append($"&sortBy={Uri.EscapeDataString(sortBy)}");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, sb.ToString());
@@ -55,6 +57,7 @@ public class ReportesRepository : IReportesRepository
         string? userId = null,
         string? cliente = null,
         string? proyecto = null,
+        string? recurso = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
@@ -64,6 +67,7 @@ public class ReportesRepository : IReportesRepository
         if (!string.IsNullOrWhiteSpace(userId))   sb.Append($"&userId={Uri.EscapeDataString(userId)}");
         if (!string.IsNullOrWhiteSpace(cliente))  sb.Append($"&cliente={Uri.EscapeDataString(cliente)}");
         if (!string.IsNullOrWhiteSpace(proyecto)) sb.Append($"&proyecto={Uri.EscapeDataString(proyecto)}");
+        if (!string.IsNullOrWhiteSpace(recurso))  sb.Append($"&recurso={Uri.EscapeDataString(recurso)}");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, sb.ToString());
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
@@ -85,23 +89,32 @@ public class ReportesRepository : IReportesRepository
         string userId,
         int mes,
         int anio,
+        string formato = "excel",
+        string? cliente = null,
+        string? proyecto = null,
+        string? recurso = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
             throw new UnauthorizedAccessException("No hay token de acceso activo.");
 
-        var url = $"api/reportes/timesheet/excel?userId={Uri.EscapeDataString(userId)}&mes={mes}&anio={anio}";
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var sb = new StringBuilder(
+            $"api/reportes/timesheet/{formato}?userId={Uri.EscapeDataString(userId)}&mes={mes}&anio={anio}");
+        if (!string.IsNullOrWhiteSpace(cliente))  sb.Append($"&cliente={Uri.EscapeDataString(cliente)}");
+        if (!string.IsNullOrWhiteSpace(proyecto)) sb.Append($"&proyecto={Uri.EscapeDataString(proyecto)}");
+        if (!string.IsNullOrWhiteSpace(recurso))  sb.Append($"&recurso={Uri.EscapeDataString(recurso)}");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, sb.ToString());
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.AccessToken);
 
         var response = await _http.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        var bytes      = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var bytes       = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
-        var fileName   = response.Content.Headers.ContentDisposition?.FileNameStar
-                      ?? response.Content.Headers.ContentDisposition?.FileName
-                      ?? $"timesheet-{mes:00}-{anio}.xlsx";
+        var fileName    = response.Content.Headers.ContentDisposition?.FileNameStar
+                       ?? response.Content.Headers.ContentDisposition?.FileName
+                       ?? $"timesheet-{mes:00}-{anio}.{(formato == "excel" ? "xlsx" : formato)}";
 
         return (bytes, contentType, fileName.Trim('"'));
     }

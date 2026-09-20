@@ -1,3 +1,4 @@
+using System.Text;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
 using KPG.Timesheet.Infrastructure.Identity;
@@ -81,6 +82,14 @@ public class ApplicationDbContextInitialiser
         var emp2       = await EnsureUserAsync("ana.garcia@kpg.com",   "Empleado1234!",   "Ana García",         Roles.Empleado);
         var emp3       = await EnsureUserAsync("carlos.ruiz@kpg.com",  "Empleado1234!",   "Carlos Ruiz",        Roles.Empleado);
 
+        // Equipo ampliado para poder simular el flujo con varios puestos y dos ramas del
+        // organigrama, en vez de una sola linea de tres personas.
+        var sup2       = await EnsureUserAsync("sofia.rojas@kpg.com",  "Supervisor1234!", "Sofía Rojas",        Roles.Supervisor);
+        var emp4       = await EnsureUserAsync("diego.mora@kpg.com",   "Empleado1234!",   "Diego Mora",         Roles.Empleado);
+        var emp5       = await EnsureUserAsync("valeria.leon@kpg.com", "Empleado1234!",   "Valeria León",       Roles.Empleado);
+        var emp6       = await EnsureUserAsync("andres.gil@kpg.com",   "Empleado1234!",   "Andrés Gil",         Roles.Empleado);
+        var emp7       = await EnsureUserAsync("paula.nino@kpg.com",   "Empleado1234!",   "Paula Niño",         Roles.Empleado);
+
         // ── Parámetros del sistema ────────────────────────────────────────────
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.VentanaRetroactividad, "3");
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DiasUmbralNotificacion, "3");
@@ -90,9 +99,19 @@ public class ApplicationDbContextInitialiser
         // ── Catálogos ────────────────────────────────────────────────────────
         await SeedCatalogosAsync();
 
+        // ── Estructura organizacional ────────────────────────────────────────
+        // Sin esto la cadena de aprobacion resuelve vacia y ningun registro se puede
+        // aprobar: el flujo completo no se puede ni demostrar ni probar.
+        await SeedEstructuraAsync(
+            admin, gerente, supervisor, emp1, emp2, emp3,
+            sup2, emp4, emp5, emp6, emp7);
+
         // ── Registros de horas (histórico 2 meses) ───────────────────────────
         if (!_context.RegistrosHoras.Any())
+        {
             await SeedRegistrosAsync(admin.Id, gerente.Id, supervisor.Id, emp1.Id, emp2.Id, emp3.Id);
+            await SeedAprobacionesAsync(supervisor.Id, gerente.Id, admin.Id);
+        }
 
         // ── Solicitudes de excepción ──────────────────────────────────────────
         if (!_context.SolicitudesExcepcion.Any())
@@ -162,7 +181,11 @@ public class ApplicationDbContextInitialiser
 
         if (!_context.Empleados.Any())
         {
-            foreach (var nombre in new[] { "Consultor", "Analista", "Desarrollador", "Lider tecnico", "Consultor SAP" })
+            foreach (var nombre in new[]
+            {
+                "Consultor", "Analista", "Desarrollador", "Lider tecnico", "Consultor SAP",
+                "Arquitecto", "QA", "Disenador UX", "Soporte", "Gerente de Proyecto"
+            })
                 _context.Empleados.Add(new Empleado(nombre));
             await _context.SaveChangesAsync(CancellationToken.None);
         }
@@ -180,6 +203,197 @@ public class ApplicationDbContextInitialiser
                 _context.LugaresTrabajo.Add(new LugarTrabajo(nombre));
             await _context.SaveChangesAsync(CancellationToken.None);
         }
+    }
+
+    /// <summary>
+    /// Deja armada la estructura que necesita la cadena de aprobacion: puesto y jefe de
+    /// cada usuario, supervisores por puesto (nivel 1) y responsable de cada proyecto
+    /// (nivel 3). Sin esto los tres niveles resuelven vacios y **ningun registro se puede
+    /// aprobar**, porque un nivel sin aprobador asignado no lo aprueba nadie.
+    ///
+    /// <para>
+    /// Es idempotente y no pisa lo configurado a mano: solo completa lo que esta vacio.
+    /// </para>
+    /// </summary>
+    private async Task SeedEstructuraAsync(
+        ApplicationUser admin, ApplicationUser gerente, ApplicationUser supervisor,
+        ApplicationUser emp1, ApplicationUser emp2, ApplicationUser emp3,
+        ApplicationUser sup2, ApplicationUser emp4, ApplicationUser emp5,
+        ApplicationUser emp6, ApplicationUser emp7)
+    {
+        // Se indexa por nombre normalizado (sin tildes, minusculas): el catalogo real
+        // dice "Lider Tecnico" con tildes y mayusculas, y una comparacion exacta dejaba
+        // a esa gente sin puesto — y por lo tanto sin quien les apruebe el nivel 1.
+        var puestos = (await _context.Empleados.ToListAsync(CancellationToken.None))
+            .GroupBy(e => NormalizarNombre(e.Nombre))
+            .ToDictionary(g => g.Key, g => g.First().Id);
+
+        // ── Puesto y jefe directo (nivel 2 = organigrama) ────────────────────
+        // Todos tienen jefe. La cabeza es su propio jefe: asi su nivel 2 tambien
+        // resuelve y sus registros no quedan trabados para siempre.
+        await AsignarEstructuraAsync(gerente,    puestos, "Lider tecnico", jefeId: gerente.Id);
+        await AsignarEstructuraAsync(admin,      puestos, "Consultor",     jefeId: gerente.Id);
+        await AsignarEstructuraAsync(supervisor, puestos, "Lider tecnico", jefeId: gerente.Id);
+        await AsignarEstructuraAsync(emp1,       puestos, "Desarrollador", jefeId: supervisor.Id);
+        await AsignarEstructuraAsync(emp2,       puestos, "Analista",      jefeId: supervisor.Id);
+        await AsignarEstructuraAsync(emp3,       puestos, "Consultor SAP", jefeId: supervisor.Id);
+
+        // Segunda rama: Sofia cuelga de Laura y tiene su propio equipo. Asi la pantalla
+        // de aprobaciones se puede probar con dos revisores distintos a la vez.
+        await AsignarEstructuraAsync(sup2,        puestos, "Gerente de Proyecto", jefeId: gerente.Id);
+        await AsignarEstructuraAsync(emp4,        puestos, "Arquitecto",          jefeId: sup2.Id);
+        await AsignarEstructuraAsync(emp5,        puestos, "QA",                  jefeId: sup2.Id);
+        await AsignarEstructuraAsync(emp6,        puestos, "Disenador UX",        jefeId: sup2.Id);
+        await AsignarEstructuraAsync(emp7,        puestos, "Soporte",             jefeId: sup2.Id);
+
+        // ── Supervisores por puesto (nivel 1) ────────────────────────────────
+        // Se evalua REGLA POR REGLA, no "si la tabla esta vacia": con el guard grueso, un
+        // puesto agregado despues se quedaba sin supervisor para siempre y los registros
+        // de esa gente no los podia aprobar nadie.
+        var existentes = await _context.SupervisoresPuesto
+            .Select(sp => new { sp.PuestoId, sp.ClienteId })
+            .ToListAsync(CancellationToken.None);
+
+        bool YaHayRegla(int puestoId, int? clienteId) =>
+            existentes.Any(e => e.PuestoId == puestoId && e.ClienteId == clienteId);
+
+        var nuevasReglas = new List<SupervisorPuesto>();
+
+        // Reglas generales: valen para todos los clientes.
+        foreach (var (puesto, responsable) in new[]
+        {
+            ("Desarrollador", supervisor.Id),
+            ("Analista",      supervisor.Id),
+            ("Consultor SAP", supervisor.Id),
+            ("Consultor",     supervisor.Id),
+            ("Arquitecto",          sup2.Id),
+            ("QA",                  sup2.Id),
+            ("Disenador UX",        sup2.Id),
+            ("Soporte",             sup2.Id),
+            ("Gerente de Proyecto", gerente.Id),
+            // Al admin y no a la gerente: la gerente ES Lider tecnico, y apuntarle la regla
+            // a ella misma la dejaria aprobando su propio nivel 1.
+            ("Lider tecnico", admin.Id),
+        })
+        {
+            if (BuscarPuesto(puestos, puesto) is { } puestoId && !YaHayRegla(puestoId, null))
+                nuevasReglas.Add(new SupervisorPuesto(puestoId, responsable));
+        }
+
+        // Regla especifica de un cliente: gana sobre la general del mismo puesto.
+        // Sirve de ejemplo vivo de que la excepcion por cliente funciona.
+        var petrocol = await _context.Clientes
+            .Where(c => c.Nombre == "Petrocol")
+            .Select(c => (int?)c.Id)
+            .FirstOrDefaultAsync(CancellationToken.None);
+
+        if (petrocol is not null
+            && BuscarPuesto(puestos, "Consultor SAP") is { } sapId
+            && !YaHayRegla(sapId, petrocol))
+            nuevasReglas.Add(new SupervisorPuesto(sapId, gerente.Id, petrocol));
+
+        if (nuevasReglas.Count > 0)
+        {
+            _context.SupervisoresPuesto.AddRange(nuevasReglas);
+            await _context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        // ── Responsable de cada proyecto (nivel 3) ───────────────────────────
+        var proyectosSinSupervisor = await _context.Proyectos
+            .Where(p => p.SupervisorUserId == null)
+            .Join(_context.Clientes, p => p.ClienteId, c => c.Id, (p, c) => new { Proyecto = p, Cliente = c.Nombre })
+            .ToListAsync(CancellationToken.None);
+
+        foreach (var item in proyectosSinSupervisor)
+        {
+            // Lo interno lo responde el admin; lo de clientes, la gerente.
+            item.Proyecto.AsignarSupervisor(item.Cliente == "KPG Interno" ? admin.Id : gerente.Id);
+        }
+
+        if (proyectosSinSupervisor.Count > 0)
+            await _context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    private static int? BuscarPuesto(Dictionary<string, int> puestos, string nombre) =>
+        puestos.TryGetValue(NormalizarNombre(nombre), out var id) ? id : null;
+
+    /// <summary>
+    /// Minusculas y sin tildes, para que "Lider tecnico" encuentre a "Lider Tecnico".
+    /// El catalogo lo escribe gente, y el seed no puede depender de como lo tecleo.
+    /// </summary>
+    private static string NormalizarNombre(string nombre)
+    {
+        var descompuesto = nombre.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+        var sinTildes = new string(descompuesto
+            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+                        != System.Globalization.UnicodeCategory.NonSpacingMark)
+            .ToArray());
+        return sinTildes.Normalize(NormalizationForm.FormC);
+    }
+
+    /// <summary>Completa puesto y jefe solo si estan vacios, para no pisar lo configurado.</summary>
+    private async Task AsignarEstructuraAsync(
+        ApplicationUser usuario, Dictionary<string, int> puestos, string puesto, string? jefeId)
+    {
+        var cambio = false;
+
+        if (usuario.PuestoId is null && BuscarPuesto(puestos, puesto) is { } puestoId)
+        {
+            usuario.PuestoId = puestoId;
+            cambio = true;
+        }
+
+        if (usuario.SupervisorUserId is null && jefeId is not null)
+        {
+            usuario.SupervisorUserId = jefeId;
+            cambio = true;
+        }
+
+        if (cambio) await _userManager.UpdateAsync(usuario);
+    }
+
+    /// <summary>
+    /// Deja los registros del seed en estados de aprobacion realistas: lo de semanas
+    /// anteriores ya aprobado, lo de la ultima semana esperando revision. Asi la pantalla
+    /// de aprobaciones tiene algo que mostrar apenas se levanta el ambiente, en vez de
+    /// pedir que alguien registre y apruebe a mano para poder verla.
+    /// </summary>
+    private async Task SeedAprobacionesAsync(string supervisorId, string gerenteId, string adminId)
+    {
+        var corte = DateOnly.FromDateTime(DateTime.Today).AddDays(-7);
+
+        var registros = await _context.RegistrosHoras
+            .Where(r => r.FechaRegistro < corte)
+            .ToListAsync(CancellationToken.None);
+
+        foreach (var registro in registros)
+        {
+            // Los tres niveles de la cadena del seed, en orden.
+            foreach (var (nivel, actor) in new[] { (1, supervisorId), (2, supervisorId), (3, gerenteId) })
+            {
+                if (registro.NivelPendiente != nivel) break;
+
+                registro.Aprobar(nivel);
+                _context.AprobacionesRegistro.Add(
+                    new AprobacionRegistro(registro.Id, AprobacionRegistro.AccionAprobar, nivel, actor));
+            }
+        }
+
+        // Un dia rechazado, para que el estado de rechazo tambien se pueda ver y probar.
+        var paraRechazar = await _context.RegistrosHoras
+            .Where(r => r.FechaRegistro >= corte && r.Estado == Domain.Enums.EstadoAprobacion.Pendiente)
+            .OrderBy(r => r.FechaRegistro)
+            .FirstOrDefaultAsync(CancellationToken.None);
+
+        if (paraRechazar is not null)
+        {
+            const string motivo = "La descripcion no detalla en que se fueron las horas de la tarde.";
+            paraRechazar.Rechazar(motivo);
+            _context.AprobacionesRegistro.Add(new AprobacionRegistro(
+                paraRechazar.Id, AprobacionRegistro.AccionRechazar, 1, supervisorId, motivo));
+        }
+
+        await _context.SaveChangesAsync(CancellationToken.None);
     }
 
     private async Task SeedRegistrosAsync(

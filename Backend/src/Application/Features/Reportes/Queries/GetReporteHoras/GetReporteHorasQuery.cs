@@ -10,6 +10,7 @@ public record GetReporteHorasQuery(
     string? UserId,
     string? Cliente,
     string? Proyecto,
+    string? Recurso,
     int PageNumber,
     int PageSize,
     string? SortBy,

@@ -14,5 +14,11 @@ public interface IRegistroHorasRepository
     Task<HistorialPaginadoResponse> GetHistorialAsync(int page = 1, int pageSize = 20, DateOnly? desde = null, DateOnly? hasta = null, CancellationToken cancellationToken = default);
     Task<ResumenMensualResponse> GetResumenMensualAsync(int mes, int anio, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
-    Task<bool> UpdateDescripcionAsync(int id, string descripcion, CancellationToken cancellationToken = default);
+    Task<bool> UpdateDescripcionAsync(
+        int id,
+        string descripcion,
+        string? modalidad = null,
+        string? recurso = null,
+        string? lugar = null,
+        CancellationToken cancellationToken = default);
 }

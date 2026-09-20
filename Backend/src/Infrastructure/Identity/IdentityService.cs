@@ -36,6 +36,18 @@ public class IdentityService : IIdentityService
             .ToDictionaryAsync(u => u.Id, u => u.Email ?? u.Id, cancellationToken);
     }
 
+    public async Task<Dictionary<string, string>> GetUserNamesAsync(
+        IEnumerable<string> userIds, CancellationToken cancellationToken = default)
+    {
+        var ids = userIds.ToList();
+        return await _userManager.Users
+            .Where(u => ids.Contains(u.Id))
+            .ToDictionaryAsync(
+                u => u.Id,
+                u => string.IsNullOrWhiteSpace(u.NombreCompleto) ? (u.Email ?? u.Id) : u.NombreCompleto,
+                cancellationToken);
+    }
+
     public async Task<UsersPageDto> GetUsersAsync(
         int pageNumber,
         int pageSize,
@@ -138,14 +150,15 @@ public class IdentityService : IIdentityService
 
         if (supervisorUserId is not null)
         {
-            if (supervisorUserId == userId)
-                return (Result.Failure(["Un usuario no puede ser su propio supervisor."]), null);
-
             var supervisor = await _userManager.FindByIdAsync(supervisorUserId);
             if (supervisor is null || !supervisor.IsActive)
                 return (Result.Failure(["El supervisor indicado no existe o esta inactivo."]), null);
 
-            if (await CreariaCicloAsync(userId, supervisorUserId, cancellationToken))
+            // Ser su propio jefe es como se marca la cabeza de la organizacion: todos
+            // tienen jefe, y el de mas arriba es el suyo propio. Es el UNICO ciclo
+            // permitido; A->B->A sigue rechazandose.
+            if (supervisorUserId != userId
+                && await CreariaCicloAsync(userId, supervisorUserId, cancellationToken))
                 return (Result.Failure([
                     "La asignacion crearia un ciclo en el organigrama: ese usuario ya depende del actual."
                 ]), null);
@@ -192,9 +205,14 @@ public class IdentityService : IIdentityService
             if (actual == userId) return true;
             if (!visitados.Add(actual)) return true;   // ciclo preexistente
 
-            actual = await _db.ExecuteScalarAsync<string?>(
+            var jefeDelActual = await _db.ExecuteScalarAsync<string?>(
                 "SELECT SupervisorUserId FROM AspNetUsers WHERE Id = @Id",
                 new { Id = actual });
+
+            // La cabeza es su propio jefe: ahi termina la cadena, no es un ciclo.
+            if (jefeDelActual == actual) return false;
+
+            actual = jefeDelActual;
         }
 
         return false;
@@ -304,7 +322,8 @@ public class IdentityService : IIdentityService
         var roles = await _userManager.GetRolesAsync(user);
         return new UserCredentialsResult(
             user.Id, user.Email!, roles.ToList().AsReadOnly(), user.NombreCompleto,
-            await GetNombreSupervisorAsync(user.SupervisorUserId));
+            await GetNombreSupervisorAsync(user.SupervisorUserId),
+            await GetNombrePuestoAsync(user.PuestoId));
     }
 
     public async Task<UserCredentialsResult?> ValidateCredentialsByIdAsync(string userId)
@@ -316,7 +335,8 @@ public class IdentityService : IIdentityService
         var roles = await _userManager.GetRolesAsync(user);
         return new UserCredentialsResult(
             user.Id, user.Email!, roles.ToList().AsReadOnly(), user.NombreCompleto,
-            await GetNombreSupervisorAsync(user.SupervisorUserId));
+            await GetNombreSupervisorAsync(user.SupervisorUserId),
+            await GetNombrePuestoAsync(user.PuestoId));
     }
 
     public async Task<Result> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
@@ -386,6 +406,19 @@ public class IdentityService : IIdentityService
         return await _db.ExecuteScalarAsync<string?>(
             "SELECT COALESCE(NombreCompleto, Email) FROM AspNetUsers WHERE Id = @Id",
             new { Id = supervisorUserId });
+    }
+
+    /// <summary>
+    /// Nombre del puesto del usuario. Null si no tiene puesto asignado: hoy es lo habitual,
+    /// y el formulario debe seguir dejando elegir el recurso a mano.
+    /// </summary>
+    private async Task<string?> GetNombrePuestoAsync(int? puestoId)
+    {
+        if (puestoId is null) return null;
+
+        return await _db.ExecuteScalarAsync<string?>(
+            "SELECT Nombre FROM Empleados WHERE Id = @Id AND Activo = 1",
+            new { Id = puestoId.Value });
     }
 
     private static bool IsValidRole(string role) =>

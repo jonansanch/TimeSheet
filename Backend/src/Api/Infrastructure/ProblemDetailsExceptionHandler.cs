@@ -4,6 +4,7 @@ using KPG.Timesheet.Domain.Exceptions;
 using ForbiddenAccessException = KPG.Timesheet.Application.Common.Exceptions.ForbiddenAccessException;
 using NotFoundException = KPG.Timesheet.Application.Common.Exceptions.NotFoundException;
 using ValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
+using ServicioNoDisponibleException = KPG.Timesheet.Application.Common.Exceptions.ServicioNoDisponibleException;
 
 namespace KPG.Timesheet.Api.Infrastructure;
 
@@ -52,6 +53,15 @@ public class ProblemDetailsExceptionHandler(
                 Title = "Solicitud invalida.",
                 Detail = bhe.Message,
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+            }),
+            // 503 y no 500: el cliente distingue "no configurado aqui" de "fallo", y puede
+            // caer a su alternativa local sin mostrar un error.
+            ServicioNoDisponibleException sne => (StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Status = StatusCodes.Status503ServiceUnavailable,
+                Title = "Servicio no disponible.",
+                Detail = sne.Message,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.6.4"
             }),
             ForbiddenAccessException => (StatusCodes.Status403Forbidden, new ProblemDetails
             {

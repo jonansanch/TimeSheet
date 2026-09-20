@@ -197,6 +197,10 @@
   <data name="Apr_RejectReasonRequired"><value>The reason is required.</value></data>
   <data name="Apr_RejectReasonHint"><value>The employee will read this: explain what to fix.</value></data>
   <data name="Apr_UndoApprove"><value>Undo my approval</value></data>
+  <data name="Apr_EditDescription"><value>Fix description</value></data>
+  <data name="Apr_EditOnlyDescription"><value>Only the description is edited. Hours, project and modality are declared by whoever worked the day.</value></data>
+  <data name="Apr_DescriptionUpdated"><value>Description fixed.</value></data>
+  <data name="Apr_EditError"><value>Could not fix the description.</value></data>
   <data name="Apr_UndoReject"><value>Undo my rejection</value></data>
   <data name="Apr_ApprovedOk"><value>{0}'s day approved.</value></data>
   <data name="Apr_RejectedOk"><value>Day rejected and returned to the employee.</value></data>
@@ -265,6 +269,8 @@
   <data name="Reg_DayHasRecord"><value>You already have an entry for this day on this project. You can add another block as long as it does not overlap the hours already recorded.</value></data>
   <data name="Reg_DayFull"><value>This day already has all three shifts recorded on this project. To change one, delete the entry from My Records.</value></data>
   <data name="Reg_ShiftAlreadySaved"><value>Already recorded</value></data>
+  <data name="Reg_ResourceFromPuesto"><value>Preloaded from your position. You can change it if you worked in another role that day.</value></data>
+  <data name="Reg_DescriptionSuggest"><value>Type or pick a description you have used before.</value></data>
   <data name="Reg_Saving"><value>Saving...</value></data>
   <data name="Reg_SavedTitle"><value>Work day saved</value></data>
   <data name="Reg_TotalHours"><value>Total:</value></data>
@@ -297,6 +303,10 @@
   <data name="Hist_DeleteCannotUndo"><value>This action cannot be undone.</value></data>
   <data name="Hist_DeletedMsg"><value>Record for {0} deleted.</value></data>
   <data name="Hist_EditDescription"><value>Edit description</value></data>
+  <data name="Hist_EditOnlyMetadata"><value>Shifts and project cannot be changed: they identify the entry. To correct them you must delete it and create it again.</value></data>
+  <data name="Hist_EditRecord"><value>Edit entry</value></data>
+  <data name="Hist_Resend"><value>Fix and resend for review</value></data>
+  <data name="Hist_Resent"><value>Entry resent. Review starts again from the first level.</value></data>
   <data name="Hist_DescUpdated"><value>Description updated successfully.</value></data>
   <data name="Hist_ErrorLoad"><value>Could not load records. Please try again.</value></data>
   <data name="Hist_ErrorDelete"><value>Could not delete the record. Please try again.</value></data>
@@ -335,6 +345,7 @@
   <data name="Rep_FilterEmployee"><value>Filter by employee</value></data>
   <data name="Rep_FilterClient"><value>Filter by start of client name</value></data>
   <data name="Rep_FilterProject"><value>Filter by start of project name</value></data>
+  <data name="Rep_FilterResource"><value>Filter by start of resource name</value></data>
   <data name="Rep_NoResults"><value>No results for the selected filters. Adjust filters and try again.</value></data>
   <data name="Rep_ErrorLoad"><value>Error generating the report. Please try again.</value></data>
   <data name="Rep_IndividualTimesheet"><value>Individual Timesheet</value></data>
@@ -522,7 +533,9 @@
   <data name="Rep_ColModality"><value>Modality</value></data>
   <data name="Rep_ColPlace"><value>Place</value></data>
   <data name="Rep_NoResults2"><value>No records match the selected filters. Try widening the period or adjusting criteria.</value></data>
-  <data name="Rep_TimesheetSubtitle"><value>Generate the monthly timesheet Excel with the official KPG format for an employee.</value></data>
+  <data name="Rep_TimesheetSubtitle"><value>Generate the monthly timesheet in Excel or PDF, with the official KPG format.</value></data>
+  <data name="Rep_PrintFilters"><value>Print filters (optional)</value></data>
+  <data name="Rep_ClearFilters"><value>Clear filters</value></data>
   <data name="Rep_GenerateTimesheet"><value>Generate Timesheet</value></data>
 
   <!-- === NOTIFICATIONS EXTRAS === -->

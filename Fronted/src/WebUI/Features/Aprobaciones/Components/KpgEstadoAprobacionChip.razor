@@ -15,9 +15,9 @@
     private string Texto => Estado switch
     {
         EstadoAprobacion.Pendiente      => L["Apr_StatePending"].Value,
-        EstadoAprobacion.AprobadoNivel1 => L["Apr_StateLevel1"].Value,
-        EstadoAprobacion.AprobadoNivel2 => L["Apr_StateLevel2"].Value,
-        EstadoAprobacion.Aprobado       => L["Apr_StateApproved"].Value,
+        EstadoAprobacion.AprobadoNivel1 => $"{L["Apr_StateLevel1"].Value} 1/3",
+        EstadoAprobacion.AprobadoNivel2 => $"{L["Apr_StateLevel2"].Value} 2/3",
+        EstadoAprobacion.Aprobado       => $"{L["Apr_StateApproved"].Value} 3/3",
         _                                => L["Apr_StateRejected"].Value
     };
 

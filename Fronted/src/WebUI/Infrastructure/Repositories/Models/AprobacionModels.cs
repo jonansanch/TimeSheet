@@ -64,3 +64,6 @@ public record ImportacionResultadoResponse(
 }
 
 public record FilaOmitidaResponse(int NumeroFila, DateOnly? Fecha, string Detalle, string Motivo);
+
+/// <summary>Un empleado que este revisor puede aprobar.</summary>
+public record EmpleadoRevisableResponse(string UserId, string Nombre);

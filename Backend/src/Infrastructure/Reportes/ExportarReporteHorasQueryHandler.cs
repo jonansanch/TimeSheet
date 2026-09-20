@@ -36,8 +36,9 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
         JOIN   AspNetUsers u ON r.UserId = u.Id
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
           AND  (@UserId  IS NULL OR r.UserId  = @UserId)
-          AND  (@ClientePattern IS NULL OR c.Nombre LIKE @ClientePattern ESCAPE '\')
-          AND  (@ProyectoPattern IS NULL OR p.Nombre LIKE @ProyectoPattern ESCAPE '\')
+          AND  (@ClientePattern IS NULL OR r.ClienteNombre LIKE @ClientePattern ESCAPE '\')
+          AND  (@ProyectoPattern IS NULL OR r.ProyectoNombre LIKE @ProyectoPattern ESCAPE '\')
+          AND  (@RecursoPattern IS NULL OR r.Recurso LIKE @RecursoPattern ESCAPE '\')
         ORDER  BY r.FechaRegistro DESC, Empleado
         OFFSET 0 ROWS FETCH NEXT 1000 ROWS ONLY
         """;
@@ -52,7 +53,8 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
             Hasta    = request.Hasta,
             UserId   = string.IsNullOrWhiteSpace(request.UserId)   ? null : request.UserId,
             ClientePattern  = BuildPrefixLikePattern(request.Cliente),
-            ProyectoPattern = BuildPrefixLikePattern(request.Proyecto)
+            ProyectoPattern = BuildPrefixLikePattern(request.Proyecto),
+            RecursoPattern  = BuildPrefixLikePattern(request.Recurso)
         })).ToList();
 
         return request.Formato == ExportFormato.Excel

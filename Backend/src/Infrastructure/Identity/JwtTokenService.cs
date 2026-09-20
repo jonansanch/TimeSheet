@@ -22,7 +22,16 @@ public class JwtTokenService : IJwtTokenService
     /// <summary>Claim propio de KPG: nombre del jefe directo.</summary>
     public const string ClaimLider = "lider";
 
-    public string GenerateAccessToken(string userId, string email, IEnumerable<string> roles, string? nombreCompleto = null, string? supervisorNombre = null)
+    /// <summary>Claim propio de KPG: puesto del usuario, que alimenta el campo Recurso.</summary>
+    public const string ClaimPuesto = "puesto";
+
+    public string GenerateAccessToken(
+        string userId,
+        string email,
+        IEnumerable<string> roles,
+        string? nombreCompleto = null,
+        string? supervisorNombre = null,
+        string? puestoNombre = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -39,6 +48,11 @@ public class JwtTokenService : IJwtTokenService
         // Quien lidera al usuario, para mostrarlo al iniciar sesion sin una llamada extra.
         if (!string.IsNullOrWhiteSpace(supervisorNombre))
             claims.Add(new Claim(ClaimLider, supervisorNombre));
+
+        // El puesto precarga el Recurso del formulario. Se omite si el usuario no tiene
+        // puesto asignado: el selector sigue disponible y nadie queda sin poder registrar.
+        if (!string.IsNullOrWhiteSpace(puestoNombre))
+            claims.Add(new Claim(ClaimPuesto, puestoNombre));
 
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));

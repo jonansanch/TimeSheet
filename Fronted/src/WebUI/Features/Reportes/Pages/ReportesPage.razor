@@ -84,6 +84,17 @@
                               aria-label="@L["Rep_FilterProject"]" />
             </MudItem>
 
+            <MudItem xs="12" sm="6" md="4">
+                <MudTextField T="string"
+                              Label="@L["Label_Resource"]"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Clearable="true"
+                              @bind-Value="_filtroRecurso"
+                              Placeholder="@L["Rep_FilterResource"]"
+                              aria-label="@L["Rep_FilterResource"]" />
+            </MudItem>
+
             <MudItem xs="12">
                 <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                     <MudButton Variant="Variant.Filled"
@@ -230,6 +241,7 @@
     private string? _filtroUserId;
     private string _filtroCliente = string.Empty;
     private string _filtroProyecto = string.Empty;
+    private string _filtroRecurso = string.Empty;
 
     private Periodo _periodo = Periodo.Mes;
     private DateRange _rango = new(
@@ -297,6 +309,7 @@
                 string.IsNullOrWhiteSpace(_filtroUserId)   ? null : _filtroUserId,
                 string.IsNullOrWhiteSpace(_filtroCliente)  ? null : _filtroCliente,
                 string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto,
+                string.IsNullOrWhiteSpace(_filtroRecurso)  ? null : _filtroRecurso,
                 pageNumber: state.Page + 1,
                 pageSize: state.PageSize,
                 sortBy: MapSortBy(sort?.SortBy),
@@ -365,7 +378,8 @@
                 desde, hasta, formato,
                 string.IsNullOrWhiteSpace(_filtroUserId)   ? null : _filtroUserId,
                 string.IsNullOrWhiteSpace(_filtroCliente)  ? null : _filtroCliente,
-                string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto);
+                string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto,
+                string.IsNullOrWhiteSpace(_filtroRecurso)  ? null : _filtroRecurso);
 
             if (result is null)
             {

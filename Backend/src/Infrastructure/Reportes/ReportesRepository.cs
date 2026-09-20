@@ -12,8 +12,9 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
         JOIN   AspNetUsers u ON r.UserId = u.Id
         WHERE  r.FechaRegistro BETWEEN @Desde AND @Hasta
           AND  (@UserId  IS NULL OR r.UserId  = @UserId)
-          AND  (@ClientePattern IS NULL OR c.Nombre LIKE @ClientePattern ESCAPE '\')
-          AND  (@ProyectoPattern IS NULL OR p.Nombre LIKE @ProyectoPattern ESCAPE '\')
+          AND  (@ClientePattern IS NULL OR r.ClienteNombre LIKE @ClientePattern ESCAPE '\')
+          AND  (@ProyectoPattern IS NULL OR r.ProyectoNombre LIKE @ProyectoPattern ESCAPE '\')
+          AND  (@RecursoPattern IS NULL OR r.Recurso LIKE @RecursoPattern ESCAPE '\')
         """;
 
     private const string SqlResumen = $"""
@@ -55,6 +56,7 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
         string? userId,
         string? cliente,
         string? proyecto,
+        string? recurso,
         int pageNumber,
         int pageSize,
         string? sortBy,
@@ -81,6 +83,7 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
             UserId   = string.IsNullOrWhiteSpace(userId)   ? null : userId,
             ClientePattern  = BuildPrefixLikePattern(cliente),
             ProyectoPattern = BuildPrefixLikePattern(proyecto),
+            RecursoPattern  = BuildPrefixLikePattern(recurso),
             Offset   = offset,
             PageSize = pageSize
         }, cancellationToken: cancellationToken));

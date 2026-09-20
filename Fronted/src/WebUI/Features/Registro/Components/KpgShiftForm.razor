@@ -7,6 +7,8 @@
 @inject IStringLocalizer<SharedResource> L
 @inject VoiceInputService VoiceInput
 @inject VoiceParser VoiceParser
+@inject IVozRepository VozRepository
+@inject AuthenticationStateProvider AuthState
 @implements IAsyncDisposable
 
 <MudPaper Elevation="1" Class="pa-6">
@@ -208,7 +210,8 @@
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudSelect T="string" Label="@L["Label_Resource"]" Variant="Variant.Outlined"
-                               @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]">
+                               @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]"
+                               HelperText="@(_puestoDelUsuario is null ? null : L["Reg_ResourceFromPuesto"].Value)">
                         @foreach (var r in _recursos)
                         {
                             <MudSelectItem Value="@r">@r</MudSelectItem>
@@ -225,15 +228,27 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudTextField T="string" Label="@L["Label_Description"]" Variant="Variant.Outlined"
-                                  Lines="3" @bind-Value="_model.Descripcion"
-                                  Immediate="true"
-                                  MaxLength="@MaxDescripcion"
-                                  Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
-                                  Counter="@MaxDescripcion"
-                                  Error="@DescripcionExcedida"
-                                  ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
-                                  Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
+                    @* Sugiere descripciones que el usuario ya escribio: la mayoria de los
+                       dias repite tareas y volver a teclearlas completas es puro trabajo. *@
+                    <MudAutocomplete T="string"
+                                     Label="@L["Label_Description"]"
+                                     Variant="Variant.Outlined"
+                                     Lines="3"
+                                     Value="@_model.Descripcion"
+                                     ValueChanged="@(v => _model.Descripcion = v)"
+                                     SearchFunc="BuscarDescripcionesAsync"
+                                     CoerceValue="true"
+                                     ResetValueOnEmptyText="false"
+                                     MaxItems="8"
+                                     MinCharacters="0"
+                                     Immediate="true"
+                                     MaxLength="@MaxDescripcion"
+                                     Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
+                                     Counter="@MaxDescripcion"
+                                     Error="@DescripcionExcedida"
+                                     ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
+                                     HelperText="@(_descripcionesUsadas.Count > 0 ? L["Reg_DescriptionSuggest"].Value : null)"
+                                     Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
                 </MudItem>
             </MudGrid>
 
@@ -307,6 +322,7 @@
     protected override async Task OnInitializedAsync()
     {
         try { _sugerenciasRecientes = await RegistroHorasRepository.GetRecientesAsync(5); } catch { }
+        await CargarDescripcionesUsadasAsync();
         try { _windowDays = await ParametroSistemaRepository.GetVentanaRetroactividadAsync(); } catch { _windowDays = 3; }
 
         try
@@ -316,6 +332,8 @@
             if (_recursos.Count == 0) _recursos = [.. RecursosFallback];
         }
         catch { _recursos = [.. RecursosFallback]; }
+
+        await PrecargarRecursoDelPuestoAsync();
 
         try { _catalogoClientes = await ClienteRepository.GetCatalogoAsync(); } catch { }
 
@@ -334,10 +352,61 @@
         catch { }
 
         _browserSupportsVoice = await VoiceInput.IsSupportedAsync();
+        if (_browserSupportsVoice)
+            _iaDisponible = await VozRepository.EstaDisponibleAsync();
+
         _dotNetRef = DotNetObjectReference.Create(this);
         if (_browserSupportsVoice)
             await VoiceInput.InitAsync();
     }
+
+    /// <summary>
+    /// El recurso sale del puesto del usuario (claim "puesto" del JWT), para que no elija
+    /// a mano de quien depende su primera aprobacion. <b>Precarga, no bloquea</b>: quien no
+    /// tenga puesto asignado —hoy la mayoria— sigue eligiendolo del selector.
+    /// </summary>
+    /// <summary>
+    /// Toma las descripciones distintas de los ultimos registros del usuario, las mas
+    /// recientes primero. Un mes alcanza para cubrir lo que repite habitualmente.
+    /// </summary>
+    private async Task CargarDescripcionesUsadasAsync()
+    {
+        try
+        {
+            var hasta = DateOnly.FromDateTime(DateTime.Today);
+            var historial = await RegistroHorasRepository.GetHistorialAsync(
+                1, 50, hasta.AddDays(-DiasDeSugerencias), hasta);
+
+            _descripcionesUsadas = historial.Items
+                .OrderByDescending(r => r.FechaRegistro)
+                .Select(r => r.Descripcion?.Trim() ?? string.Empty)
+                .Where(d => d.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch { _descripcionesUsadas = []; }
+    }
+
+    /// <summary>Ventana de historial de la que salen las sugerencias de descripcion.</summary>
+    private const int DiasDeSugerencias = 60;
+
+    private async Task PrecargarRecursoDelPuestoAsync()
+    {
+        try
+        {
+            var estado = await AuthState.GetAuthenticationStateAsync();
+            _puestoDelUsuario = estado.User.FindFirst("puesto")?.Value;
+
+            // Solo si el puesto sigue en el catalogo activo: si se desactivo, que elija.
+            if (!string.IsNullOrWhiteSpace(_puestoDelUsuario) && _recursos.Contains(_puestoDelUsuario))
+                _model.Recurso = _puestoDelUsuario;
+            else
+                _puestoDelUsuario = null;
+        }
+        catch { _puestoDelUsuario = null; }
+    }
+
+    private string? _puestoDelUsuario;
 
     private async Task HandleSuggestionSelected(RegistroRecienteResponse s)
     {
@@ -350,6 +419,25 @@
         _model.Lugar      = s.Lugar;
         _model.Descripcion = s.Descripcion;
         await CargarRegistroExistenteAsync();
+    }
+
+    /// <summary>
+    /// Descripciones que el usuario ya uso, para ofrecerlas como sugerencia. Se cargan del
+    /// historial reciente: no hace falta un catalogo aparte que alguien deba mantener.
+    /// </summary>
+    private List<string> _descripcionesUsadas = [];
+
+    /// <summary>
+    /// Con el campo vacio muestra las mas recientes; al teclear filtra por coincidencia en
+    /// cualquier parte del texto, no solo al inicio.
+    /// </summary>
+    private Task<IEnumerable<string>> BuscarDescripcionesAsync(string? valor, CancellationToken _)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+            return Task.FromResult<IEnumerable<string>>(_descripcionesUsadas);
+
+        return Task.FromResult(_descripcionesUsadas
+            .Where(d => d.Contains(valor, StringComparison.OrdinalIgnoreCase)));
     }
 
     private IEnumerable<ProyectoActivoResponse> ProyectosDelCliente =>
@@ -625,6 +713,7 @@
             // Limpiar el formulario evita que el usuario reenvie el mismo dia/proyecto,
             // que el backend rechaza por inmutabilidad del bloque ya registrado.
             _model.Reset();
+            _model.Recurso = _puestoDelUsuario;   // vuelve solo, no hay que reelegirlo
             _registroExistente = null;
             _touchedModalidad = false;
             _form.ResetValidation();
@@ -664,6 +753,9 @@
     private List<string> _voiceCamposNoDetectados = [];
     private DotNetObjectReference<KpgShiftForm>? _dotNetRef;
 
+    /// <summary>True si el backend tiene configurada la interpretacion por IA.</summary>
+    private bool _iaDisponible;
+
     private async Task ToggleVoiceAsync()
     {
         if (_voiceState == VoiceState.Listening)
@@ -672,7 +764,19 @@
             _voiceState = VoiceState.Idle;
             return;
         }
+
+        // Pedido del cliente: al empezar a dictar el formulario arranca limpio. Si no, lo
+        // dictado se mezclaba con lo que hubiera quedado y no se sabia que venia de donde.
+        _model.Reset();
+        _model.Recurso           = _puestoDelUsuario;
+        _touchedModalidad        = false;
+        _guardado                = false;
+        _response                = null;
+        _errorMessage            = null;
+        _sinTurno                = false;
         _voiceCamposNoDetectados = [];
+        _form.ResetValidation();
+
         _voiceState = VoiceState.Listening;
         await VoiceInput.StartAsync(_dotNetRef!, "es-CO");
     }
@@ -687,7 +791,12 @@
 
         try
         {
-            var result = VoiceParser.Parse(transcript, BuildVoiceCatalog());
+            // La IA entiende el lenguaje natural mucho mejor que las reglas, pero necesita
+            // red y credenciales. Si no responde, el parser local resuelve igual las frases
+            // habituales: el dictado nunca queda inservible por una falla de red.
+            var result = await InterpretarConIaAsync(transcript)
+                      ?? VoiceParser.Parse(transcript, BuildVoiceCatalog());
+
             ApplyVoiceResult(result);
             // El dictado pudo cambiar fecha o proyecto: hay que releer lo ya registrado.
             await CargarRegistroExistenteAsync();
@@ -713,6 +822,35 @@
         if (_voiceState is VoiceState.Listening or VoiceState.Processing)
             _voiceState = VoiceState.Idle;
         await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Interpreta el dictado con la IA del backend. Devuelve null cuando no esta
+    /// configurada o no responde, para que quien llama caiga al parser de reglas.
+    /// </summary>
+    private async Task<VoiceParseResult?> InterpretarConIaAsync(string transcript)
+    {
+        if (!_iaDisponible) return null;
+
+        var r = await VozRepository.InterpretarAsync(transcript);
+        if (r is null) return null;
+
+        return new VoiceParseResult
+        {
+            Fecha        = r.Fecha,
+            HoraEntrada1 = r.HoraEntrada1,
+            HoraSalida1  = r.HoraSalida1,
+            HoraEntrada2 = r.HoraEntrada2,
+            HoraSalida2  = r.HoraSalida2,
+            HoraEntrada3 = r.HoraEntrada3,
+            HoraSalida3  = r.HoraSalida3,
+            Cliente      = r.Cliente,
+            Proyecto     = r.Proyecto,
+            Modalidad    = r.Modalidad,
+            Recurso      = r.Recurso,
+            Lugar        = r.Lugar,
+            Descripcion  = r.Descripcion
+        };
     }
 
     private VoiceCatalog BuildVoiceCatalog() => new()

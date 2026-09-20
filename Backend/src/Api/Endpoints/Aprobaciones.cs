@@ -22,6 +22,7 @@ public class Aprobaciones : IEndpointGroup
         };
 
         groupBuilder.MapGet("pendientes", GetPendientes).RequireAuthorization(revisores);
+        groupBuilder.MapGet("empleados", GetEmpleadosRevisables).RequireAuthorization(revisores);
         groupBuilder.MapPost("{id:int}/aprobar", Aprobar).RequireAuthorization(revisores);
         groupBuilder.MapPost("{id:int}/rechazar", Rechazar).RequireAuthorization(revisores);
         groupBuilder.MapPost("{id:int}/revertir-aprobacion", RevertirAprobacion).RequireAuthorization(revisores);
@@ -31,6 +32,16 @@ public class Aprobaciones : IEndpointGroup
             .RequireAuthorization(new AuthorizeAttribute { Roles = Roles.Admin })
             .DisableAntiforgery();
     }
+
+    [EndpointSummary("Empleados que le toca revisar al usuario autenticado")]
+    [EndpointDescription("Alimenta el filtro de la pantalla de aprobaciones. Solo devuelve a quienes el revisor les aprueba algun nivel.")]
+    [ProducesResponseType<IReadOnlyList<EmpleadoRevisableDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    private static async Task<IResult> GetEmpleadosRevisables(
+        ISender sender,
+        CancellationToken cancellationToken)
+        => Results.Ok(await sender.Send(new GetEmpleadosRevisablesQuery(), cancellationToken));
 
     [EndpointSummary("Registros que esperan mi aprobacion")]
     [EndpointDescription("Devuelve los dias agrupados por empleado cuyo nivel pendiente le corresponde al usuario autenticado. Filtros opcionales por empleado, cliente, proyecto y puesto.")]

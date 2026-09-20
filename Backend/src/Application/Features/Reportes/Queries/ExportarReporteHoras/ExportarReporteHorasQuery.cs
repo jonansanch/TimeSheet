@@ -12,6 +12,7 @@ public record ExportarReporteHorasQuery(
     string? UserId,
     string? Cliente,
     string? Proyecto,
+    string? Recurso,
     ExportFormato Formato) : IRequest<ExportarReporteHorasResult>;
 
 public record ExportarReporteHorasResult(byte[] Contenido, string ContentType, string FileName);

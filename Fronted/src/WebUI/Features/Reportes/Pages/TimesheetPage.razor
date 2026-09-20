@@ -2,6 +2,8 @@
 @attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @inject IReportesRepository Repo
 @inject IUserAdminRepository UsuariosRepo
+@inject IClienteRepository ClienteRepository
+@inject CatalogosCacheService CatalogosCache
 @inject IJSRuntime JS
 @inject IStringLocalizer<SharedResource> L
 
@@ -24,7 +26,7 @@
             </MudStack>
 
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="6" md="4">
+                <MudItem xs="12" sm="6" md="5">
                     <MudSelect T="string"
                                Label="@L["Label_Employee"]"
                                Variant="Variant.Outlined"
@@ -38,7 +40,7 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="6" sm="3" md="2">
+                <MudItem xs="6" sm="3" md="4">
                     <MudSelect T="int"
                                Label="@L["Label_Month"]"
                                Variant="Variant.Outlined"
@@ -51,7 +53,7 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="6" sm="3" md="2">
+                <MudItem xs="6" sm="3" md="3">
                     <MudNumericField T="int"
                                      Label="@L["Label_Year"]"
                                      Variant="Variant.Outlined"
@@ -61,18 +63,110 @@
                                      Max="2099"
                                      aria-label="@L["Label_Year"]" />
                 </MudItem>
-                <MudItem xs="12" sm="12" md="4" Class="d-flex align-center">
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Download"
-                               OnClick="DescargarTimesheetAsync"
-                               Disabled="@(_isExporting || string.IsNullOrWhiteSpace(_tsUserId))">
-                        @if (_isExporting)
-                        { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
-                        @L["Btn_DownloadTimesheet"]
-                    </MudButton>
+            </MudGrid>
+
+            @* ── Filtros de impresion ──────────────────────────────────────
+               Un consultor que trabajo para dos clientes en el mes necesita una
+               hoja por cliente: sin filtros tendria que recortarla a mano. *@
+            <MudDivider />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Color="Color.Secondary" />
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@L["Rep_PrintFilters"]</MudText>
+            </MudStack>
+
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudSelect T="string"
+                               Label="@L["Label_Client"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               Value="@_cliente"
+                               ValueChanged="HandleClienteChanged"
+                               aria-label="@L["Label_Client"]">
+                        @foreach (var c in _clientes)
+                        {
+                            <MudSelectItem Value="@c.Nombre">@c.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="4">
+                    @* Sin cliente elegido no se ofrece proyecto: la pareja podria no existir. *@
+                    <MudSelect T="string"
+                               Label="@L["Label_Project"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               @bind-Value="_proyecto"
+                               Disabled="@(string.IsNullOrWhiteSpace(_cliente))"
+                               HelperText="@(string.IsNullOrWhiteSpace(_cliente) ? L["Reg_SelectClientFirst"].Value : null)"
+                               aria-label="@L["Label_Project"]">
+                        @foreach (var p in ProyectosDelCliente)
+                        {
+                            <MudSelectItem Value="@p.Nombre">@p.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="4">
+                    <MudSelect T="string"
+                               Label="@L["Label_Resource"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Clearable="true"
+                               @bind-Value="_recurso"
+                               aria-label="@L["Label_Resource"]">
+                        @foreach (var r in _recursos)
+                        {
+                            <MudSelectItem Value="@r">@r</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
             </MudGrid>
+
+            @if (HayFiltros)
+            {
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                    @if (!string.IsNullOrWhiteSpace(_cliente))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@_cliente</MudChip>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_proyecto))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@_proyecto</MudChip>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_recurso))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@_recurso</MudChip>
+                    }
+                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="LimpiarFiltros">
+                        @L["Rep_ClearFilters"]
+                    </MudButton>
+                </MudStack>
+            }
+
+            <MudDivider />
+
+            <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.GridOn"
+                           OnClick="@(() => DescargarAsync("excel"))"
+                           Disabled="@(_isExporting || string.IsNullOrWhiteSpace(_tsUserId))">
+                    @if (_isExporting && _formatoEnCurso == "excel")
+                    { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    @L["Btn_ExportExcel"]
+                </MudButton>
+
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                           OnClick="@(() => DescargarAsync("pdf"))"
+                           Disabled="@(_isExporting || string.IsNullOrWhiteSpace(_tsUserId))">
+                    @if (_isExporting && _formatoEnCurso == "pdf")
+                    { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    @L["Btn_ExportPdf"]
+                </MudButton>
+            </MudStack>
 
             @if (!string.IsNullOrWhiteSpace(_error))
             {
@@ -85,10 +179,19 @@
 
 @code {
     private List<UserAdminResponse> _usuarios = [];
+    private List<ClienteConProyectosResponse> _clientes = [];
+    private List<string> _recursos = [];
+
     private string? _tsUserId;
-    private int     _tsMes    = DateTime.Today.Month;
-    private int     _tsAnio   = DateTime.Today.Year;
+    private int     _tsMes  = DateTime.Today.Month;
+    private int     _tsAnio = DateTime.Today.Year;
+
+    private string? _cliente;
+    private string? _proyecto;
+    private string? _recurso;
+
     private bool    _isExporting;
+    private string  _formatoEnCurso = string.Empty;
     private string  _error = string.Empty;
 
     private static readonly (int Num, string Nombre)[] _meses =
@@ -98,6 +201,15 @@
         (9,"Septiembre"),(10,"Octubre"),(11,"Noviembre"),(12,"Diciembre")
     ];
 
+    private bool HayFiltros =>
+        !string.IsNullOrWhiteSpace(_cliente) ||
+        !string.IsNullOrWhiteSpace(_proyecto) ||
+        !string.IsNullOrWhiteSpace(_recurso);
+
+    private IEnumerable<ProyectoActivoResponse> ProyectosDelCliente =>
+        _clientes.FirstOrDefault(c => c.Nombre == _cliente)?.ProyectosActivos
+        ?? Enumerable.Empty<ProyectoActivoResponse>();
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -106,22 +218,49 @@
             _usuarios = paged?.Items ?? [];
         }
         catch { }
-    }
 
-    private async Task DescargarTimesheetAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_tsUserId)) return;
-        _isExporting = true;
-        _error = string.Empty;
-        StateHasChanged();
+        try { _clientes = await ClienteRepository.GetCatalogoAsync(); } catch { }
+
         try
         {
-            var result = await Repo.ExportarTimesheetAsync(_tsUserId, _tsMes, _tsAnio);
+            var puestos = await CatalogosCache.GetEmpleadosActivosAsync();
+            _recursos = puestos.Select(e => e.Nombre).ToList();
+        }
+        catch { }
+    }
+
+    /// <summary>Al cambiar de cliente se limpia el proyecto: ya no pertenece al nuevo.</summary>
+    private void HandleClienteChanged(string? cliente)
+    {
+        _cliente  = cliente;
+        _proyecto = null;
+    }
+
+    private void LimpiarFiltros()
+    {
+        _cliente = _proyecto = _recurso = null;
+    }
+
+    private async Task DescargarAsync(string formato)
+    {
+        if (string.IsNullOrWhiteSpace(_tsUserId)) return;
+
+        _isExporting    = true;
+        _formatoEnCurso = formato;
+        _error          = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var result = await Repo.ExportarTimesheetAsync(
+                _tsUserId, _tsMes, _tsAnio, formato, _cliente, _proyecto, _recurso);
+
             if (result is null) { _error = L["Rep_ErrorLoad"]; return; }
+
             var (bytes, contentType, fileName) = result.Value;
             await JS.InvokeVoidAsync("downloadFile", fileName, contentType, Convert.ToBase64String(bytes));
         }
         catch { _error = L["Error_Server"]; }
-        finally { _isExporting = false; }
+        finally { _isExporting = false; _formatoEnCurso = string.Empty; }
     }
 }

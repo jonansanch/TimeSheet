@@ -197,6 +197,10 @@
   <data name="Apr_RejectReasonRequired"><value>El motivo es obligatorio.</value></data>
   <data name="Apr_RejectReasonHint"><value>El empleado verá este texto: explícale qué debe corregir.</value></data>
   <data name="Apr_UndoApprove"><value>Deshacer mi aprobación</value></data>
+  <data name="Apr_EditDescription"><value>Corregir descripción</value></data>
+  <data name="Apr_EditOnlyDescription"><value>Solo se corrige la descripción. Las horas, el proyecto y la modalidad los declara quien trabajó el día.</value></data>
+  <data name="Apr_DescriptionUpdated"><value>Descripción corregida.</value></data>
+  <data name="Apr_EditError"><value>No fue posible corregir la descripción.</value></data>
   <data name="Apr_UndoReject"><value>Deshacer mi rechazo</value></data>
   <data name="Apr_ApprovedOk"><value>Día de {0} aprobado.</value></data>
   <data name="Apr_RejectedOk"><value>Día rechazado y devuelto al empleado.</value></data>
@@ -265,6 +269,8 @@
   <data name="Reg_DayHasRecord"><value>Ya tienes un registro de este día en este proyecto. Puedes agregar otro tramo mientras no se cruce con las horas ya registradas.</value></data>
   <data name="Reg_DayFull"><value>Este día ya tiene los tres horarios registrados en este proyecto. Para cambiar uno, elimina el registro desde Mis Registros.</value></data>
   <data name="Reg_ShiftAlreadySaved"><value>Ya registrado</value></data>
+  <data name="Reg_ResourceFromPuesto"><value>Precargado desde tu puesto. Puedes cambiarlo si este día trabajaste en otro rol.</value></data>
+  <data name="Reg_DescriptionSuggest"><value>Escribe o elige una descripción que ya hayas usado.</value></data>
   <data name="Reg_Saving"><value>Guardando...</value></data>
   <data name="Reg_SavedTitle"><value>Jornada guardada</value></data>
   <data name="Reg_TotalHours"><value>Total:</value></data>
@@ -297,6 +303,10 @@
   <data name="Hist_DeleteCannotUndo"><value>Esta acción no se puede deshacer.</value></data>
   <data name="Hist_DeletedMsg"><value>Registro del {0} eliminado.</value></data>
   <data name="Hist_EditDescription"><value>Editar descripción</value></data>
+  <data name="Hist_EditOnlyMetadata"><value>Los horarios y el proyecto no se pueden cambiar: identifican al registro. Para corregirlos hay que eliminarlo y volver a crearlo.</value></data>
+  <data name="Hist_EditRecord"><value>Editar registro</value></data>
+  <data name="Hist_Resend"><value>Corregir y reenviar a revisión</value></data>
+  <data name="Hist_Resent"><value>Registro reenviado. La revisión empieza de nuevo desde el primer nivel.</value></data>
   <data name="Hist_DescUpdated"><value>Descripción actualizada correctamente.</value></data>
   <data name="Hist_ErrorLoad"><value>No fue posible cargar el historial. Intente nuevamente.</value></data>
   <data name="Hist_ErrorDelete"><value>No fue posible eliminar el registro. Intente nuevamente.</value></data>
@@ -335,6 +345,7 @@
   <data name="Rep_FilterEmployee"><value>Filtrar por empleado</value></data>
   <data name="Rep_FilterClient"><value>Filtrar por inicio del nombre de cliente</value></data>
   <data name="Rep_FilterProject"><value>Filtrar por inicio del nombre de proyecto</value></data>
+  <data name="Rep_FilterResource"><value>Filtrar por inicio del nombre de recurso</value></data>
   <data name="Rep_NoResults"><value>Sin resultados para los filtros seleccionados. Ajuste los filtros e intente nuevamente.</value></data>
   <data name="Rep_ErrorLoad"><value>Error al generar el reporte. Intente nuevamente.</value></data>
   <data name="Rep_IndividualTimesheet"><value>Timesheet individual</value></data>
@@ -522,7 +533,9 @@
   <data name="Rep_ColModality"><value>Modalidad</value></data>
   <data name="Rep_ColPlace"><value>Lugar</value></data>
   <data name="Rep_NoResults2"><value>No hay registros que coincidan con los filtros seleccionados. Intenta ampliar el período o ajustar los criterios.</value></data>
-  <data name="Rep_TimesheetSubtitle"><value>Genera el Excel de timesheet mensual con el formato oficial KPG para un empleado.</value></data>
+  <data name="Rep_TimesheetSubtitle"><value>Genera el timesheet mensual en Excel o PDF, con el formato oficial KPG.</value></data>
+  <data name="Rep_PrintFilters"><value>Filtros de impresión (opcionales)</value></data>
+  <data name="Rep_ClearFilters"><value>Limpiar filtros</value></data>
   <data name="Rep_GenerateTimesheet"><value>Generar Timesheet</value></data>
 
   <!-- === NOTIFICACIONES EXTRAS === -->
