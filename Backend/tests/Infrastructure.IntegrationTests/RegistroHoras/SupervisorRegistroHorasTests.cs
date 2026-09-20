@@ -37,7 +37,7 @@ public class SupervisorRegistroHorasTests
         context.RegistrosHoras.Add(MakeRegistro("empleado-1", new DateOnly(2026, 5, 11)));
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("supervisor-1"));
+        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("supervisor-1"), IdentityDePrueba());
         var result = await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None);
 
         result.Items.Should().HaveCount(1);
@@ -122,5 +122,17 @@ public class SupervisorRegistroHorasTests
         public TestClock(DateOnly today) => Today = today;
         public DateOnly Today { get; }
         public DateTimeOffset UtcNow => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+    }
+
+    /// <summary>
+    /// El handler resuelve los nombres de quien aprobo cada nivel. A estas pruebas no les
+    /// importa ese dato: lo que verifican es la consulta de registros.
+    /// </summary>
+    private static IIdentityService IdentityDePrueba()
+    {
+        var identity = Substitute.For<IIdentityService>();
+        identity.GetUserNamesAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new Dictionary<string, string>());
+        return identity;
     }
 }

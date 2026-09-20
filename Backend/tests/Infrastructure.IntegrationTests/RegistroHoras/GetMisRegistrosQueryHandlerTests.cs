@@ -1,3 +1,4 @@
+using NSubstitute;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.RegistroHoras.Queries.GetMisRegistros;
 using KPG.Timesheet.Infrastructure.Data;
@@ -12,7 +13,7 @@ public class GetMisRegistrosQueryHandlerTests
     public async Task Handle_WhenUserHasNoRegistros_ShouldReturnEmpty()
     {
         await using var context = CreateContext();
-        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-sin-registros"));
+        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-sin-registros"), IdentityDePrueba());
 
         var result = await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None);
 
@@ -28,7 +29,7 @@ public class GetMisRegistrosQueryHandlerTests
         context.RegistrosHoras.Add(MakeRegistro("user-2", 2, new DateOnly(2026, 5, 10)));
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
+        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"), IdentityDePrueba());
         var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).Items.ToList();
 
         result.Should().HaveCount(1);
@@ -44,7 +45,7 @@ public class GetMisRegistrosQueryHandlerTests
         context.RegistrosHoras.Add(MakeRegistro("user-1", 5, new DateOnly(2026, 5, 11)));
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
+        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"), IdentityDePrueba());
         var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).Items.ToList();
 
         result.Should().HaveCount(3);
@@ -60,7 +61,7 @@ public class GetMisRegistrosQueryHandlerTests
         context.RegistrosHoras.Add(MakeRegistro("user-1", 1, new DateOnly(2026, 5, 10)));
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
+        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"), IdentityDePrueba());
         var result = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).Items.ToList();
 
         var item = result[0];
@@ -102,5 +103,17 @@ public class GetMisRegistrosQueryHandlerTests
         public string? Id { get; }
         public string? Email => null;
         public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
+    }
+
+    /// <summary>
+    /// El handler resuelve los nombres de quien aprobo cada nivel. A estas pruebas no les
+    /// importa ese dato: lo que verifican es la consulta de registros.
+    /// </summary>
+    private static IIdentityService IdentityDePrueba()
+    {
+        var identity = Substitute.For<IIdentityService>();
+        identity.GetUserNamesAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new Dictionary<string, string>());
+        return identity;
     }
 }

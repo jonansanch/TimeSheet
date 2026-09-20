@@ -44,15 +44,32 @@ public class IdentityServiceEstructuraTests
     }
 
     [Fact]
-    public async Task AsignarEstructura_WhenSupervisorIsSelf_ShouldFail()
+    public async Task AsignarEstructura_WhenSupervisorIsSelf_ShouldSucceed()
     {
+        // Decision del cliente: todos tienen jefe, y el de mas arriba es el suyo propio.
+        // Es asi como se marca la cabeza de la organizacion. Antes esto se rechazaba, y
+        // por eso los registros del jefe quedaban trabados en el nivel 2 para siempre.
         var (identity, _) = CreateServices();
+        var cabeza = await CrearUsuarioAsync(identity, "gerente@kpg.com");
+
+        var (result, _) = await identity.AsignarEstructuraAsync(cabeza, cabeza, null);
+
+        result.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AsignarEstructura_ConLaCabezaComoJefeDeOtro_ShouldNoVerloComoCiclo()
+    {
+        // La auto-referencia termina la cadena; subir por ella no debe confundirse con
+        // un ciclo preexistente y bloquear a quien cuelga de la cabeza.
+        var (identity, _) = CreateServices();
+        var cabeza   = await CrearUsuarioAsync(identity, "gerente@kpg.com");
         var empleado = await CrearUsuarioAsync(identity, "empleado@kpg.com");
+        await identity.AsignarEstructuraAsync(cabeza, cabeza, null);
 
-        var (result, _) = await identity.AsignarEstructuraAsync(empleado, empleado, null);
+        var (result, _) = await identity.AsignarEstructuraAsync(empleado, cabeza, null);
 
-        result.Succeeded.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("su propio supervisor"));
+        result.Succeeded.Should().BeTrue();
     }
 
     [Fact]

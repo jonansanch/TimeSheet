@@ -1,3 +1,4 @@
+using NSubstitute;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
@@ -72,7 +73,7 @@ public class NombreHistoricoTests
         proyecto.ActualizarNombre("Core Bancario v2");
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"));
+        var handler = new GetMisRegistrosQueryHandler(context, new TestUser("user-1"), IdentityDePrueba());
         var items = (await handler.Handle(new GetMisRegistrosQuery(null, null), CancellationToken.None)).Items;
 
         items.Should().ContainSingle()
@@ -142,5 +143,17 @@ public class NombreHistoricoTests
         public Task RegistrarAsync(string tipoEvento, string actorId, string? actorEmail,
             string entidadAfectada, string? entidadId, object? metadata = null,
             CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// El handler resuelve los nombres de quien aprobo cada nivel. A estas pruebas no les
+    /// importa ese dato: lo que verifican es la consulta de registros.
+    /// </summary>
+    private static IIdentityService IdentityDePrueba()
+    {
+        var identity = Substitute.For<IIdentityService>();
+        identity.GetUserNamesAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new Dictionary<string, string>());
+        return identity;
     }
 }
