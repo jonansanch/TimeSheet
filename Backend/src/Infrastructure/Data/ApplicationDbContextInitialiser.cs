@@ -980,7 +980,7 @@ public class ApplicationDbContextInitialiser
                 CREATE TABLE [dbo].[ParametrosSistema] (
                     [Id] int NOT NULL IDENTITY,
                     [Clave] nvarchar(100) NOT NULL,
-                    [Valor] nvarchar(500) NOT NULL,
+                    [Valor] nvarchar(max) NOT NULL,
                     [Created] datetimeoffset NOT NULL,
                     [CreatedBy] nvarchar(max) NULL,
                     [LastModified] datetimeoffset NOT NULL,
@@ -988,6 +988,21 @@ public class ApplicationDbContextInitialiser
                     CONSTRAINT [PK_ParametrosSistema] PRIMARY KEY ([Id])
                 );
                 CREATE UNIQUE INDEX [IX_ParametrosSistema_Clave] ON [dbo].[ParametrosSistema] ([Clave]);
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (
+                SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'[dbo].[ParametrosSistema]')
+                  AND name = N'Valor'
+                  AND max_length <> -1
+            )
+            BEGIN
+                -- Tablas creadas antes de que existiera el logo de reportes quedaron con
+                -- nvarchar(500): no alcanza para una imagen en base64. -1 = ya es
+                -- nvarchar(max), asi que en instalaciones nuevas esto no hace nada.
+                ALTER TABLE [dbo].[ParametrosSistema] ALTER COLUMN [Valor] nvarchar(max) NOT NULL;
             END
             """);
 

@@ -83,8 +83,8 @@
                                            OnClick="@(() => AbrirDialogoAsync(context.Item))" />
                         </MudTooltip>
                         <MudTooltip Text="@(context.Item.Activo ? L["Btn_Deactivate"].Value : L["Btn_Activate"].Value)">
-                            <MudIconButton Icon="@(context.Item.Activo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
-                                           Color="@(context.Item.Activo ? Color.Warning : Color.Success)"
+                            <MudIconButton Icon="@(context.Item.Activo ? Icons.Material.Filled.ToggleOn : Icons.Material.Filled.ToggleOff)"
+                                           Color="@(context.Item.Activo ? Color.Success : Color.Default)"
                                            Size="Size.Small"
                                            aria-label="@(context.Item.Activo ? L["Btn_Deactivate"] : L["Btn_Activate"])"
                                            Disabled="_isProcesando"

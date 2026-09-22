@@ -1,8 +1,10 @@
 using System.Data;
 using Dapper;
+using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.Reportes.Queries.ExportarReporteHoras;
 using KPG.Timesheet.Application.Features.Reportes.Queries.ExportarTimesheet;
 using MediatR;
+using ParametrosSistemaKeys = KPG.Timesheet.Domain.Constants.ParametrosSistema;
 
 namespace KPG.Timesheet.Infrastructure.Reportes;
 
@@ -10,7 +12,7 @@ namespace KPG.Timesheet.Infrastructure.Reportes;
 /// Resuelve los datos del timesheet mensual y delega el armado del documento en
 /// <see cref="TimesheetDocumentBuilder"/>, que es donde vive el formato del cliente.
 /// </summary>
-public class ExportarTimesheetQueryHandler(IDbConnection db)
+public class ExportarTimesheetQueryHandler(IDbConnection db, IParametrosSistemaService parametros)
     : IRequestHandler<ExportarTimesheetQuery, ExportarTimesheetResult>
 {
     private const string SqlNombre = """
@@ -60,10 +62,12 @@ public class ExportarTimesheetQueryHandler(IDbConnection db)
             Recurso  = Vacio(request.Recurso)
         })).Select(ToFila).ToList();
 
+        var logo = await parametros.GetTextoAsync(ParametrosSistemaKeys.LogoReportes, string.Empty, cancellationToken);
+
         var esPdf = request.Formato == ExportFormato.Pdf;
         var contenido = esPdf
-            ? TimesheetDocumentBuilder.Pdf(consultor, request.Mes, request.Anio, filas)
-            : TimesheetDocumentBuilder.Excel(consultor, request.Mes, request.Anio, filas);
+            ? TimesheetDocumentBuilder.Pdf(consultor, request.Mes, request.Anio, filas, logo)
+            : TimesheetDocumentBuilder.Excel(consultor, request.Mes, request.Anio, filas, logo);
 
         var mes     = TimesheetDocumentBuilder.NombreDelMes(request.Mes, request.Anio).ToLowerInvariant();
         var archivo = $"timesheet-{consultor.Replace(" ", "-").ToLowerInvariant()}-" +

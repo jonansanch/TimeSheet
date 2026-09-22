@@ -1,15 +1,17 @@
 using System.Data;
+using ClosedXML.Excel;
 using Dapper;
+using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Features.Reportes.Queries.ExportarReporteHoras;
 using MediatR;
-using MiniExcelLibs;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using ParametrosSistemaKeys = KPG.Timesheet.Domain.Constants.ParametrosSistema;
 
 namespace KPG.Timesheet.Infrastructure.Reportes;
 
-public class ExportarReporteHorasQueryHandler(IDbConnection db)
+public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSistemaService parametros)
     : IRequestHandler<ExportarReporteHorasQuery, ExportarReporteHorasResult>
 {
     private const string Sql = """
@@ -57,20 +59,92 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
             RecursoPattern  = BuildPrefixLikePattern(request.Recurso)
         })).ToList();
 
+        var logo = await parametros.GetTextoAsync(ParametrosSistemaKeys.LogoReportes, string.Empty, cancellationToken);
+
         return request.Formato == ExportFormato.Excel
-            ? GenerarExcel(rows, request)
-            : GenerarPdf(rows, request);
+            ? GenerarExcel(rows, request, logo)
+            : GenerarPdf(rows, request, logo);
     }
 
-    private static ExportarReporteHorasResult GenerarExcel(List<ExportRow> rows, ExportarReporteHorasQuery req)
+    private static readonly string[] Encabezados =
+    [
+        "Empleado", "Email", "Fecha", "Entrada 1", "Salida 1", "Entrada 2", "Salida 2",
+        "Entrada 3", "Salida 3", "Horas", "Cliente", "Proyecto", "Modalidad", "Lugar", "Descripción"
+    ];
+
+    private static ExportarReporteHorasResult GenerarExcel(
+        List<ExportRow> rows, ExportarReporteHorasQuery req, string? logoDataUri)
     {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Reporte de Horas");
+        ws.ShowGridLines = false;
+
+        AgregarLogoSiHay(ws, logoDataUri);
+
+        var titulo = ws.Range(1, 1, 1, Encabezados.Length).Merge();
+        titulo.Value = "Reporte de Horas KPG Timesheet";
+        titulo.Style.Font.Bold = true;
+        titulo.Style.Font.FontSize = 16;
+        ws.Row(1).Height = 24;
+
+        ws.Cell(2, 1).Value = $"Período: {req.Desde:dd/MM/yyyy} - {req.Hasta:dd/MM/yyyy}";
+        ws.Cell(2, 1).Style.Font.FontColor = XLColor.Gray;
+
+        const int filaEncabezado = 4;
+        for (var i = 0; i < Encabezados.Length; i++)
+        {
+            var celda = ws.Cell(filaEncabezado, i + 1);
+            celda.Value = Encabezados[i];
+            celda.Style.Font.Bold = true;
+            celda.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            celda.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        }
+
+        var fila = filaEncabezado + 1;
+        foreach (var r in rows)
+        {
+            ws.Cell(fila, 1).Value  = r.Empleado;
+            ws.Cell(fila, 2).Value  = r.Email;
+            ws.Cell(fila, 3).Value  = r.Fecha;
+            ws.Cell(fila, 4).Value  = r.Entrada1;
+            ws.Cell(fila, 5).Value  = r.Salida1;
+            ws.Cell(fila, 6).Value  = r.Entrada2;
+            ws.Cell(fila, 7).Value  = r.Salida2;
+            ws.Cell(fila, 8).Value  = r.Entrada3;
+            ws.Cell(fila, 9).Value  = r.Salida3;
+            ws.Cell(fila, 10).Value = r.Horas;
+            ws.Cell(fila, 11).Value = r.Cliente;
+            ws.Cell(fila, 12).Value = r.Proyecto;
+            ws.Cell(fila, 13).Value = r.Modalidad;
+            ws.Cell(fila, 14).Value = r.Lugar;
+            ws.Cell(fila, 15).Value = r.Descripcion;
+
+            ws.Range(fila, 1, fila, Encabezados.Length).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            fila++;
+        }
+
+        ws.Columns().AdjustToContents();
+        ws.SheetView.Freeze(filaEncabezado, 0);
+
         using var ms = new MemoryStream();
-        ms.SaveAs(rows);
+        wb.SaveAs(ms);
         var fileName = $"reporte-horas-{req.Desde:yyyyMMdd}-{req.Hasta:yyyyMMdd}.xlsx";
         return new ExportarReporteHorasResult(
             ms.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             fileName);
+    }
+
+    private static void AgregarLogoSiHay(IXLWorksheet ws, string? logoDataUri)
+    {
+        var bytes  = LogoDataUri.DecodeBytes(logoDataUri);
+        var format = LogoDataUri.DecodeFormat(logoDataUri);
+        if (bytes is null || format is null) return;
+
+        using var stream = new MemoryStream(bytes);
+        ws.AddPicture(stream, format.Value)
+            .MoveTo(ws.Cell(1, Encabezados.Length))
+            .WithSize(110, 36);
     }
 
     private static string? BuildPrefixLikePattern(string? value)
@@ -88,8 +162,11 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
             .Replace("_", @"\_")
             .Replace("[", @"\[");
 
-    private static ExportarReporteHorasResult GenerarPdf(List<ExportRow> rows, ExportarReporteHorasQuery req)
+    private static ExportarReporteHorasResult GenerarPdf(
+        List<ExportRow> rows, ExportarReporteHorasQuery req, string? logoDataUri)
     {
+        var logo = LogoDataUri.DecodeBytes(logoDataUri);
+
         var doc = Document.Create(container =>
         {
             container.Page(page =>
@@ -98,17 +175,23 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db)
                 page.Margin(1.5f, QuestPDF.Infrastructure.Unit.Centimetre);
                 page.DefaultTextStyle(x => x.FontSize(9));
 
-                page.Header().Column(col =>
+                page.Header().Row(header =>
                 {
-                    col.Item().Text($"Reporte de Horas KPG Timesheet")
-                        .FontSize(14).Bold();
-                    col.Item().Text($"Período: {req.Desde:dd/MM/yyyy} – {req.Hasta:dd/MM/yyyy}")
-                        .FontSize(10).FontColor(Colors.Grey.Medium);
-                    if (!string.IsNullOrWhiteSpace(req.Cliente))
-                        col.Item().Text($"Cliente: {req.Cliente}").FontSize(9).FontColor(Colors.Grey.Medium);
-                    if (!string.IsNullOrWhiteSpace(req.Proyecto))
-                        col.Item().Text($"Proyecto: {req.Proyecto}").FontSize(9).FontColor(Colors.Grey.Medium);
-                    col.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    header.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text($"Reporte de Horas KPG Timesheet")
+                            .FontSize(14).Bold();
+                        col.Item().Text($"Período: {req.Desde:dd/MM/yyyy} – {req.Hasta:dd/MM/yyyy}")
+                            .FontSize(10).FontColor(Colors.Grey.Medium);
+                        if (!string.IsNullOrWhiteSpace(req.Cliente))
+                            col.Item().Text($"Cliente: {req.Cliente}").FontSize(9).FontColor(Colors.Grey.Medium);
+                        if (!string.IsNullOrWhiteSpace(req.Proyecto))
+                            col.Item().Text($"Proyecto: {req.Proyecto}").FontSize(9).FontColor(Colors.Grey.Medium);
+                        col.Item().PaddingTop(4).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    });
+
+                    if (logo is not null)
+                        header.ConstantItem(70).AlignRight().Image(logo).FitArea();
                 });
 
                 page.Content().PaddingTop(8).Table(table =>

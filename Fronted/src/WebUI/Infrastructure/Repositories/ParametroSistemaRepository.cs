@@ -106,6 +106,37 @@ public class ParametroSistemaRepository : IParametroSistemaRepository
         return (true, null);
     }
 
+    public async Task<string> GetLogoReportesAsync(CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken)) return string.Empty;
+
+        using var message = CreateMessage(HttpMethod.Get, "api/sistema/logo-reportes");
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode) return string.Empty;
+
+        var result = await response.Content.ReadFromJsonAsync<LogoReportesResponse>(cancellationToken: ct);
+        return result?.Logo ?? string.Empty;
+    }
+
+    public async Task<(bool Ok, string? Error)> UpdateLogoReportesAsync(
+        string? imagenDataUri, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return (false, "Sesion no disponible.");
+
+        using var message = CreateMessage(HttpMethod.Put, "api/sistema/logo-reportes");
+        message.Content = JsonContent.Create(new UpdateLogoReportesRequest(imagenDataUri));
+
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode)
+            return (false, await ReadErrorAsync(response, ct));
+
+        return (true, null);
+    }
+
+    private sealed record LogoReportesResponse(string Logo);
+    private sealed record UpdateLogoReportesRequest(string? ImagenDataUri);
+
     private HttpRequestMessage CreateMessage(HttpMethod method, string url)
     {
         var message = new HttpRequestMessage(method, url);

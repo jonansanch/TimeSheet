@@ -10,4 +10,10 @@ public static class ParametrosSistema
 
     /// <summary>Corte con el que el supervisor revisa: "Semanal" o "Quincenal".</summary>
     public const string PeriodoAprobacion = "PeriodoAprobacion";
+
+    /// <summary>
+    /// Logo que se imprime en los reportes (timesheet y reporte de horas), como data URI
+    /// completo ("data:image/png;base64,..."). Vacio o ausente significa sin logo.
+    /// </summary>
+    public const string LogoReportes = "LogoReportes";
 }

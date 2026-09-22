@@ -54,7 +54,8 @@ public record TimesheetFila(
 /// </summary>
 public static class TimesheetDocumentBuilder
 {
-    public static byte[] Excel(string consultor, int mes, int anio, IReadOnlyList<TimesheetFila> filas)
+    public static byte[] Excel(
+        string consultor, int mes, int anio, IReadOnlyList<TimesheetFila> filas, string? logoDataUri = null)
     {
         var cols = Columnas.Para(filas);
 
@@ -75,7 +76,11 @@ public static class TimesheetDocumentBuilder
         titulo.Style.Font.FontSize        = 20;
         titulo.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         titulo.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
-        ws.Row(5).Height = 45;
+
+        // Alta para dejarle espacio al logo, que comparte la fila con el titulo:
+        // misma proporcion que la plantilla oficial del cliente.
+        ws.Row(5).Height = 72.75;
+        AgregarLogo(ws, logoDataUri, cols.Fecha);
 
         // ── Fila 6: consultor / mes / anio ──────────────────────────────────
         ws.Cell(6, cols.Fecha).Value = "Consultor";
@@ -167,11 +172,13 @@ public static class TimesheetDocumentBuilder
         return ms.ToArray();
     }
 
-    public static byte[] Pdf(string consultor, int mes, int anio, IReadOnlyList<TimesheetFila> filas)
+    public static byte[] Pdf(
+        string consultor, int mes, int anio, IReadOnlyList<TimesheetFila> filas, string? logoDataUri = null)
     {
         var pares = Columnas.ParesNecesarios(filas);
         var total = Math.Round(filas.Sum(f => f.TotalMinutos) / 60.0m, 2);
         var periodo = $"{NombreDelMes(mes, anio)} {anio}";
+        var logo = LogoDataUri.DecodeBytes(logoDataUri);
 
         return Document.Create(doc =>
         {
@@ -183,7 +190,14 @@ public static class TimesheetDocumentBuilder
 
                 page.Header().Column(col =>
                 {
-                    col.Item().AlignCenter().Text("Timesheet KPG").FontSize(16).Bold();
+                    col.Item().Row(r =>
+                    {
+                        if (logo is not null)
+                            r.ConstantItem(70).Image(logo).FitArea();
+                        r.RelativeItem().AlignCenter().AlignMiddle().Text("Timesheet KPG").FontSize(16).Bold();
+                        if (logo is not null)
+                            r.ConstantItem(70);   // balancea el logo para que el titulo quede centrado
+                    });
                     col.Item().PaddingTop(6).Row(r =>
                     {
                         r.RelativeItem().Text(t => { t.Span("Consultor: ").Bold(); t.Span(consultor); });
@@ -297,6 +311,24 @@ public static class TimesheetDocumentBuilder
         valor.HasValue
             ? DateTime.Today.Add(valor.Value.ToTimeSpan()).ToString("h:mm tt", CultureInfo.InvariantCulture)
             : string.Empty;
+
+    /// <summary>
+    /// Inserta el logo parametrizado como imagen flotante en la fila 5 (la del titulo),
+    /// con la misma posicion y tamano que trae la plantilla oficial del cliente: ancla en
+    /// la columna Fecha, 24px a la derecha y 27px hacia abajo, de 108x47px. No depende del
+    /// ancho de la celda ancla, asi que no distorsiona el resto de la plantilla.
+    /// </summary>
+    private static void AgregarLogo(IXLWorksheet ws, string? logoDataUri, int columnaFecha)
+    {
+        var bytes  = LogoDataUri.DecodeBytes(logoDataUri);
+        var format = LogoDataUri.DecodeFormat(logoDataUri);
+        if (bytes is null || format is null) return;
+
+        using var stream = new MemoryStream(bytes);
+        ws.AddPicture(stream, format.Value)
+            .MoveTo(ws.Cell(5, columnaFecha), 24, 27)
+            .WithSize(108, 47);
+    }
 
     private static void AplicarAnchos(IXLWorksheet ws, Columnas cols)
     {

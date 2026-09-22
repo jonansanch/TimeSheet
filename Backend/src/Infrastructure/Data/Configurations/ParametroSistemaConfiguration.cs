@@ -10,7 +10,13 @@ public class ParametroSistemaConfiguration : IEntityTypeConfiguration<ParametroS
     {
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Clave).IsRequired().HasMaxLength(100);
-        builder.Property(p => p.Valor).IsRequired().HasMaxLength(500);
+
+        // Sin HasMaxLength ni HasColumnType: EF deja el ancho sin especificar, que en SQL
+        // Server cae en nvarchar(max) y en SQLite (usado en tests) no rompe la sintaxis de
+        // creacion de tabla. Hace falta: la mayoria de los valores son cortos (numeros,
+        // "Semanal"), pero el logo de reportes guarda una imagen entera en base64.
+        builder.Property(p => p.Valor).IsRequired();
+
         builder.HasIndex(p => p.Clave).IsUnique();
     }
 }

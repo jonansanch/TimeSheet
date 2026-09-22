@@ -1,5 +1,7 @@
+using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateLogoReportes;
 using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateUmbralNotificacion;
 using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateVentanaRetroactividad;
+using KPG.Timesheet.Application.Features.Sistema.Queries.GetLogoReportes;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetUmbralNotificacion;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetVentanaRetroactividad;
 using KPG.Timesheet.Domain.Constants;
@@ -27,6 +29,8 @@ public class Sistema : IEndpointGroup
         groupBuilder.MapGet("periodo-aprobacion", GetPeriodoAprobacion).RequireAuthorization(anyAuth);
         groupBuilder.MapGet("umbral-notificacion", GetUmbralNotificacion).RequireAuthorization(anyAuth);
         groupBuilder.MapPut("umbral-notificacion", UpdateUmbralNotificacion).RequireAuthorization(adminOnly);
+        groupBuilder.MapGet("logo-reportes", GetLogoReportes).RequireAuthorization(adminOnly);
+        groupBuilder.MapPut("logo-reportes", UpdateLogoReportes).RequireAuthorization(adminOnly);
     }
 
     [EndpointSummary("Obtener ventana de registro retroactivo del usuario autenticado")]
@@ -87,7 +91,31 @@ public class Sistema : IEndpointGroup
         await sender.Send(new UpdateUmbralNotificacionCommand(request.Dias), cancellationToken);
         return Results.NoContent();
     }
+
+    [EndpointSummary("Obtener el logo parametrizado para los reportes")]
+    [EndpointDescription("Data URI completo (data:image/png;base64,...) o cadena vacia si no hay logo configurado.")]
+    private static async Task<IResult> GetLogoReportes(ISender sender, CancellationToken cancellationToken)
+    {
+        var logo = await sender.Send(new GetLogoReportesQuery(), cancellationToken);
+        return Results.Ok(new { logo });
+    }
+
+    [EndpointSummary("Actualizar el logo de los reportes")]
+    [EndpointDescription("PNG o JPG como data URI, hasta 1 MB. Enviar null o vacio para quitarlo.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    private static async Task<IResult> UpdateLogoReportes(
+        [FromBody] UpdateLogoReportesRequest request,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new UpdateLogoReportesCommand(request.ImagenDataUri), cancellationToken);
+        return Results.NoContent();
+    }
 }
 
 public record UpdateVentanaRequest(int Dias);
 public record UpdateUmbralRequest(int Dias);
+public record UpdateLogoReportesRequest(string? ImagenDataUri);

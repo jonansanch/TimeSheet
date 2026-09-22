@@ -59,8 +59,8 @@
                             @if (context.Item.Activo)
                             {
                                 <MudTooltip Text="@(L["Btn_Deactivate"].Value)">
-                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
-                                                   Color="Color.Warning" Size="Size.Small"
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                   Color="Color.Success" Size="Size.Small"
                                                    aria-label="@L["Btn_Deactivate"]"
                                                    Disabled="_isProcesando"
                                                    OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
@@ -69,8 +69,8 @@
                             else
                             {
                                 <MudTooltip Text="@(L["Btn_Activate"].Value)">
-                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
-                                                   Color="Color.Success" Size="Size.Small"
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                   Color="Color.Default" Size="Size.Small"
                                                    aria-label="@L["Btn_Activate"]"
                                                    Disabled="_isProcesando"
                                                    OnClick="@(() => ConfirmarToggleAsync(context.Item))" />

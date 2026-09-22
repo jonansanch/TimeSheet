@@ -239,6 +239,13 @@
   <data name="Day_Friday"><value>Viernes</value></data>
   <data name="Day_Saturday"><value>Sábado</value></data>
   <data name="Day_Sunday"><value>Domingo</value></data>
+  <data name="Params_LogoTitle"><value>Logo de reportes</value></data>
+  <data name="Params_LogoSubtitle"><value>Se imprime en el timesheet y el reporte de horas, en Excel y PDF.</value></data>
+  <data name="Params_LogoEmpty"><value>No hay logo configurado. Los reportes se generan sin logo.</value></data>
+  <data name="Params_LogoChoose"><value>Elegir imagen</value></data>
+  <data name="Params_LogoRemove"><value>Quitar logo</value></data>
+  <data name="Params_LogoErrorType"><value>La imagen debe ser PNG o JPG.</value></data>
+  <data name="Params_LogoErrorSize"><value>La imagen no puede superar 1 MB.</value></data>
   <data name="Org_LedBy"><value>Líder:</value></data>
   <data name="Org_Title"><value>Organigrama</value></data>
   <data name="Org_Subtitle"><value>Jerarquía de la organización según el jefe directo de cada persona.</value></data>

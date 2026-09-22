@@ -13,4 +13,8 @@ public interface IParametroSistemaRepository
 
     Task<int> GetUmbralNotificacionAsync(CancellationToken ct = default);
     Task<(bool Ok, string? Error)> UpdateUmbralNotificacionAsync(int dias, CancellationToken ct = default);
+
+    /// <summary>Logo actual de los reportes, como data URI, o cadena vacia si no hay ninguno.</summary>
+    Task<string> GetLogoReportesAsync(CancellationToken ct = default);
+    Task<(bool Ok, string? Error)> UpdateLogoReportesAsync(string? imagenDataUri, CancellationToken ct = default);
 }

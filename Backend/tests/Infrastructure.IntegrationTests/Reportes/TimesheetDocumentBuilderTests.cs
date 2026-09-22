@@ -112,7 +112,47 @@ public class TimesheetDocumentBuilderTests
         act.Should().NotThrow();
     }
 
+    [Fact]
+    public void Excel_ConLogo_ShouldInsertarLaImagenSinRomperElFormato()
+    {
+        var ws = Abrir(TimesheetDocumentBuilder.Excel("Consultor", 5, 2026, DosDias(), LogoPngDataUri));
+
+        ws.Pictures.Should().ContainSingle();
+        // El resto de la plantilla sigue intacta con el logo presente.
+        Encabezados(ws).Should().Contain("Lugar");
+    }
+
+    [Fact]
+    public void Excel_SinLogo_ShouldNoAgregarNingunaImagen()
+    {
+        var ws = Abrir(TimesheetDocumentBuilder.Excel("Consultor", 5, 2026, DosDias()));
+
+        ws.Pictures.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Pdf_ConLogo_ShouldGenerarseSinErrores()
+    {
+        var bytes = TimesheetDocumentBuilder.Pdf("Consultor", 5, 2026, DosDias(), LogoPngDataUri);
+
+        bytes.Should().NotBeEmpty();
+        System.Text.Encoding.ASCII.GetString(bytes, 0, 5).Should().Be("%PDF-");
+    }
+
+    [Fact]
+    public void Pdf_ConLogoInvalido_ShouldGenerarseIgualSinLogo()
+    {
+        var act = () => TimesheetDocumentBuilder.Pdf("Consultor", 5, 2026, DosDias(), "no-es-un-data-uri");
+
+        act.Should().NotThrow();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>PNG de 1x1 transparente, valido, para probar la insercion del logo.</summary>
+    private const string LogoPngDataUri =
+        "data:image/png;base64," +
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
     /// <summary>La plantilla deja la columna A de margen: el contenido arranca en B.</summary>
     private const int PrimeraColumna = 2;
