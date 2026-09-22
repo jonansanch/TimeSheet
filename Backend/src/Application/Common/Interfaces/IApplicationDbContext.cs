@@ -18,7 +18,9 @@ public interface IApplicationDbContext
     DbSet<BitacoraAuditoria> BitacoraAuditoria { get; }
     DbSet<SupervisorPuesto> SupervisoresPuesto { get; }
     DbSet<ReglaVentanaRetroactividad> ReglasVentanaRetroactividad { get; }
+    DbSet<ParametroRestriccionDia> ParametrosRestriccionDia { get; }
     DbSet<AprobacionRegistro> AprobacionesRegistro { get; }
+    DbSet<ReporteUsuario> ReportesUsuario { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

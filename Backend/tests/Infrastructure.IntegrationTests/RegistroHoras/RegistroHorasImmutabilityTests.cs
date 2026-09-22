@@ -109,7 +109,7 @@ public class RegistroHorasImmutabilityTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora(), VentanaService(context));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
         var result = await handler.Handle(CommandForDate(fechaFueraVentana), CancellationToken.None);
 
         result.FechaRegistro.Should().Be(fechaFueraVentana);

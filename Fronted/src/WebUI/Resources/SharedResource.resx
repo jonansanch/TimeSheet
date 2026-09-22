@@ -146,6 +146,7 @@
   <data name="Login_Button"><value>Entrar</value></data>
   <data name="Login_Error"><value>Credenciales incorrectas. Verifica tu correo y contraseña.</value></data>
   <data name="Login_Loading"><value>Verificando...</value></data>
+  <data name="Login_Welcome"><value>Bienvenido,</value></data>
   <data name="Login_ContactAdmin"><value>¿Problemas para acceder? Contacte al Administrador del sistema.</value></data>
 
   <!-- === REGISTRO DE JORNADA === -->
@@ -226,6 +227,18 @@
   <data name="Params_WindowRuleByRole"><value>Un rol</value></data>
   <data name="Params_WindowRuleByPerson"><value>Una persona</value></data>
   <data name="Params_WindowRuleHint"><value>El valor general es {0} días. Una excepción de persona pesa más que una de rol.</value></data>
+  <data name="Params_DayRestrictionsTitle"><value>Restricciones de días</value></data>
+  <data name="Params_DayRestrictionsSubtitle"><value>Días de la semana en los que un rol o una persona concreta no puede registrar horas.</value></data>
+  <data name="Params_DayRestrictionsEmpty"><value>No hay restricciones configuradas.</value></data>
+  <data name="Params_DayRestrictionNew"><value>Nueva restricción</value></data>
+  <data name="Params_DayRestrictionDay"><value>Día</value></data>
+  <data name="Day_Monday"><value>Lunes</value></data>
+  <data name="Day_Tuesday"><value>Martes</value></data>
+  <data name="Day_Wednesday"><value>Miércoles</value></data>
+  <data name="Day_Thursday"><value>Jueves</value></data>
+  <data name="Day_Friday"><value>Viernes</value></data>
+  <data name="Day_Saturday"><value>Sábado</value></data>
+  <data name="Day_Sunday"><value>Domingo</value></data>
   <data name="Org_LedBy"><value>Líder:</value></data>
   <data name="Org_Title"><value>Organigrama</value></data>
   <data name="Org_Subtitle"><value>Jerarquía de la organización según el jefe directo de cada persona.</value></data>
@@ -612,4 +625,37 @@
   <data name="Error_Server"><value>Error al comunicarse con el servidor.</value></data>
   <data name="Error_SessionExpired"><value>Su sesión expiró. Inicie sesión nuevamente.</value></data>
   <data name="Reload"><value>Recargar</value></data>
+  <data name="Val_Required"><value>Este campo es obligatorio.</value></data>
+
+  <!-- === REPORTES DE USUARIO (fallas / mejoras) === -->
+  <data name="Nav_Reportar"><value>Reportar falla / mejora</value></data>
+  <data name="Nav_ReportesAdmin"><value>Reportes de usuarios</value></data>
+  <data name="RepUser_Title"><value>Reportar falla o mejora</value></data>
+  <data name="RepUser_Subtitle"><value>Cuéntanos qué falló o qué te gustaría que mejoráramos.</value></data>
+  <data name="Rep_TypeFailure"><value>Falla</value></data>
+  <data name="Rep_TypeImprovement"><value>Mejora</value></data>
+  <data name="Rep_FieldTitle"><value>Título</value></data>
+  <data name="Rep_FieldDescription"><value>Descripción</value></data>
+  <data name="Rep_Submit"><value>Enviar</value></data>
+  <data name="Rep_SentOk"><value>Reporte enviado. Gracias por avisarnos.</value></data>
+  <data name="Rep_ErrorSend"><value>No se pudo enviar el reporte.</value></data>
+  <data name="Rep_MyReportsTitle"><value>Mis reportes</value></data>
+  <data name="Rep_NoReports"><value>Aún no has enviado ningún reporte.</value></data>
+  <data name="Rep_ColType"><value>Tipo</value></data>
+  <data name="Rep_ColResponse"><value>Respuesta</value></data>
+  <data name="Rep_StateNew"><value>Nuevo</value></data>
+  <data name="Rep_StateInReview"><value>En revisión</value></data>
+  <data name="Rep_StateResolved"><value>Resuelto</value></data>
+  <data name="Rep_StateRejected"><value>Rechazado</value></data>
+  <data name="RepAdmin_Title"><value>Reportes de usuarios</value></data>
+  <data name="RepAdmin_Subtitle"><value>Fallas y mejoras reportadas por todos los usuarios.</value></data>
+  <data name="RepAdmin_ColUser"><value>Usuario</value></data>
+  <data name="RepAdmin_NoReports"><value>No hay reportes.</value></data>
+  <data name="RepAdmin_ErrorLoad"><value>No se pudieron cargar los reportes.</value></data>
+  <data name="RepAdmin_ChangeState"><value>Cambiar estado</value></data>
+  <data name="RepAdmin_NewState"><value>Nuevo estado</value></data>
+  <data name="RepAdmin_Comment"><value>Comentario</value></data>
+  <data name="RepAdmin_CommentRequiredOnReject"><value>El rechazo requiere un comentario.</value></data>
+  <data name="RepAdmin_SavedOk"><value>Estado actualizado.</value></data>
+  <data name="RepAdmin_ErrorSave"><value>No se pudo actualizar el estado.</value></data>
 </root>

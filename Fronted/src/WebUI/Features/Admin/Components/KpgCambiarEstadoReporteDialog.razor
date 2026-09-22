@@ -1,0 +1,54 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["RepAdmin_ChangeState"]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.body1" Style="font-weight:600;">@Reporte.Titulo</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Reporte.Descripcion</MudText>
+
+            <MudSelect T="EstadoReporte" Label="@L["RepAdmin_NewState"]" Variant="Variant.Outlined"
+                       @bind-Value="_nuevoEstado" aria-label="@L["RepAdmin_NewState"]">
+                <MudSelectItem Value="EstadoReporte.EnRevision">@L["Rep_StateInReview"]</MudSelectItem>
+                <MudSelectItem Value="EstadoReporte.Resuelto">@L["Rep_StateResolved"]</MudSelectItem>
+                <MudSelectItem Value="EstadoReporte.Rechazado">@L["Rep_StateRejected"]</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="@L["RepAdmin_Comment"]"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_comentario"
+                          Lines="3"
+                          MaxLength="2000"
+                          Required="@(_nuevoEstado == EstadoReporte.Rechazado)"
+                          RequiredError="@L["RepAdmin_CommentRequiredOnReject"]" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!EsValido)" OnClick="Submit">
+            @L["Btn_Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public ReporteUsuarioResponse Reporte { get; set; } = default!;
+
+    private EstadoReporte _nuevoEstado = EstadoReporte.EnRevision;
+    private string? _comentario;
+
+    private bool EsValido => _nuevoEstado != EstadoReporte.Rechazado || !string.IsNullOrWhiteSpace(_comentario);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(new CambiarEstadoReporteRequest(_nuevoEstado, _comentario)));
+}

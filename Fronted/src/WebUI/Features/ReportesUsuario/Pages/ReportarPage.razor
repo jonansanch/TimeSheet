@@ -1,0 +1,182 @@
+@page "/reportar"
+@attribute [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
+@inject IReporteUsuarioRepository Repo
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L["RepUser_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["RepUser_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["RepUser_Subtitle"]</MudText>
+    </div>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudForm @ref="_form" @bind-IsValid="_formIsValid">
+            <MudStack Spacing="3">
+                <MudRadioGroup T="TipoReporte" @bind-Value="_tipo">
+                    <MudRadio T="TipoReporte" Value="TipoReporte.Falla" Color="Color.Error">
+                        @L["Rep_TypeFailure"]
+                    </MudRadio>
+                    <MudRadio T="TipoReporte" Value="TipoReporte.Mejora" Color="Color.Primary">
+                        @L["Rep_TypeImprovement"]
+                    </MudRadio>
+                </MudRadioGroup>
+
+                <MudTextField T="string"
+                              Label="@L["Rep_FieldTitle"]"
+                              Variant="Variant.Outlined"
+                              @bind-Value="_titulo"
+                              Required="true"
+                              RequiredError="@L["Val_Required"]"
+                              MaxLength="200"
+                              Counter="200" />
+
+                <MudTextField T="string"
+                              Label="@L["Rep_FieldDescription"]"
+                              Variant="Variant.Outlined"
+                              @bind-Value="_descripcion"
+                              Required="true"
+                              RequiredError="@L["Val_Required"]"
+                              Lines="4"
+                              MaxLength="2000"
+                              Counter="2000" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Send"
+                           Disabled="@(_isSaving || !_formIsValid)"
+                           OnClick="EnviarAsync">
+                    @(_isSaving ? L["Loading"].Value : L["Rep_Submit"].Value)
+                </MudButton>
+            </MudStack>
+        </MudForm>
+    </MudPaper>
+
+    <div>
+        <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Rep_MyReportsTitle"]</MudText>
+    </div>
+
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton />
+    }
+    else if (_reportes.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Inbox">@L["Rep_NoReports"]</MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="ReporteUsuarioResponse" Items="_reportes" Dense="true"
+                     Filterable="false" SortMode="SortMode.Single" RowsPerPage="50">
+            <Columns>
+                <TemplateColumn Title="@L["Rep_ColType"]" Sortable="false">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                 Color="@(context.Item.Tipo == TipoReporte.Falla ? Color.Error : Color.Primary)"
+                                 Icon="@(context.Item.Tipo == TipoReporte.Falla ? Icons.Material.Filled.BugReport : Icons.Material.Filled.Lightbulb)">
+                            @(context.Item.Tipo == TipoReporte.Falla ? L["Rep_TypeFailure"] : L["Rep_TypeImprovement"])
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Titulo" Title="@L["Rep_FieldTitle"]" Sortable="false" />
+                <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small" Color="@EstadoColor(context.Item.Estado)">
+                            @EstadoTexto(context.Item.Estado)
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Rep_ColResponse"]" Sortable="false">
+                    <CellTemplate>
+                        @if (!string.IsNullOrWhiteSpace(context.Item.ComentarioRespuesta))
+                        {
+                            <MudTooltip Text="@context.Item.ComentarioRespuesta">
+                                <MudIcon Icon="@Icons.Material.Filled.Comment" Size="Size.Small" Color="Color.Secondary" />
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Exc_ColDate"]" Sortable="true">
+                    <CellTemplate>@context.Item.Created.LocalDateTime.ToString("dd/MM/yyyy")</CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="ReporteUsuarioResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["RepUser_Title"].Value, null, disabled: true)
+    ];
+
+    private MudForm _form = default!;
+    private bool _formIsValid;
+    private bool _isSaving;
+    private bool _isLoading = true;
+    private TipoReporte _tipo = TipoReporte.Falla;
+    private string _titulo = string.Empty;
+    private string _descripcion = string.Empty;
+    private List<ReporteUsuarioResponse> _reportes = [];
+
+    protected override async Task OnInitializedAsync() => await CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        _isLoading = true;
+        try { _reportes = await Repo.GetMisReportesAsync(); }
+        finally { _isLoading = false; }
+    }
+
+    private async Task EnviarAsync()
+    {
+        await _form.Validate();
+        if (!_formIsValid) return;
+
+        _isSaving = true;
+        try
+        {
+            var (ok, _, error) = await Repo.CrearAsync(new CrearReporteUsuarioRequest(_tipo, _titulo.Trim(), _descripcion.Trim()));
+            if (ok)
+            {
+                Snackbar.Add(L["Rep_SentOk"].Value, Severity.Success);
+                _titulo = string.Empty;
+                _descripcion = string.Empty;
+                _form.ResetValidation();
+                await CargarAsync();
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["Rep_ErrorSend"].Value, Severity.Error);
+            }
+        }
+        finally { _isSaving = false; }
+    }
+
+    private string EstadoTexto(EstadoReporte estado) => estado switch
+    {
+        EstadoReporte.Nuevo      => L["Rep_StateNew"].Value,
+        EstadoReporte.EnRevision => L["Rep_StateInReview"].Value,
+        EstadoReporte.Resuelto   => L["Rep_StateResolved"].Value,
+        EstadoReporte.Rechazado  => L["Rep_StateRejected"].Value,
+        _                         => estado.ToString()
+    };
+
+    private static Color EstadoColor(EstadoReporte estado) => estado switch
+    {
+        EstadoReporte.Resuelto  => Color.Success,
+        EstadoReporte.Rechazado => Color.Error,
+        EstadoReporte.EnRevision => Color.Info,
+        _                        => Color.Warning
+    };
+}

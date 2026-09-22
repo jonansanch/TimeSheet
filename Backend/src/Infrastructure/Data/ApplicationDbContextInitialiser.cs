@@ -890,6 +890,58 @@ public class ApplicationDbContextInitialiser
             """);
 
         await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[ParametrosRestriccionDia]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[ParametrosRestriccionDia] (
+                    [Id] int NOT NULL IDENTITY,
+                    [DiaDelaSemana] int NOT NULL,
+                    [UserId] nvarchar(450) NULL,
+                    [Rol] nvarchar(100) NULL,
+                    [Activo] bit NOT NULL DEFAULT 1,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_ParametrosRestriccionDia] PRIMARY KEY ([Id])
+                );
+
+                -- Filtrados: la columna que no aplica queda NULL, y un unique normal
+                -- trataria esos NULL como iguales dejando una sola regla por dia.
+                CREATE UNIQUE INDEX [IX_ParametrosRestriccionDia_Dia_UserId]
+                    ON [dbo].[ParametrosRestriccionDia] ([DiaDelaSemana], [UserId])
+                    WHERE [UserId] IS NOT NULL;
+
+                CREATE UNIQUE INDEX [IX_ParametrosRestriccionDia_Dia_Rol]
+                    ON [dbo].[ParametrosRestriccionDia] ([DiaDelaSemana], [Rol])
+                    WHERE [Rol] IS NOT NULL;
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[ReportesUsuario]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[ReportesUsuario] (
+                    [Id] int NOT NULL IDENTITY,
+                    [UserId] nvarchar(450) NOT NULL,
+                    [Tipo] nvarchar(20) NOT NULL,
+                    [Titulo] nvarchar(200) NOT NULL,
+                    [Descripcion] nvarchar(2000) NOT NULL,
+                    [Estado] nvarchar(20) NOT NULL,
+                    [ComentarioRespuesta] nvarchar(2000) NULL,
+                    [RespondidoPorUserId] nvarchar(450) NULL,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_ReportesUsuario] PRIMARY KEY ([Id])
+                );
+
+                CREATE INDEX [IX_ReportesUsuario_UserId] ON [dbo].[ReportesUsuario] ([UserId]);
+                CREATE INDEX [IX_ReportesUsuario_Estado] ON [dbo].[ReportesUsuario] ([Estado]);
+            END
+            """);
+
+        await _context.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'[dbo].[SupervisoresPuesto]', N'U') IS NULL
             BEGIN
                 CREATE TABLE [dbo].[SupervisoresPuesto] (

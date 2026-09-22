@@ -1,0 +1,152 @@
+@page "/admin/reportes-usuario"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IReporteUsuarioRepository Repo
+@inject IUserAdminRepository UsuariosRepo
+@inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L["RepAdmin_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["RepAdmin_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["RepAdmin_Subtitle"]</MudText>
+    </div>
+
+    @if (_isLoading)
+    {
+        <KpgTableSkeleton />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    else if (_reportes.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Inbox">@L["RepAdmin_NoReports"]</MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="ReporteUsuarioResponse" Items="_reportes" Dense="true"
+                     Filterable="true" SortMode="SortMode.Single" RowsPerPage="50">
+            <Columns>
+                <TemplateColumn Title="@L["Rep_ColType"]" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                 Color="@(context.Item.Tipo == TipoReporte.Falla ? Color.Error : Color.Primary)"
+                                 Icon="@(context.Item.Tipo == TipoReporte.Falla ? Icons.Material.Filled.BugReport : Icons.Material.Filled.Lightbulb)">
+                            @(context.Item.Tipo == TipoReporte.Falla ? L["Rep_TypeFailure"] : L["Rep_TypeImprovement"])
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["RepAdmin_ColUser"]" Sortable="false" Filterable="false">
+                    <CellTemplate>@NombreUsuario(context.Item.UserId)</CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Titulo" Title="@L["Rep_FieldTitle"]" Sortable="false" />
+                <TemplateColumn Title="@L["Label_Status"]" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small" Color="@EstadoColor(context.Item.Estado)">
+                            @EstadoTexto(context.Item.Estado)
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Exc_ColDate"]" Sortable="true" Filterable="false">
+                    <CellTemplate>@context.Item.Created.LocalDateTime.ToString("dd/MM/yyyy")</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="@L["Label_Actions"]" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudTooltip Text="@(L["RepAdmin_ChangeState"].Value)">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary" Size="Size.Small"
+                                           aria-label="@L["RepAdmin_ChangeState"]"
+                                           Disabled="@(_isSaving || context.Item.Estado is EstadoReporte.Resuelto or EstadoReporte.Rechazado)"
+                                           OnClick="@(() => AbrirCambioEstadoAsync(context.Item))" />
+                        </MudTooltip>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="ReporteUsuarioResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["RepAdmin_Title"].Value, null, disabled: true)
+    ];
+
+    private List<ReporteUsuarioResponse> _reportes = [];
+    private List<UserAdminResponse> _usuarios = [];
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var rTask  = Repo.GetTodosAsync();
+            var usTask = UsuariosRepo.GetUsersAsync(1, 200, "email", false);
+            await Task.WhenAll(rTask, usTask);
+            _reportes = await rTask;
+            _usuarios = (await usTask).Items;
+        }
+        catch { _errorMessage = L["RepAdmin_ErrorLoad"].Value; }
+        finally { _isLoading = false; }
+    }
+
+    private string NombreUsuario(string userId) =>
+        _usuarios.FirstOrDefault(u => u.Id == userId) is { } u
+            ? (u.NombreCompleto ?? u.Email)
+            : userId;
+
+    private async Task AbrirCambioEstadoAsync(ReporteUsuarioResponse item)
+    {
+        var parameters = new DialogParameters<KpgCambiarEstadoReporteDialog> { { x => x.Reporte, item } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialog = await DialogService.ShowAsync<KpgCambiarEstadoReporteDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CambiarEstadoReporteRequest request)
+            return;
+
+        _isSaving = true;
+        try
+        {
+            var (ok, _, error) = await Repo.CambiarEstadoAsync(item.Id, request);
+            if (ok)
+            {
+                _reportes = await Repo.GetTodosAsync();
+                Snackbar.Add(L["RepAdmin_SavedOk"].Value, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["RepAdmin_ErrorSave"].Value, Severity.Error);
+            }
+        }
+        finally { _isSaving = false; }
+    }
+
+    private string EstadoTexto(EstadoReporte estado) => estado switch
+    {
+        EstadoReporte.Nuevo      => L["Rep_StateNew"].Value,
+        EstadoReporte.EnRevision => L["Rep_StateInReview"].Value,
+        EstadoReporte.Resuelto   => L["Rep_StateResolved"].Value,
+        EstadoReporte.Rechazado  => L["Rep_StateRejected"].Value,
+        _                         => estado.ToString()
+    };
+
+    private static Color EstadoColor(EstadoReporte estado) => estado switch
+    {
+        EstadoReporte.Resuelto   => Color.Success,
+        EstadoReporte.Rechazado  => Color.Error,
+        EstadoReporte.EnRevision => Color.Info,
+        _                         => Color.Warning
+    };
+}

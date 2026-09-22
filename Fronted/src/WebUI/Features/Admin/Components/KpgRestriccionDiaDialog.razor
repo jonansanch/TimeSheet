@@ -1,0 +1,107 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.EventBusy" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Params_DayRestrictionNew"]</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect T="DayOfWeek" Label="@L["Params_DayRestrictionDay"]" Variant="Variant.Outlined"
+                       @bind-Value="_dia" Required="true" aria-label="@L["Params_DayRestrictionDay"]">
+                @foreach (var dia in DiasDisponibles)
+                {
+                    <MudSelectItem Value="@dia">@NombreDia(dia)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudRadioGroup T="Ambito" Value="_ambito" ValueChanged="OnAmbitoChanged">
+                <MudRadio T="Ambito" Value="@Ambito.Rol" Color="Color.Primary">@L["Params_WindowRuleByRole"]</MudRadio>
+                <MudRadio T="Ambito" Value="@Ambito.Persona" Color="Color.Primary">@L["Params_WindowRuleByPerson"]</MudRadio>
+            </MudRadioGroup>
+
+            @if (_ambito == Ambito.Rol)
+            {
+                <MudSelect T="string" Label="@L["Users_ColRole"]" Variant="Variant.Outlined"
+                           @bind-Value="_rol" Required="true" aria-label="@L["Users_ColRole"]">
+                    @foreach (var rol in RolesDisponibles)
+                    {
+                        <MudSelectItem Value="@rol">@rol</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            else
+            {
+                <MudSelect T="string" Label="@L["Label_Employee"]" Variant="Variant.Outlined"
+                           @bind-Value="_userId" Required="true" aria-label="@L["Label_Employee"]">
+                    @foreach (var u in Usuarios.Where(u => u.IsActive))
+                    {
+                        <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!EsValido)" OnClick="Submit">
+            @L["Btn_Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
+
+    private enum Ambito { Rol, Persona }
+
+    private static readonly string[] RolesDisponibles =
+        [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
+
+    private static readonly DayOfWeek[] DiasDisponibles =
+    [
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
+        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
+    ];
+
+    private DayOfWeek _dia = DayOfWeek.Monday;
+    private Ambito _ambito = Ambito.Rol;
+    private string? _rol;
+    private string? _userId;
+
+    private bool EsValido => _ambito == Ambito.Rol
+        ? !string.IsNullOrWhiteSpace(_rol)
+        : !string.IsNullOrWhiteSpace(_userId);
+
+    /// <summary>Al cambiar de ámbito se limpia el otro campo, para no enviar ambos.</summary>
+    private void OnAmbitoChanged(Ambito ambito)
+    {
+        _ambito = ambito;
+        if (ambito == Ambito.Rol) _userId = null; else _rol = null;
+    }
+
+    private string NombreDia(DayOfWeek dia) => dia switch
+    {
+        DayOfWeek.Monday    => L["Day_Monday"].Value,
+        DayOfWeek.Tuesday   => L["Day_Tuesday"].Value,
+        DayOfWeek.Wednesday => L["Day_Wednesday"].Value,
+        DayOfWeek.Thursday  => L["Day_Thursday"].Value,
+        DayOfWeek.Friday    => L["Day_Friday"].Value,
+        DayOfWeek.Saturday  => L["Day_Saturday"].Value,
+        DayOfWeek.Sunday    => L["Day_Sunday"].Value,
+        _                    => dia.ToString()
+    };
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(
+            new GuardarRestriccionDiaRequest(
+                _dia,
+                _ambito == Ambito.Persona ? _userId : null,
+                _ambito == Ambito.Rol ? _rol : null)));
+}

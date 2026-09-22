@@ -1,0 +1,1555 @@
+diff --git a/Backend/src/Api/Endpoints/RestriccionesDia.cs b/Backend/src/Api/Endpoints/RestriccionesDia.cs
+new file mode 100644
+index 0000000..e78d3e8
+--- /dev/null
++++ b/Backend/src/Api/Endpoints/RestriccionesDia.cs
+@@ -0,0 +1,50 @@
++using KPG.Timesheet.Application.Features.Sistema.RestriccionesDia;
++using KPG.Timesheet.Domain.Constants;
++using MediatR;
++using Microsoft.AspNetCore.Authorization;
++using Microsoft.AspNetCore.Mvc;
++
++namespace KPG.Timesheet.Api.Endpoints;
++
++public class RestriccionesDia : IEndpointGroup
++{
++    public static string RoutePrefix => "/api/restricciones-dia";
++
++    public static void Map(RouteGroupBuilder groupBuilder)
++    {
++        var adminOnly = new AuthorizeAttribute { Roles = Roles.Admin };
++
++        groupBuilder.MapGet("", GetAll).RequireAuthorization(adminOnly);
++        groupBuilder.MapPost("", Crear).RequireAuthorization(adminOnly);
++        groupBuilder.MapPut("{id:int}/toggle", Toggle).RequireAuthorization(adminOnly);
++    }
++
++    [EndpointSummary("Listar restricciones de dia")]
++    [EndpointDescription("Dias de la semana en los que una persona o un rol no puede registrar horas.")]
++    [ProducesResponseType<IReadOnlyList<RestriccionDiaDto>>(StatusCodes.Status200OK)]
++    [ProducesResponseType(StatusCodes.Status403Forbidden)]
++    public static async Task<IResult> GetAll(ISender sender, CancellationToken cancellationToken)
++        => Results.Ok(await sender.Send(new GetRestriccionesDiaQuery(), cancellationToken));
++
++    [EndpointSummary("Crear restriccion de dia")]
++    [ProducesResponseType<RestriccionDiaDto>(StatusCodes.Status201Created)]
++    [ProducesResponseType(StatusCodes.Status400BadRequest)]
++    public static async Task<IResult> Crear(
++        [FromBody] GuardarRestriccionDiaRequest request,
++        ISender sender,
++        CancellationToken cancellationToken)
++    {
++        var result = await sender.Send(
++            new GuardarRestriccionDiaCommand(request.DiaDelaSemana, request.UserId, request.Rol),
++            cancellationToken);
++        return Results.Created($"/api/restricciones-dia/{result.Id}", result);
++    }
++
++    [EndpointSummary("Activar o desactivar restriccion de dia")]
++    [ProducesResponseType<RestriccionDiaDto>(StatusCodes.Status200OK)]
++    [ProducesResponseType(StatusCodes.Status404NotFound)]
++    public static async Task<IResult> Toggle(int id, ISender sender, CancellationToken cancellationToken)
++        => Results.Ok(await sender.Send(new ToggleRestriccionDiaCommand(id), cancellationToken));
++}
++
++public record GuardarRestriccionDiaRequest(DayOfWeek DiaDelaSemana, string? UserId, string? Rol);
+diff --git a/Backend/src/Application/Common/Interfaces/IApplicationDbContext.cs b/Backend/src/Application/Common/Interfaces/IApplicationDbContext.cs
+index 093799b..17bdeca 100644
+--- a/Backend/src/Application/Common/Interfaces/IApplicationDbContext.cs
++++ b/Backend/src/Application/Common/Interfaces/IApplicationDbContext.cs
+@@ -18,6 +18,7 @@ public interface IApplicationDbContext
+     DbSet<BitacoraAuditoria> BitacoraAuditoria { get; }
+     DbSet<SupervisorPuesto> SupervisoresPuesto { get; }
+     DbSet<ReglaVentanaRetroactividad> ReglasVentanaRetroactividad { get; }
++    DbSet<ParametroRestriccionDia> ParametrosRestriccionDia { get; }
+     DbSet<AprobacionRegistro> AprobacionesRegistro { get; }
+ 
+     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+diff --git a/Backend/src/Application/Common/Interfaces/IRestriccionDiaService.cs b/Backend/src/Application/Common/Interfaces/IRestriccionDiaService.cs
+new file mode 100644
+index 0000000..fb3367d
+--- /dev/null
++++ b/Backend/src/Application/Common/Interfaces/IRestriccionDiaService.cs
+@@ -0,0 +1,18 @@
++namespace KPG.Timesheet.Application.Common.Interfaces;
++
++/// <summary>
++/// Verifica si una persona puede registrar horas en una fecha dada, segun las
++/// restricciones de dia de la semana configuradas por rol o por persona.
++/// </summary>
++public interface IRestriccionDiaService
++{
++    /// <summary>
++    /// Retorna si puede registrar y, si no, el motivo para mostrar al usuario.
++    /// Una restriccion de persona o de rol que coincida con el dia bloquea el registro.
++    /// </summary>
++    Task<(bool PuedeRegistrar, string? Motivo)> PuedeRegistrarEnDiaAsync(
++        string userId,
++        IEnumerable<string>? roles,
++        DateOnly fecha,
++        CancellationToken cancellationToken = default);
++}
+diff --git a/Backend/src/Application/Common/Services/RestriccionDiaService.cs b/Backend/src/Application/Common/Services/RestriccionDiaService.cs
+new file mode 100644
+index 0000000..8656ccf
+--- /dev/null
++++ b/Backend/src/Application/Common/Services/RestriccionDiaService.cs
+@@ -0,0 +1,44 @@
++using KPG.Timesheet.Application.Common.Interfaces;
++
++namespace KPG.Timesheet.Application.Common.Services;
++
++public class RestriccionDiaService(IApplicationDbContext context) : IRestriccionDiaService
++{
++    public async Task<(bool PuedeRegistrar, string? Motivo)> PuedeRegistrarEnDiaAsync(
++        string userId,
++        IEnumerable<string>? roles,
++        DateOnly fecha,
++        CancellationToken cancellationToken = default)
++    {
++        var dia = fecha.DayOfWeek;
++        var listaRoles = roles?.ToList() ?? [];
++
++        var restriccionUsuario = await context.ParametrosRestriccionDia
++            .AnyAsync(r => r.Activo && r.DiaDelaSemana == dia && r.UserId == userId, cancellationToken);
++
++        if (restriccionUsuario)
++            return (false, $"No puede registrar el {NombreDia(dia)}: tiene una restriccion para ese dia.");
++
++        var rolRestringido = await context.ParametrosRestriccionDia
++            .Where(r => r.Activo && r.DiaDelaSemana == dia && r.Rol != null && listaRoles.Contains(r.Rol!))
++            .Select(r => r.Rol)
++            .FirstOrDefaultAsync(cancellationToken);
++
++        if (rolRestringido is not null)
++            return (false, $"No puede registrar el {NombreDia(dia)}: el rol '{rolRestringido}' tiene ese dia restringido.");
++
++        return (true, null);
++    }
++
++    private static string NombreDia(DayOfWeek dia) => dia switch
++    {
++        DayOfWeek.Sunday    => "domingo",
++        DayOfWeek.Monday    => "lunes",
++        DayOfWeek.Tuesday   => "martes",
++        DayOfWeek.Wednesday => "miercoles",
++        DayOfWeek.Thursday  => "jueves",
++        DayOfWeek.Friday    => "viernes",
++        DayOfWeek.Saturday  => "sabado",
++        _                    => dia.ToString()
++    };
++}
+diff --git a/Backend/src/Application/DependencyInjection.cs b/Backend/src/Application/DependencyInjection.cs
+index d446144..4a75899 100644
+--- a/Backend/src/Application/DependencyInjection.cs
++++ b/Backend/src/Application/DependencyInjection.cs
+@@ -14,6 +14,7 @@ public static class DependencyInjection
+ 
+         builder.Services.AddScoped<IParametrosSistemaService, ParametrosSistemaService>();
+         builder.Services.AddScoped<IVentanaRetroactividadService, VentanaRetroactividadService>();
++        builder.Services.AddScoped<IRestriccionDiaService, RestriccionDiaService>();
+ 
+         builder.Services.AddMediatR(cfg => {
+             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+diff --git a/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistroHoras/CreateRegistroHorasCommandHandler.cs b/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistroHoras/CreateRegistroHorasCommandHandler.cs
+index 5212dcb..4be13e8 100644
+--- a/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistroHoras/CreateRegistroHorasCommandHandler.cs
++++ b/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistroHoras/CreateRegistroHorasCommandHandler.cs
+@@ -16,19 +16,22 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
+     private readonly IClock _clock;
+     private readonly IBitacoraService _bitacora;
+     private readonly IVentanaRetroactividadService _ventana;
++    private readonly IRestriccionDiaService _restriccionDia;
+ 
+     public CreateRegistroHorasCommandHandler(
+         IApplicationDbContext context,
+         IUser user,
+         IClock clock,
+         IBitacoraService bitacora,
+-        IVentanaRetroactividadService ventana)
++        IVentanaRetroactividadService ventana,
++        IRestriccionDiaService restriccionDia)
+     {
+-        _context  = context;
+-        _user     = user;
+-        _clock    = clock;
+-        _bitacora = bitacora;
+-        _ventana  = ventana;
++        _context        = context;
++        _user           = user;
++        _clock          = clock;
++        _bitacora       = bitacora;
++        _ventana        = ventana;
++        _restriccionDia = restriccionDia;
+     }
+ 
+     public async Task<RegistroHorasDto> Handle(CreateRegistroHorasCommand request, CancellationToken cancellationToken)
+@@ -37,6 +40,13 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
+         if (string.IsNullOrWhiteSpace(userId))
+             throw new UnauthorizedAccessException("No existe usuario autenticado para asociar el registro.");
+ 
++        var (puedeRegistrar, motivoRestriccion) = await _restriccionDia.PuedeRegistrarEnDiaAsync(
++            userId, _user.Roles, request.FechaRegistro, cancellationToken);
++
++        if (!puedeRegistrar)
++            throw new ApplicationValidationException([
++                new ValidationFailure(nameof(request.FechaRegistro), motivoRestriccion)]);
++
+         // Ventana de retroactividad efectiva: puede tener excepcion por persona o por rol.
+         var windowDays = await _ventana.GetDiasAsync(userId, _user.Roles, cancellationToken);
+ 
+diff --git a/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistrosRango/CreateRegistrosRangoCommand.cs b/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistrosRango/CreateRegistrosRangoCommand.cs
+index 456b1fd..b9364f5 100644
+--- a/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistrosRango/CreateRegistrosRangoCommand.cs
++++ b/Backend/src/Application/Features/RegistroHoras/Commands/CreateRegistrosRango/CreateRegistrosRangoCommand.cs
+@@ -74,7 +74,8 @@ public class CreateRegistrosRangoCommandHandler(
+     IUser user,
+     IClock clock,
+     IBitacoraService bitacora,
+-    IVentanaRetroactividadService ventana)
++    IVentanaRetroactividadService ventana,
++    IRestriccionDiaService restriccionDia)
+     : IRequestHandler<CreateRegistrosRangoCommand, RegistrosRangoResultadoDto>
+ {
+     public async Task<RegistrosRangoResultadoDto> Handle(
+@@ -137,6 +138,15 @@ public class CreateRegistrosRangoCommandHandler(
+                 continue;
+             }
+ 
++            var (puedeRegistrar, motivoRestriccion) = await restriccionDia.PuedeRegistrarEnDiaAsync(
++                userId, user.Roles, fecha, cancellationToken);
++
++            if (!puedeRegistrar)
++            {
++                omitidos.Add(new DiaOmitidoDto(fecha, motivoRestriccion!));
++                continue;
++            }
++
+             if (fecha < fechaMasAntigua && !excepciones.Contains(fecha))
+             {
+                 omitidos.Add(new DiaOmitidoDto(fecha,
+diff --git a/Backend/src/Application/Features/Sistema/RestriccionesDia/RestriccionesDia.cs b/Backend/src/Application/Features/Sistema/RestriccionesDia/RestriccionesDia.cs
+new file mode 100644
+index 0000000..087021b
+--- /dev/null
++++ b/Backend/src/Application/Features/Sistema/RestriccionesDia/RestriccionesDia.cs
+@@ -0,0 +1,139 @@
++using KPG.Timesheet.Application.Common.Interfaces;
++using KPG.Timesheet.Application.Common.Security;
++using KPG.Timesheet.Domain.Constants;
++using RestriccionEntity = KPG.Timesheet.Domain.Entities.ParametroRestriccionDia;
++using NotFoundException = KPG.Timesheet.Application.Common.Exceptions.NotFoundException;
++using ValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
++using FluentValidation.Results;
++
++namespace KPG.Timesheet.Application.Features.Sistema.RestriccionesDia;
++
++public record RestriccionDiaDto(
++    int Id,
++    DayOfWeek DiaDelaSemana,
++    string? UserId,
++    string? Rol,
++    bool Activo);
++
++// ── Listar ───────────────────────────────────────────────────────────────────
++
++[Authorize(Roles = Roles.Admin)]
++public record GetRestriccionesDiaQuery : IRequest<IReadOnlyList<RestriccionDiaDto>>;
++
++public class GetRestriccionesDiaQueryHandler(IApplicationDbContext context)
++    : IRequestHandler<GetRestriccionesDiaQuery, IReadOnlyList<RestriccionDiaDto>>
++{
++    public async Task<IReadOnlyList<RestriccionDiaDto>> Handle(
++        GetRestriccionesDiaQuery request,
++        CancellationToken cancellationToken)
++    {
++        return await context.ParametrosRestriccionDia
++            .OrderBy(r => r.DiaDelaSemana)
++            .ThenBy(r => r.UserId != null)
++            .ThenBy(r => r.Rol)
++            .Select(r => new RestriccionDiaDto(r.Id, r.DiaDelaSemana, r.UserId, r.Rol, r.Activo))
++            .ToListAsync(cancellationToken);
++    }
++}
++
++// ── Crear ────────────────────────────────────────────────────────────────────
++
++/// <summary>Exactamente uno de <paramref name="UserId"/> o <paramref name="Rol"/> debe venir informado.</summary>
++[Authorize(Roles = Roles.Admin)]
++public record GuardarRestriccionDiaCommand(
++    DayOfWeek DiaDelaSemana,
++    string? UserId,
++    string? Rol) : IRequest<RestriccionDiaDto>;
++
++public class GuardarRestriccionDiaCommandValidator : AbstractValidator<GuardarRestriccionDiaCommand>
++{
++    private static readonly string[] RolesValidos =
++        [Roles.Admin, Roles.Gerente, Roles.Supervisor, Roles.Empleado];
++
++    public GuardarRestriccionDiaCommandValidator()
++    {
++        RuleFor(x => x.DiaDelaSemana).IsInEnum();
++
++        RuleFor(x => x)
++            .Must(x => string.IsNullOrWhiteSpace(x.UserId) ^ string.IsNullOrWhiteSpace(x.Rol))
++            .WithMessage("La restriccion debe aplicar a una persona o a un rol, no a ambos ni a ninguno.");
++
++        RuleFor(x => x.Rol)
++            .Must(rol => RolesValidos.Contains(rol))
++            .When(x => !string.IsNullOrWhiteSpace(x.Rol))
++            .WithMessage("El rol seleccionado no es valido.");
++    }
++}
++
++public class GuardarRestriccionDiaCommandHandler(
++    IApplicationDbContext context,
++    IBitacoraService bitacora,
++    IUser actor)
++    : IRequestHandler<GuardarRestriccionDiaCommand, RestriccionDiaDto>
++{
++    public async Task<RestriccionDiaDto> Handle(
++        GuardarRestriccionDiaCommand request,
++        CancellationToken cancellationToken)
++    {
++        var userId = string.IsNullOrWhiteSpace(request.UserId) ? null : request.UserId.Trim();
++        var rol    = string.IsNullOrWhiteSpace(request.Rol)    ? null : request.Rol.Trim();
++
++        // La BD lo impide con indices unicos filtrados, pero aqui el mensaje es entendible.
++        var duplicada = await context.ParametrosRestriccionDia.AnyAsync(
++            r => r.DiaDelaSemana == request.DiaDelaSemana
++              && ((userId != null && r.UserId == userId) || (rol != null && r.Rol == rol)),
++            cancellationToken);
++
++        if (duplicada)
++        {
++            throw new ValidationException([
++                new ValidationFailure(
++                    userId is not null ? nameof(request.UserId) : nameof(request.Rol),
++                    userId is not null
++                        ? "Esa persona ya tiene una restriccion para ese dia."
++                        : "Ese rol ya tiene una restriccion para ese dia.")]);
++        }
++
++        var restriccion = userId is not null
++            ? RestriccionEntity.ParaUsuario(request.DiaDelaSemana, userId)
++            : RestriccionEntity.ParaRol(request.DiaDelaSemana, rol!);
++
++        context.ParametrosRestriccionDia.Add(restriccion);
++
++        await bitacora.RegistrarAsync(
++            TipoEventoBitacora.CambioRestriccionDia,
++            actor.Id ?? "system", null,
++            "ParametrosRestriccionDia", null,
++            new { request.DiaDelaSemana, userId, rol },
++            cancellationToken);
++
++        await context.SaveChangesAsync(cancellationToken);
++
++        return new RestriccionDiaDto(
++            restriccion.Id, restriccion.DiaDelaSemana, restriccion.UserId, restriccion.Rol, restriccion.Activo);
++    }
++}
++
++// ── Activar / desactivar ─────────────────────────────────────────────────────
++
++[Authorize(Roles = Roles.Admin)]
++public record ToggleRestriccionDiaCommand(int Id) : IRequest<RestriccionDiaDto>;
++
++public class ToggleRestriccionDiaCommandHandler(IApplicationDbContext context)
++    : IRequestHandler<ToggleRestriccionDiaCommand, RestriccionDiaDto>
++{
++    public async Task<RestriccionDiaDto> Handle(
++        ToggleRestriccionDiaCommand request,
++        CancellationToken cancellationToken)
++    {
++        var restriccion = await context.ParametrosRestriccionDia
++            .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken)
++            ?? throw new NotFoundException($"Restriccion de dia con id '{request.Id}' no fue encontrada.");
++
++        if (restriccion.Activo) restriccion.Desactivar(); else restriccion.Activar();
++        await context.SaveChangesAsync(cancellationToken);
++
++        return new RestriccionDiaDto(
++            restriccion.Id, restriccion.DiaDelaSemana, restriccion.UserId, restriccion.Rol, restriccion.Activo);
++    }
++}
+diff --git a/Backend/src/Domain/Constants/TipoEventoBitacora.cs b/Backend/src/Domain/Constants/TipoEventoBitacora.cs
+index 960d3f3..d434ffe 100644
+--- a/Backend/src/Domain/Constants/TipoEventoBitacora.cs
++++ b/Backend/src/Domain/Constants/TipoEventoBitacora.cs
+@@ -12,6 +12,7 @@ public static class TipoEventoBitacora
+     public const string CambioSupervisorProyecto = "CambioSupervisorProyecto";
+     public const string CambioSupervisorPuesto = "CambioSupervisorPuesto";
+     public const string CambioVentanaRetroactividad = "CambioVentanaRetroactividad";
++    public const string CambioRestriccionDia = "CambioRestriccionDia";
+     public const string RegistroHorasCreado = "RegistroHorasCreado";
+     public const string AprobacionRegistro = "AprobacionRegistro";
+     public const string RechazoRegistro = "RechazoRegistro";
+diff --git a/Backend/src/Domain/Entities/ParametroRestriccionDia.cs b/Backend/src/Domain/Entities/ParametroRestriccionDia.cs
+new file mode 100644
+index 0000000..2f8f7b7
+--- /dev/null
++++ b/Backend/src/Domain/Entities/ParametroRestriccionDia.cs
+@@ -0,0 +1,59 @@
++using KPG.Timesheet.Domain.Exceptions;
++
++namespace KPG.Timesheet.Domain.Entities;
++
++/// <summary>
++/// Dia de la semana en el que una persona o un rol no puede registrar horas, salvo que
++/// tenga una excepcion aprobada (<see cref="SolicitudExcepcion"/>).
++///
++/// <para>
++/// Aplica a una persona concreta (<see cref="UserId"/>) o a un rol (<see cref="Rol"/>),
++/// nunca a ambos. Puede haber varias restricciones para el mismo dia (una por rol, una
++/// por persona): a diferencia de <see cref="ReglaVentanaRetroactividad"/>, aqui no hay un
++/// valor que uno "gane" sobre otro — cualquier restriccion que coincida bloquea.
++/// </para>
++/// </summary>
++public class ParametroRestriccionDia : BaseAuditableEntity
++{
++    private ParametroRestriccionDia() { }
++
++    private ParametroRestriccionDia(DayOfWeek diaDelaSemana, string? userId, string? rol)
++    {
++        DiaDelaSemana = diaDelaSemana;
++        UserId        = userId;
++        Rol           = rol;
++        Activo        = true;
++    }
++
++    public static ParametroRestriccionDia ParaUsuario(DayOfWeek diaDelaSemana, string userId)
++    {
++        if (string.IsNullOrWhiteSpace(userId))
++            throw new DomainRuleException("El usuario es requerido.");
++        return new ParametroRestriccionDia(diaDelaSemana, userId.Trim(), null);
++    }
++
++    public static ParametroRestriccionDia ParaRol(DayOfWeek diaDelaSemana, string rol)
++    {
++        if (string.IsNullOrWhiteSpace(rol))
++            throw new DomainRuleException("El rol es requerido.");
++        return new ParametroRestriccionDia(diaDelaSemana, null, rol.Trim());
++    }
++
++    /// <summary>Dia de la semana que se restringe.</summary>
++    public DayOfWeek DiaDelaSemana { get; private set; }
++
++    /// <summary>Si se aplica a un rol completo. Nulo si es especifica de un usuario.</summary>
++    public string? Rol { get; private set; }
++
++    /// <summary>Si se aplica a un usuario especifico. Nulo si es general por rol.</summary>
++    public string? UserId { get; private set; }
++
++    /// <summary>Si esta activa; permite desactivar sin borrar el historial.</summary>
++    public bool Activo { get; private set; }
++
++    public bool EsDeUsuario => UserId is not null;
++
++    public void Activar() => Activo = true;
++
++    public void Desactivar() => Activo = false;
++}
+diff --git a/Backend/src/Domain/Entities/RegistroHoras.cs b/Backend/src/Domain/Entities/RegistroHoras.cs
+index bcf8a47..c867215 100644
+--- a/Backend/src/Domain/Entities/RegistroHoras.cs
++++ b/Backend/src/Domain/Entities/RegistroHoras.cs
+@@ -250,6 +250,9 @@ public class RegistroHoras : BaseAuditableEntity
+     {
+         if (horaSalida <= horaEntrada)
+             throw new DomainRuleException("La hora de salida debe ser mayor que la hora de entrada.");
++        if (horaEntrada.Minute % 15 != 0 || horaSalida.Minute % 15 != 0)
++            throw new DomainRuleException(
++                "Los minutos deben estar en cuartos de hora (00, 15, 30, 45).");
+ 
+         for (var numero = 1; numero <= TotalBloques; numero++)
+         {
+@@ -336,6 +339,19 @@ public class RegistroHoras : BaseAuditableEntity
+         if (entrada.HasValue && salida!.Value <= entrada.Value)
+             throw new DomainRuleException(
+                 $"La hora de salida del horario {numero} debe ser mayor que la hora de entrada.");
++        if (entrada.HasValue)
++        {
++            ThrowIfNoEsCuartoDeHora(entrada.Value, numero, "entrada");
++            ThrowIfNoEsCuartoDeHora(salida!.Value, numero, "salida");
++        }
++    }
++
++    /// <summary>Los minutos solo pueden ser 0, 15, 30 o 45: igual que exige el formulario.</summary>
++    private static void ThrowIfNoEsCuartoDeHora(TimeOnly hora, int numero, string tipo)
++    {
++        if (hora.Minute % 15 != 0)
++            throw new DomainRuleException(
++                $"La hora de {tipo} del horario {numero} debe estar en cuartos de hora (00, 15, 30, 45).");
+     }
+ 
+     private static void ValidarSinCruces(
+diff --git a/Backend/src/Domain/Entities/SolicitudExcepcion.cs b/Backend/src/Domain/Entities/SolicitudExcepcion.cs
+index 30074dc..8cc93ca 100644
+--- a/Backend/src/Domain/Entities/SolicitudExcepcion.cs
++++ b/Backend/src/Domain/Entities/SolicitudExcepcion.cs
+@@ -127,6 +127,10 @@ public class SolicitudExcepcion : BaseAuditableEntity
+         if (entrada.HasValue && salida!.Value <= entrada.Value)
+             throw new DomainRuleException(
+                 $"La hora de salida del horario {numero} debe ser mayor que la hora de entrada.");
++        if (entrada.HasValue &&
++            (entrada.Value.Minute % 15 != 0 || salida!.Value.Minute % 15 != 0))
++            throw new DomainRuleException(
++                $"Los minutos del horario {numero} deben estar en cuartos de hora (00, 15, 30, 45).");
+     }
+ 
+     private static void ThrowIfBlank(string value, string parameterName)
+diff --git a/Backend/src/Infrastructure/Data/ApplicationDbContext.cs b/Backend/src/Infrastructure/Data/ApplicationDbContext.cs
+index 6e5d2cb..fa9274f 100644
+--- a/Backend/src/Infrastructure/Data/ApplicationDbContext.cs
++++ b/Backend/src/Infrastructure/Data/ApplicationDbContext.cs
+@@ -24,6 +24,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
+     public DbSet<BitacoraAuditoria> BitacoraAuditoria => Set<BitacoraAuditoria>();
+     public DbSet<SupervisorPuesto> SupervisoresPuesto => Set<SupervisorPuesto>();
+     public DbSet<ReglaVentanaRetroactividad> ReglasVentanaRetroactividad => Set<ReglaVentanaRetroactividad>();
++    public DbSet<ParametroRestriccionDia> ParametrosRestriccionDia => Set<ParametroRestriccionDia>();
+     public DbSet<AprobacionRegistro> AprobacionesRegistro => Set<AprobacionRegistro>();
+ 
+     protected override void OnModelCreating(ModelBuilder builder)
+diff --git a/Backend/src/Infrastructure/Data/ApplicationDbContextInitialiser.cs b/Backend/src/Infrastructure/Data/ApplicationDbContextInitialiser.cs
+index 7356ac0..c34f0b8 100644
+--- a/Backend/src/Infrastructure/Data/ApplicationDbContextInitialiser.cs
++++ b/Backend/src/Infrastructure/Data/ApplicationDbContextInitialiser.cs
+@@ -889,6 +889,34 @@ public class ApplicationDbContextInitialiser
+             END
+             """);
+ 
++        await _context.Database.ExecuteSqlRawAsync("""
++            IF OBJECT_ID(N'[dbo].[ParametrosRestriccionDia]', N'U') IS NULL
++            BEGIN
++                CREATE TABLE [dbo].[ParametrosRestriccionDia] (
++                    [Id] int NOT NULL IDENTITY,
++                    [DiaDelaSemana] int NOT NULL,
++                    [UserId] nvarchar(450) NULL,
++                    [Rol] nvarchar(100) NULL,
++                    [Activo] bit NOT NULL DEFAULT 1,
++                    [Created] datetimeoffset NOT NULL,
++                    [CreatedBy] nvarchar(max) NULL,
++                    [LastModified] datetimeoffset NOT NULL,
++                    [LastModifiedBy] nvarchar(max) NULL,
++                    CONSTRAINT [PK_ParametrosRestriccionDia] PRIMARY KEY ([Id])
++                );
++
++                -- Filtrados: la columna que no aplica queda NULL, y un unique normal
++                -- trataria esos NULL como iguales dejando una sola regla por dia.
++                CREATE UNIQUE INDEX [IX_ParametrosRestriccionDia_Dia_UserId]
++                    ON [dbo].[ParametrosRestriccionDia] ([DiaDelaSemana], [UserId])
++                    WHERE [UserId] IS NOT NULL;
++
++                CREATE UNIQUE INDEX [IX_ParametrosRestriccionDia_Dia_Rol]
++                    ON [dbo].[ParametrosRestriccionDia] ([DiaDelaSemana], [Rol])
++                    WHERE [Rol] IS NOT NULL;
++            END
++            """);
++
+         await _context.Database.ExecuteSqlRawAsync("""
+             IF OBJECT_ID(N'[dbo].[SupervisoresPuesto]', N'U') IS NULL
+             BEGIN
+diff --git a/Backend/src/Infrastructure/Data/Configurations/ParametroRestriccionDiaConfiguration.cs b/Backend/src/Infrastructure/Data/Configurations/ParametroRestriccionDiaConfiguration.cs
+new file mode 100644
+index 0000000..66016fe
+--- /dev/null
++++ b/Backend/src/Infrastructure/Data/Configurations/ParametroRestriccionDiaConfiguration.cs
+@@ -0,0 +1,34 @@
++using KPG.Timesheet.Domain.Entities;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Metadata.Builders;
++
++namespace KPG.Timesheet.Infrastructure.Data.Configurations;
++
++public class ParametroRestriccionDiaConfiguration : IEntityTypeConfiguration<ParametroRestriccionDia>
++{
++    public void Configure(EntityTypeBuilder<ParametroRestriccionDia> builder)
++    {
++        builder.ToTable("ParametrosRestriccionDia");
++
++        builder.HasKey(r => r.Id);
++
++        builder.Property(r => r.DiaDelaSemana).IsRequired().HasConversion<int>();
++        builder.Property(r => r.UserId).HasMaxLength(450);
++        builder.Property(r => r.Rol).HasMaxLength(100);
++        builder.Property(r => r.Activo).IsRequired().HasDefaultValue(true);
++
++        // Una sola regla por dia y persona, y una sola por dia y rol. Filtrados porque la
++        // columna que no aplica queda NULL, y un unique normal trataria esos NULL como iguales.
++        builder.HasIndex(r => new { r.DiaDelaSemana, r.UserId })
++            .HasDatabaseName("IX_ParametrosRestriccionDia_Dia_UserId")
++            .IsUnique()
++            .HasFilter("[UserId] IS NOT NULL");
++
++        builder.HasIndex(r => new { r.DiaDelaSemana, r.Rol })
++            .HasDatabaseName("IX_ParametrosRestriccionDia_Dia_Rol")
++            .IsUnique()
++            .HasFilter("[Rol] IS NOT NULL");
++
++        builder.Ignore(r => r.EsDeUsuario);
++    }
++}
+diff --git a/Backend/tests/Domain.UnitTests/Entities/RegistroHorasTests.cs b/Backend/tests/Domain.UnitTests/Entities/RegistroHorasTests.cs
+index e5c5be5..d8a6b24 100644
+--- a/Backend/tests/Domain.UnitTests/Entities/RegistroHorasTests.cs
++++ b/Backend/tests/Domain.UnitTests/Entities/RegistroHorasTests.cs
+@@ -174,6 +174,54 @@ public class RegistroHorasTests
+         act.Should().Throw<DomainRuleException>().WithMessage("*se cruzan*");
+     }
+ 
++    // ── Cuartos de hora ─────────────────────────────────────────────────────
++
++    [Theory]
++    [InlineData(8, 5)]
++    [InlineData(8, 10)]
++    [InlineData(8, 37)]
++    [InlineData(8, 59)]
++    public void Constructor_WhenEntradaIsNotQuarterHour_ShouldThrow(int hora, int minuto)
++    {
++        var act = () => CreateRegistro(horaEntrada1: new TimeOnly(hora, minuto));
++
++        act.Should().Throw<DomainRuleException>().WithMessage("*cuartos de hora*");
++    }
++
++    [Theory]
++    [InlineData(13, 5)]
++    [InlineData(13, 44)]
++    public void Constructor_WhenSalidaIsNotQuarterHour_ShouldThrow(int hora, int minuto)
++    {
++        var act = () => CreateRegistro(horaSalida1: new TimeOnly(hora, minuto));
++
++        act.Should().Throw<DomainRuleException>().WithMessage("*cuartos de hora*");
++    }
++
++    [Theory]
++    [InlineData(0)]
++    [InlineData(15)]
++    [InlineData(30)]
++    [InlineData(45)]
++    public void Constructor_WhenMinutesAreQuarterHour_ShouldNotThrow(int minuto)
++    {
++        var act = () => CreateRegistro(
++            horaEntrada1: new TimeOnly(8, minuto),
++            horaSalida1: new TimeOnly(13, minuto));
++
++        act.Should().NotThrow();
++    }
++
++    [Fact]
++    public void AgregarHorario_WhenMinutesAreNotQuarterHour_ShouldThrow()
++    {
++        var registro = CreateRegistro();   // 08:00-13:00
++
++        var act = () => registro.AgregarHorario(new TimeOnly(13, 10), new TimeOnly(14, 0));
++
++        act.Should().Throw<DomainRuleException>().WithMessage("*cuartos de hora*");
++    }
++
+     /// <summary>El dominio solo exige un id positivo; la existencia la valida la capa de aplicacion.</summary>
+     private const int ProyectoIdValido = 1;
+ 
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistroHorasCommandHandlerTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistroHorasCommandHandlerTests.cs
+index 3402055..831bc50 100644
+--- a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistroHorasCommandHandlerTests.cs
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistroHorasCommandHandlerTests.cs
+@@ -15,7 +15,7 @@ public class CreateRegistroHorasCommandHandlerTests
+     public async Task Handle_WhenValid_ShouldPersistRegistroForAuthenticatedUser()
+     {
+         await using var context = CreateContextWithVentana(3);
+-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
++        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
+ 
+         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
+ 
+@@ -31,7 +31,7 @@ public class CreateRegistroHorasCommandHandlerTests
+     public async Task Handle_WhenSameDateSecondCall_ShouldUpsertAddingPMBlock()
+     {
+         await using var context = CreateContextWithVentana(3);
+-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
++        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
+ 
+         // First call: AM block only
+         await handler.Handle(ValidCommand(), CancellationToken.None);
+@@ -62,7 +62,7 @@ public class CreateRegistroHorasCommandHandlerTests
+         context.SolicitudesExcepcion.Add(solicitud);
+         await context.SaveChangesAsync(CancellationToken.None);
+ 
+-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
++        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
+         var command = new CreateRegistroHorasCommand(
+             fechaFuera,
+             new TimeOnly(8, 0), new TimeOnly(13, 0),
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistrosRangoCommandHandlerTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistrosRangoCommandHandlerTests.cs
+index b521016..976cd89 100644
+--- a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistrosRangoCommandHandlerTests.cs
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/CreateRegistrosRangoCommandHandlerTests.cs
+@@ -159,7 +159,8 @@ public class CreateRegistrosRangoCommandHandlerTests
+         var proyectoId = await context.Proyectos.Select(p => p.Id).FirstAsync();
+         var handler = new CreateRegistrosRangoCommandHandler(
+             context, new TestUser("user-1"), new TestClock(Hoy), new NullBitacora(),
+-            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)));
++            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)),
++            new RestriccionDiaService(context));
+ 
+         return await handler.Handle(new CreateRegistrosRangoCommand(
+             desde, hasta,
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/NombreHistoricoTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/NombreHistoricoTests.cs
+index fbd3952..fb0397a 100644
+--- a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/NombreHistoricoTests.cs
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/NombreHistoricoTests.cs
+@@ -97,7 +97,8 @@ public class NombreHistoricoTests
+ 
+     private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context) =>
+         new(context, new TestUser("user-1"), new TestClock(Hoy), new NullBitacora(),
+-            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)));
++            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)),
++            new RestriccionDiaService(context));
+ 
+     private static CreateRegistroHorasCommand Command(int proyectoId) =>
+         new(Hoy,
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RegistroHorasImmutabilityTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RegistroHorasImmutabilityTests.cs
+index f25e235..107f56d 100644
+--- a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RegistroHorasImmutabilityTests.cs
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RegistroHorasImmutabilityTests.cs
+@@ -109,7 +109,7 @@ public class RegistroHorasImmutabilityTests
+         context.SolicitudesExcepcion.Add(solicitud);
+         await context.SaveChangesAsync(CancellationToken.None);
+ 
+-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora(), VentanaService(context));
++        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(Today), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
+         var result = await handler.Handle(CommandForDate(fechaFueraVentana), CancellationToken.None);
+ 
+         result.FechaRegistro.Should().Be(fechaFueraVentana);
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RestriccionDiaHandlerTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RestriccionDiaHandlerTests.cs
+new file mode 100644
+index 0000000..3cb8045
+--- /dev/null
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/RestriccionDiaHandlerTests.cs
+@@ -0,0 +1,134 @@
++using KPG.Timesheet.Application.Common.Interfaces;
++using KPG.Timesheet.Application.Common.Services;
++using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistroHoras;
++using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistrosRango;
++using KPG.Timesheet.Domain.Constants;
++using KPG.Timesheet.Domain.Entities;
++using KPG.Timesheet.Infrastructure.Data;
++using Microsoft.EntityFrameworkCore;
++using ApplicationValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
++
++namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
++
++/// <summary>
++/// La restriccion de dia bloquea la creacion, tanto para un registro individual como
++/// para un rango: el rango no es una via para saltarsela.
++/// </summary>
++public class RestriccionDiaHandlerTests
++{
++    // 2026-05-18 es lunes.
++    private static readonly DateOnly Lunes = new(2026, 5, 18);
++
++    [Fact]
++    public async Task CreateRegistroHoras_ConDiaRestringidoParaElUsuario_Throws()
++    {
++        await using var context = await CreateContextAsync();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaUsuario(DayOfWeek.Monday, "user-1"));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var handler = MakeHandler(context, Lunes);
++
++        var act = () => handler.Handle(CommandForDate(Lunes), CancellationToken.None);
++
++        await act.Should().ThrowAsync<ApplicationValidationException>()
++            .Where(e => e.Errors.Any(err => err.Value.Any(msg => msg.Contains("restriccion") || msg.Contains("restricción"))));
++    }
++
++    [Fact]
++    public async Task CreateRegistroHoras_ConDiaRestringidoParaElRol_Throws()
++    {
++        await using var context = await CreateContextAsync();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaRol(DayOfWeek.Monday, Roles.Empleado));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var handler = MakeHandler(context, Lunes);
++
++        var act = () => handler.Handle(CommandForDate(Lunes), CancellationToken.None);
++
++        await act.Should().ThrowAsync<ApplicationValidationException>();
++    }
++
++    [Fact]
++    public async Task CreateRegistroHoras_SinRestriccion_Succeeds()
++    {
++        await using var context = await CreateContextAsync();
++        var handler = MakeHandler(context, Lunes);
++
++        var result = await handler.Handle(CommandForDate(Lunes), CancellationToken.None);
++
++        result.Id.Should().BeGreaterThan(0);
++    }
++
++    [Fact]
++    public async Task CreateRegistrosRango_ConDiaRestringido_OmiteEseDiaYCreaLosDemas()
++    {
++        await using var context = await CreateContextAsync();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaUsuario(DayOfWeek.Monday, "user-1"));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var martes = Lunes.AddDays(1);
++        var rangoHandler = new CreateRegistrosRangoCommandHandler(
++            context, new TestUser("user-1"), new TestClock(martes), new NullBitacora(),
++            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)),
++            new RestriccionDiaService(context));
++
++        var proyectoId = await context.Proyectos.Select(p => p.Id).FirstAsync();
++        var resultado = await rangoHandler.Handle(new CreateRegistrosRangoCommand(
++            Lunes, martes,
++            new TimeOnly(8, 0), new TimeOnly(13, 0),
++            null, null, null, null,
++            proyectoId, "Remoto", "Consultor", "Desarrollo", "Bogota"),
++            CancellationToken.None);
++
++        resultado.Creados.Should().Be(1);
++        resultado.Omitidos.Should().ContainSingle(o => o.Fecha == Lunes);
++    }
++
++    private static async Task<ApplicationDbContext> CreateContextAsync()
++    {
++        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
++            .UseInMemoryDatabase(Guid.NewGuid().ToString())
++            .Options;
++        var context = new ApplicationDbContext(options);
++        await CatalogoDePrueba.SembrarAsync(context);
++        context.ParametrosSistema.Add(new ParametroSistema
++        {
++            Clave = KPG.Timesheet.Domain.Constants.ParametrosSistema.VentanaRetroactividad,
++            Valor = "30"
++        });
++        await context.SaveChangesAsync(CancellationToken.None);
++        return context;
++    }
++
++    private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context, DateOnly today) =>
++        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora(),
++            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)),
++            new RestriccionDiaService(context));
++
++    private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
++        new(fecha,
++            new TimeOnly(8, 0), new TimeOnly(13, 0),
++            null, null,
++            null, null,
++            1, "Remoto", "Consultor", "Desarrollo", "Bogota");
++
++    private sealed class TestUser(string id) : IUser
++    {
++        public string? Id => id;
++        public string? Email => null;
++        public List<string>? Roles => [KPG.Timesheet.Domain.Constants.Roles.Empleado];
++    }
++
++    private sealed class TestClock(DateOnly today) : IClock
++    {
++        public DateOnly Today => today;
++        public DateTimeOffset UtcNow => today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
++    }
++
++    private sealed class NullBitacora : IBitacoraService
++    {
++        public Task RegistrarAsync(string tipoEvento, string actorId, string? actorEmail,
++            string entidadAfectada, string? entidadId, object? metadata = null,
++            CancellationToken cancellationToken = default) => Task.CompletedTask;
++    }
++}
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/SupervisorRegistroHorasTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/SupervisorRegistroHorasTests.cs
+index 4752116..f8443fa 100644
+--- a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/SupervisorRegistroHorasTests.cs
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/SupervisorRegistroHorasTests.cs
+@@ -18,7 +18,7 @@ public class SupervisorRegistroHorasTests
+     public async Task Handle_WhenSupervisorCreatesRegistro_ShouldPersistWithSupervisorUserId()
+     {
+         await using var context = CreateContextWithVentana(3);
+-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>(), VentanaService(context));
++        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>(), VentanaService(context), new RestriccionDiaService(context));
+ 
+         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
+ 
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/VentanaRetroactivoTests.cs b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/VentanaRetroactivoTests.cs
+index c493a59..ba0acda 100644
+--- a/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/VentanaRetroactivoTests.cs
++++ b/Backend/tests/Infrastructure.IntegrationTests/RegistroHoras/VentanaRetroactivoTests.cs
+@@ -82,7 +82,7 @@ public class VentanaRetroactivoTests
+     }
+ 
+     private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context, DateOnly today) =>
+-        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora(), VentanaService(context));
++        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
+ 
+     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
+         new(fecha,
+diff --git a/Backend/tests/Infrastructure.IntegrationTests/Sistema/RestriccionDiaServiceTests.cs b/Backend/tests/Infrastructure.IntegrationTests/Sistema/RestriccionDiaServiceTests.cs
+new file mode 100644
+index 0000000..9c55566
+--- /dev/null
++++ b/Backend/tests/Infrastructure.IntegrationTests/Sistema/RestriccionDiaServiceTests.cs
+@@ -0,0 +1,117 @@
++using KPG.Timesheet.Application.Common.Services;
++using KPG.Timesheet.Domain.Constants;
++using KPG.Timesheet.Domain.Entities;
++using KPG.Timesheet.Infrastructure.Data;
++using Microsoft.EntityFrameworkCore;
++
++namespace KPG.Timesheet.Infrastructure.IntegrationTests.Sistema;
++
++public class RestriccionDiaServiceTests
++{
++    // 2026-05-18 es lunes.
++    private static readonly DateOnly Lunes = new(2026, 5, 18);
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_SinRestricciones_Permite()
++    {
++        await using var context = CreateContext();
++
++        var (puede, motivo) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeTrue();
++        motivo.Should().BeNull();
++    }
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_ConRestriccionDeUsuario_Bloquea()
++    {
++        await using var context = CreateContext();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaUsuario(DayOfWeek.Monday, "user-1"));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var (puede, motivo) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeFalse();
++        motivo.Should().NotBeNullOrWhiteSpace();
++    }
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_ConRestriccionDeOtroUsuario_NoAfecta()
++    {
++        await using var context = CreateContext();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaUsuario(DayOfWeek.Monday, "otro-usuario"));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var (puede, _) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeTrue();
++    }
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_ConRestriccionDeRol_Bloquea()
++    {
++        await using var context = CreateContext();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaRol(DayOfWeek.Monday, Roles.Empleado));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var (puede, motivo) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeFalse();
++        motivo.Should().NotBeNullOrWhiteSpace();
++    }
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_ConRestriccionDeOtroRol_NoAfecta()
++    {
++        await using var context = CreateContext();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaRol(DayOfWeek.Monday, Roles.Gerente));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var (puede, _) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeTrue();
++    }
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_ConRestriccionInactiva_NoAfecta()
++    {
++        await using var context = CreateContext();
++        var restriccion = ParametroRestriccionDia.ParaUsuario(DayOfWeek.Monday, "user-1");
++        restriccion.Desactivar();
++        context.ParametrosRestriccionDia.Add(restriccion);
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var (puede, _) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeTrue();
++    }
++
++    [Fact]
++    public async Task PuedeRegistrarEnDiaAsync_ConRestriccionDeOtroDia_NoAfecta()
++    {
++        await using var context = CreateContext();
++        context.ParametrosRestriccionDia.Add(ParametroRestriccionDia.ParaUsuario(DayOfWeek.Friday, "user-1"));
++        await context.SaveChangesAsync(CancellationToken.None);
++
++        var (puede, _) = await Service(context)
++            .PuedeRegistrarEnDiaAsync("user-1", [Roles.Empleado], Lunes, CancellationToken.None);
++
++        puede.Should().BeTrue();
++    }
++
++    private static ApplicationDbContext CreateContext()
++    {
++        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
++            .UseInMemoryDatabase(Guid.NewGuid().ToString())
++            .Options;
++        return new ApplicationDbContext(options);
++    }
++
++    private static RestriccionDiaService Service(ApplicationDbContext context) => new(context);
++}
+diff --git a/Fronted/src/WebUI/Features/Admin/Components/KpgRestriccionDiaDialog.razor b/Fronted/src/WebUI/Features/Admin/Components/KpgRestriccionDiaDialog.razor
+new file mode 100644
+index 0000000..cbdb7b8
+--- /dev/null
++++ b/Fronted/src/WebUI/Features/Admin/Components/KpgRestriccionDiaDialog.razor
+@@ -0,0 +1,107 @@
++@inject IStringLocalizer<SharedResource> L
++
++<MudDialog>
++    <TitleContent>
++        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
++            <MudIcon Icon="@Icons.Material.Filled.EventBusy" Color="Color.Primary" />
++            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Params_DayRestrictionNew"]</MudText>
++        </MudStack>
++    </TitleContent>
++    <DialogContent>
++        <MudStack Spacing="3">
++            <MudSelect T="DayOfWeek" Label="@L["Params_DayRestrictionDay"]" Variant="Variant.Outlined"
++                       @bind-Value="_dia" Required="true" aria-label="@L["Params_DayRestrictionDay"]">
++                @foreach (var dia in DiasDisponibles)
++                {
++                    <MudSelectItem Value="@dia">@NombreDia(dia)</MudSelectItem>
++                }
++            </MudSelect>
++
++            <MudRadioGroup T="Ambito" Value="_ambito" ValueChanged="OnAmbitoChanged">
++                <MudRadio T="Ambito" Value="@Ambito.Rol" Color="Color.Primary">@L["Params_WindowRuleByRole"]</MudRadio>
++                <MudRadio T="Ambito" Value="@Ambito.Persona" Color="Color.Primary">@L["Params_WindowRuleByPerson"]</MudRadio>
++            </MudRadioGroup>
++
++            @if (_ambito == Ambito.Rol)
++            {
++                <MudSelect T="string" Label="@L["Users_ColRole"]" Variant="Variant.Outlined"
++                           @bind-Value="_rol" Required="true" aria-label="@L["Users_ColRole"]">
++                    @foreach (var rol in RolesDisponibles)
++                    {
++                        <MudSelectItem Value="@rol">@rol</MudSelectItem>
++                    }
++                </MudSelect>
++            }
++            else
++            {
++                <MudSelect T="string" Label="@L["Label_Employee"]" Variant="Variant.Outlined"
++                           @bind-Value="_userId" Required="true" aria-label="@L["Label_Employee"]">
++                    @foreach (var u in Usuarios.Where(u => u.IsActive))
++                    {
++                        <MudSelectItem Value="@u.Id">@(u.NombreCompleto ?? u.Email)</MudSelectItem>
++                    }
++                </MudSelect>
++            }
++        </MudStack>
++    </DialogContent>
++    <DialogActions>
++        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
++        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!EsValido)" OnClick="Submit">
++            @L["Btn_Save"]
++        </MudButton>
++    </DialogActions>
++</MudDialog>
++
++@code {
++    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
++
++    [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
++
++    private enum Ambito { Rol, Persona }
++
++    private static readonly string[] RolesDisponibles =
++        [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
++
++    private static readonly DayOfWeek[] DiasDisponibles =
++    [
++        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
++        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
++    ];
++
++    private DayOfWeek _dia = DayOfWeek.Monday;
++    private Ambito _ambito = Ambito.Rol;
++    private string? _rol;
++    private string? _userId;
++
++    private bool EsValido => _ambito == Ambito.Rol
++        ? !string.IsNullOrWhiteSpace(_rol)
++        : !string.IsNullOrWhiteSpace(_userId);
++
++    /// <summary>Al cambiar de ámbito se limpia el otro campo, para no enviar ambos.</summary>
++    private void OnAmbitoChanged(Ambito ambito)
++    {
++        _ambito = ambito;
++        if (ambito == Ambito.Rol) _userId = null; else _rol = null;
++    }
++
++    private string NombreDia(DayOfWeek dia) => dia switch
++    {
++        DayOfWeek.Monday    => L["Day_Monday"].Value,
++        DayOfWeek.Tuesday   => L["Day_Tuesday"].Value,
++        DayOfWeek.Wednesday => L["Day_Wednesday"].Value,
++        DayOfWeek.Thursday  => L["Day_Thursday"].Value,
++        DayOfWeek.Friday    => L["Day_Friday"].Value,
++        DayOfWeek.Saturday  => L["Day_Saturday"].Value,
++        DayOfWeek.Sunday    => L["Day_Sunday"].Value,
++        _                    => dia.ToString()
++    };
++
++    private void Cancel() => MudDialog.Cancel();
++
++    private void Submit() =>
++        MudDialog.Close(DialogResult.Ok(
++            new GuardarRestriccionDiaRequest(
++                _dia,
++                _ambito == Ambito.Persona ? _userId : null,
++                _ambito == Ambito.Rol ? _rol : null)));
++}
+diff --git a/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor b/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor
+index 34d66e8..b71c6d5 100644
+--- a/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor
++++ b/Fronted/src/WebUI/Features/Admin/Pages/ParametrosAdminPage.razor
+@@ -2,6 +2,7 @@
+ @attribute [Authorize(Roles = Roles.Admin)]
+ @inject IParametroSistemaRepository SistemaRepo
+ @inject IReglaVentanaRepository ReglasRepo
++@inject IRestriccionDiaRepository RestriccionesRepo
+ @inject IUserAdminRepository UsuariosRepo
+ @inject IDialogService DialogService
+ @inject IStringLocalizer<SharedResource> L
+@@ -126,6 +127,72 @@
+                 }
+             </MudStack>
+         </MudPaper>
++
++        @* ── Restricciones de dia ──────────────────────────────────────── *@
++        <MudPaper Elevation="1" Class="pa-4">
++            <MudStack Spacing="3">
++                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
++                    <div>
++                        <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Params_DayRestrictionsTitle"]</MudText>
++                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Params_DayRestrictionsSubtitle"]</MudText>
++                    </div>
++                    <MudButton Variant="Variant.Outlined"
++                               Color="Color.Primary"
++                               StartIcon="@Icons.Material.Filled.Add"
++                               Disabled="_isSaving"
++                               OnClick="AbrirRestriccionAsync">
++                        @L["Params_DayRestrictionNew"]
++                    </MudButton>
++                </MudStack>
++
++                @if (_restricciones.Count == 0)
++                {
++                    <MudAlert Severity="Severity.Info" Dense="true">@L["Params_DayRestrictionsEmpty"]</MudAlert>
++                }
++                else
++                {
++                    <MudDataGrid T="RestriccionDiaResponse" Items="_restricciones" Dense="true"
++                                 Filterable="false" SortMode="SortMode.None" RowsPerPage="50">
++                        <Columns>
++                            <TemplateColumn Title="@L["Params_DayRestrictionDay"]" Sortable="false">
++                                <CellTemplate>@NombreDia(context.Item.DiaDelaSemana)</CellTemplate>
++                            </TemplateColumn>
++                            <TemplateColumn Title="@L["Params_WindowRuleApplies"]" Sortable="false">
++                                <CellTemplate>
++                                    @if (context.Item.Rol is not null)
++                                    {
++                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">
++                                            @L["Users_ColRole"]: @context.Item.Rol
++                                        </MudChip>
++                                    }
++                                    else
++                                    {
++                                        <span>@NombreUsuario(context.Item.UserId)</span>
++                                    }
++                                </CellTemplate>
++                            </TemplateColumn>
++                            <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
++                                <CellTemplate>
++                                    <KpgEstadoChip Activo="@context.Item.Activo" />
++                                </CellTemplate>
++                            </TemplateColumn>
++                            <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
++                                <CellTemplate>
++                                    <MudTooltip Text="@(context.Item.Activo ? L["Btn_Deactivate"].Value : L["Btn_Activate"].Value)">
++                                        <MudIconButton Icon="@(context.Item.Activo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
++                                                       Color="@(context.Item.Activo ? Color.Warning : Color.Success)"
++                                                       Size="Size.Small"
++                                                       aria-label="@(context.Item.Activo ? L["Btn_Deactivate"] : L["Btn_Activate"])"
++                                                       Disabled="_isSaving"
++                                                       OnClick="@(() => ToggleRestriccionAsync(context.Item))" />
++                                    </MudTooltip>
++                                </CellTemplate>
++                            </TemplateColumn>
++                        </Columns>
++                    </MudDataGrid>
++                }
++            </MudStack>
++        </MudPaper>
+     }
+ </MudStack>
+ 
+@@ -142,6 +209,7 @@
+     private int  _ventana = 3;
+     private int  _umbral  = 3;
+     private List<ReglaVentanaResponse> _reglas = [];
++    private List<RestriccionDiaResponse> _restricciones = [];
+     private List<UserAdminResponse> _usuarios = [];
+ 
+     protected override async Task OnInitializedAsync()
+@@ -152,12 +220,14 @@
+             var vTask = SistemaRepo.GetVentanaRetroactividadGlobalAsync();
+             var uTask = SistemaRepo.GetUmbralNotificacionAsync();
+             var rTask = ReglasRepo.GetAllAsync();
++            var rdTask = RestriccionesRepo.GetAllAsync();
+             var usTask = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
+-            await Task.WhenAll(vTask, uTask, rTask, usTask);
+-            _ventana  = await vTask;
+-            _umbral   = await uTask;
+-            _reglas   = await rTask;
+-            _usuarios = (await usTask).Items;
++            await Task.WhenAll(vTask, uTask, rTask, rdTask, usTask);
++            _ventana        = await vTask;
++            _umbral         = await uTask;
++            _reglas         = await rTask;
++            _restricciones  = await rdTask;
++            _usuarios       = (await usTask).Items;
+         }
+         catch { Snackbar.Add(L["Params_ErrorLoad"].Value, Severity.Error); }
+         finally { _isLoading = false; }
+@@ -229,4 +299,58 @@
+         }
+         finally { _isSaving = false; }
+     }
++
++    private string NombreDia(DayOfWeek dia) => dia switch
++    {
++        DayOfWeek.Monday    => L["Day_Monday"].Value,
++        DayOfWeek.Tuesday   => L["Day_Tuesday"].Value,
++        DayOfWeek.Wednesday => L["Day_Wednesday"].Value,
++        DayOfWeek.Thursday  => L["Day_Thursday"].Value,
++        DayOfWeek.Friday    => L["Day_Friday"].Value,
++        DayOfWeek.Saturday  => L["Day_Saturday"].Value,
++        DayOfWeek.Sunday    => L["Day_Sunday"].Value,
++        _                    => dia.ToString()
++    };
++
++    private async Task AbrirRestriccionAsync()
++    {
++        var parameters = new DialogParameters<KpgRestriccionDiaDialog>
++        {
++            { x => x.Usuarios, _usuarios }
++        };
++        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
++
++        var dialog = await DialogService.ShowAsync<KpgRestriccionDiaDialog>(string.Empty, parameters, options);
++        var result = await dialog.Result;
++        if (result?.Canceled != false || result.Data is not GuardarRestriccionDiaRequest request)
++            return;
++
++        _isSaving = true;
++        try
++        {
++            var (ok, _, error) = await RestriccionesRepo.CrearAsync(request);
++            if (ok)
++            {
++                _restricciones = await RestriccionesRepo.GetAllAsync();
++                Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
++            }
++            else
++            {
++                Snackbar.Add(error ?? L["Params_ErrorSave"].Value, Severity.Error);
++            }
++        }
++        finally { _isSaving = false; }
++    }
++
++    private async Task ToggleRestriccionAsync(RestriccionDiaResponse item)
++    {
++        _isSaving = true;
++        try
++        {
++            var (ok, _) = await RestriccionesRepo.ToggleAsync(item.Id);
++            if (ok) _restricciones = await RestriccionesRepo.GetAllAsync();
++            else Snackbar.Add(L["Params_ErrorSave"].Value, Severity.Error);
++        }
++        finally { _isSaving = false; }
++    }
+ }
+diff --git a/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor b/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor
+index b211892..546eeba 100644
+--- a/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor
++++ b/Fronted/src/WebUI/Features/Auth/Pages/LoginPage.razor
+@@ -1,5 +1,6 @@
+ @page "/login"
+ @layout LoginLayout
++@using System.Security.Claims
+ @inject KpgAuthStateProvider AuthProvider
+ @inject NavigationManager Navigation
+ @inject IStringLocalizer<SharedResource> L
+@@ -23,6 +24,13 @@
+             <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+         }
+ 
++        @if (!string.IsNullOrEmpty(_welcomeName))
++        {
++            <MudAlert Severity="Severity.Success" Class="mb-4" Dense="true" aria-live="polite">
++                @L["Login_Welcome"] @_welcomeName
++            </MudAlert>
++        }
++
+         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
+             <MudTextField T="string"
+                           Label="@L["Label_Email"]"
+@@ -88,6 +96,7 @@
+     private string _email = string.Empty;
+     private string _password = string.Empty;
+     private string? _errorMessage;
++    private string? _welcomeName;
+     private bool _isLoading;
+     private bool _formIsValid;
+     private bool _showPassword;
+@@ -106,11 +115,18 @@
+ 
+         _isLoading = true;
+         _errorMessage = null;
++        _welcomeName = null;
+ 
+         try
+         {
+             await AuthProvider.LoginAsync(_email, _password);
+ 
++            var state = await AuthProvider.GetAuthenticationStateAsync();
++            _welcomeName = NombreDelToken(state.User);
++            StateHasChanged();
++
++            await Task.Delay(800);
++
+             Navigation.NavigateTo("/");
+         }
+         catch (UnauthorizedAccessException)
+@@ -126,4 +142,7 @@
+             _isLoading = false;
+         }
+     }
++
++    private static string? NombreDelToken(ClaimsPrincipal user) =>
++        user.FindFirst("name")?.Value ?? user.FindFirst(ClaimTypes.Name)?.Value;
+ }
+diff --git a/Fronted/src/WebUI/Infrastructure/Repositories/IRestriccionDiaRepository.cs b/Fronted/src/WebUI/Infrastructure/Repositories/IRestriccionDiaRepository.cs
+new file mode 100644
+index 0000000..b0452d0
+--- /dev/null
++++ b/Fronted/src/WebUI/Infrastructure/Repositories/IRestriccionDiaRepository.cs
+@@ -0,0 +1,13 @@
++using KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
++
++namespace KPG.Timesheet.WebUI.Infrastructure.Repositories;
++
++public interface IRestriccionDiaRepository
++{
++    Task<List<RestriccionDiaResponse>> GetAllAsync(CancellationToken ct = default);
++
++    Task<(bool Ok, RestriccionDiaResponse? Item, string? Error)> CrearAsync(
++        GuardarRestriccionDiaRequest request, CancellationToken ct = default);
++
++    Task<(bool Ok, RestriccionDiaResponse? Item)> ToggleAsync(int id, CancellationToken ct = default);
++}
+diff --git a/Fronted/src/WebUI/Infrastructure/Repositories/Models/RestriccionDiaModels.cs b/Fronted/src/WebUI/Infrastructure/Repositories/Models/RestriccionDiaModels.cs
+new file mode 100644
+index 0000000..de5a936
+--- /dev/null
++++ b/Fronted/src/WebUI/Infrastructure/Repositories/Models/RestriccionDiaModels.cs
+@@ -0,0 +1,14 @@
++namespace KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
++
++/// <summary>
++/// Dia de la semana en el que una persona (<c>UserId</c>) o un rol (<c>Rol</c>) no puede
++/// registrar horas, salvo que tenga una excepcion aprobada.
++/// </summary>
++public record RestriccionDiaResponse(
++    int Id,
++    DayOfWeek DiaDelaSemana,
++    string? UserId,
++    string? Rol,
++    bool Activo);
++
++public record GuardarRestriccionDiaRequest(DayOfWeek DiaDelaSemana, string? UserId, string? Rol);
+diff --git a/Fronted/src/WebUI/Infrastructure/Repositories/RestriccionDiaRepository.cs b/Fronted/src/WebUI/Infrastructure/Repositories/RestriccionDiaRepository.cs
+new file mode 100644
+index 0000000..12b1856
+--- /dev/null
++++ b/Fronted/src/WebUI/Infrastructure/Repositories/RestriccionDiaRepository.cs
+@@ -0,0 +1,78 @@
++using System.Net.Http.Headers;
++using System.Net.Http.Json;
++using System.Text.Json;
++using KPG.Timesheet.WebUI.Infrastructure.Repositories.Models;
++using KPG.Timesheet.WebUI.Shared.Services;
++
++namespace KPG.Timesheet.WebUI.Infrastructure.Repositories;
++
++public class RestriccionDiaRepository(HttpClient http, AuthStateService authState) : IRestriccionDiaRepository
++{
++    public async Task<List<RestriccionDiaResponse>> GetAllAsync(CancellationToken ct = default)
++    {
++        if (string.IsNullOrWhiteSpace(authState.AccessToken)) return [];
++
++        using var message = CreateMessage(HttpMethod.Get, "api/restricciones-dia");
++        var response = await http.SendAsync(message, ct);
++        if (!response.IsSuccessStatusCode) return [];
++
++        return await response.Content.ReadFromJsonAsync<List<RestriccionDiaResponse>>(cancellationToken: ct) ?? [];
++    }
++
++    public Task<(bool Ok, RestriccionDiaResponse? Item, string? Error)> CrearAsync(
++        GuardarRestriccionDiaRequest request, CancellationToken ct = default) =>
++        EnviarAsync(HttpMethod.Post, "api/restricciones-dia", request, ct);
++
++    public async Task<(bool Ok, RestriccionDiaResponse? Item)> ToggleAsync(int id, CancellationToken ct = default)
++    {
++        var (ok, item, _) = await EnviarAsync<object?>(HttpMethod.Put, $"api/restricciones-dia/{id}/toggle", null, ct);
++        return (ok, item);
++    }
++
++    private async Task<(bool Ok, RestriccionDiaResponse? Item, string? Error)> EnviarAsync<TBody>(
++        HttpMethod method, string url, TBody body, CancellationToken ct)
++    {
++        if (string.IsNullOrWhiteSpace(authState.AccessToken))
++            return (false, null, "Sesion no disponible.");
++
++        using var message = CreateMessage(method, url);
++        if (body is not null) message.Content = JsonContent.Create(body);
++
++        var response = await http.SendAsync(message, ct);
++        if (!response.IsSuccessStatusCode)
++            return (false, null, await ReadErrorAsync(response, ct));
++
++        var item = await response.Content.ReadFromJsonAsync<RestriccionDiaResponse>(cancellationToken: ct);
++        return (item is not null, item, null);
++    }
++
++    private HttpRequestMessage CreateMessage(HttpMethod method, string url)
++    {
++        var message = new HttpRequestMessage(method, url);
++        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authState.AccessToken);
++        return message;
++    }
++
++    /// <summary>Extrae el detalle del ProblemDetails para mostrar el motivo real del rechazo.</summary>
++    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response, CancellationToken ct)
++    {
++        try
++        {
++            var raw = await response.Content.ReadAsStringAsync(ct);
++            if (string.IsNullOrWhiteSpace(raw)) return null;
++
++            using var doc = JsonDocument.Parse(raw);
++            if (doc.RootElement.TryGetProperty("errors", out var errores))
++            {
++                var mensajes = errores.EnumerateObject()
++                    .SelectMany(p => p.Value.EnumerateArray().Select(v => v.GetString()))
++                    .Where(m => !string.IsNullOrWhiteSpace(m));
++                var texto = string.Join(" ", mensajes);
++                if (!string.IsNullOrWhiteSpace(texto)) return texto;
++            }
++
++            return doc.RootElement.TryGetProperty("detail", out var detail) ? detail.GetString() : null;
++        }
++        catch { return null; }
++    }
++}
+diff --git a/Fronted/src/WebUI/Program.cs b/Fronted/src/WebUI/Program.cs
+index b768af2..9b5cf85 100644
+--- a/Fronted/src/WebUI/Program.cs
++++ b/Fronted/src/WebUI/Program.cs
+@@ -34,6 +34,7 @@ builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
+ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+ builder.Services.AddScoped<ISupervisorPuestoRepository, SupervisorPuestoRepository>();
+ builder.Services.AddScoped<IReglaVentanaRepository, ReglaVentanaRepository>();
++builder.Services.AddScoped<IRestriccionDiaRepository, RestriccionDiaRepository>();
+ builder.Services.AddScoped<IAprobacionRepository, AprobacionRepository>();
+ builder.Services.AddScoped<IModalidadRepository, ModalidadRepository>();
+ builder.Services.AddScoped<ILugarTrabajoRepository, LugarTrabajoRepository>();
+diff --git a/Fronted/src/WebUI/Resources/SharedResource.en.resx b/Fronted/src/WebUI/Resources/SharedResource.en.resx
+index a8e6404..42b4317 100644
+--- a/Fronted/src/WebUI/Resources/SharedResource.en.resx
++++ b/Fronted/src/WebUI/Resources/SharedResource.en.resx
+@@ -146,6 +146,7 @@
+   <data name="Login_Button"><value>Sign in</value></data>
+   <data name="Login_Error"><value>Incorrect credentials. Check your email and password.</value></data>
+   <data name="Login_Loading"><value>Verifying...</value></data>
++  <data name="Login_Welcome"><value>Welcome,</value></data>
+   <data name="Login_ContactAdmin"><value>Having trouble? Contact your system administrator.</value></data>
+ 
+   <!-- === DAILY REGISTER === -->
+@@ -226,6 +227,18 @@
+   <data name="Params_WindowRuleByRole"><value>A role</value></data>
+   <data name="Params_WindowRuleByPerson"><value>A person</value></data>
+   <data name="Params_WindowRuleHint"><value>The general value is {0} days. A person exception outweighs a role one.</value></data>
++  <data name="Params_DayRestrictionsTitle"><value>Day restrictions</value></data>
++  <data name="Params_DayRestrictionsSubtitle"><value>Days of the week on which a role or a specific person cannot log time.</value></data>
++  <data name="Params_DayRestrictionsEmpty"><value>No restrictions configured.</value></data>
++  <data name="Params_DayRestrictionNew"><value>New restriction</value></data>
++  <data name="Params_DayRestrictionDay"><value>Day</value></data>
++  <data name="Day_Monday"><value>Monday</value></data>
++  <data name="Day_Tuesday"><value>Tuesday</value></data>
++  <data name="Day_Wednesday"><value>Wednesday</value></data>
++  <data name="Day_Thursday"><value>Thursday</value></data>
++  <data name="Day_Friday"><value>Friday</value></data>
++  <data name="Day_Saturday"><value>Saturday</value></data>
++  <data name="Day_Sunday"><value>Sunday</value></data>
+   <data name="Org_LedBy"><value>Manager:</value></data>
+   <data name="Org_Title"><value>Org chart</value></data>
+   <data name="Org_Subtitle"><value>Company hierarchy based on each person's direct manager.</value></data>
+diff --git a/Fronted/src/WebUI/Resources/SharedResource.resx b/Fronted/src/WebUI/Resources/SharedResource.resx
+index ecd2353..c4ca542 100644
+--- a/Fronted/src/WebUI/Resources/SharedResource.resx
++++ b/Fronted/src/WebUI/Resources/SharedResource.resx
+@@ -146,6 +146,7 @@
+   <data name="Login_Button"><value>Entrar</value></data>
+   <data name="Login_Error"><value>Credenciales incorrectas. Verifica tu correo y contraseña.</value></data>
+   <data name="Login_Loading"><value>Verificando...</value></data>
++  <data name="Login_Welcome"><value>Bienvenido,</value></data>
+   <data name="Login_ContactAdmin"><value>¿Problemas para acceder? Contacte al Administrador del sistema.</value></data>
+ 
+   <!-- === REGISTRO DE JORNADA === -->
+@@ -226,6 +227,18 @@
+   <data name="Params_WindowRuleByRole"><value>Un rol</value></data>
+   <data name="Params_WindowRuleByPerson"><value>Una persona</value></data>
+   <data name="Params_WindowRuleHint"><value>El valor general es {0} días. Una excepción de persona pesa más que una de rol.</value></data>
++  <data name="Params_DayRestrictionsTitle"><value>Restricciones de días</value></data>
++  <data name="Params_DayRestrictionsSubtitle"><value>Días de la semana en los que un rol o una persona concreta no puede registrar horas.</value></data>
++  <data name="Params_DayRestrictionsEmpty"><value>No hay restricciones configuradas.</value></data>
++  <data name="Params_DayRestrictionNew"><value>Nueva restricción</value></data>
++  <data name="Params_DayRestrictionDay"><value>Día</value></data>
++  <data name="Day_Monday"><value>Lunes</value></data>
++  <data name="Day_Tuesday"><value>Martes</value></data>
++  <data name="Day_Wednesday"><value>Miércoles</value></data>
++  <data name="Day_Thursday"><value>Jueves</value></data>
++  <data name="Day_Friday"><value>Viernes</value></data>
++  <data name="Day_Saturday"><value>Sábado</value></data>
++  <data name="Day_Sunday"><value>Domingo</value></data>
+   <data name="Org_LedBy"><value>Líder:</value></data>
+   <data name="Org_Title"><value>Organigrama</value></data>
+   <data name="Org_Subtitle"><value>Jerarquía de la organización según el jefe directo de cada persona.</value></data>

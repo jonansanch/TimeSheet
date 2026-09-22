@@ -12,6 +12,7 @@ public static class TipoEventoBitacora
     public const string CambioSupervisorProyecto = "CambioSupervisorProyecto";
     public const string CambioSupervisorPuesto = "CambioSupervisorPuesto";
     public const string CambioVentanaRetroactividad = "CambioVentanaRetroactividad";
+    public const string CambioRestriccionDia = "CambioRestriccionDia";
     public const string RegistroHorasCreado = "RegistroHorasCreado";
     public const string AprobacionRegistro = "AprobacionRegistro";
     public const string RechazoRegistro = "RechazoRegistro";
@@ -26,4 +27,6 @@ public static class TipoEventoBitacora
     public const string EliminacionRegistro = "EliminacionRegistro";
     public const string NotificacionEnviada = "NotificacionEnviada";
     public const string ResetContrasena = "ResetContrasena";
+    public const string ReporteUsuarioCreado = "ReporteUsuarioCreado";
+    public const string ReporteUsuarioCambioEstado = "ReporteUsuarioCambioEstado";
 }

@@ -96,7 +96,7 @@ public class RegistroHoras : IEndpointGroup
     }
 
     [EndpointSummary("Registrar el mismo dia en un rango de fechas")]
-    [EndpointDescription("Crea el mismo registro para cada dia habil del rango. Omite domingos, fechas futuras, dias ya registrados en ese proyecto y dias fuera de la ventana sin excepcion aprobada, y devuelve el detalle de lo omitido.")]
+    [EndpointDescription("Crea el mismo registro para cada dia habil del rango (sabados solo si se indica). Es una carga masiva: no valida ventana de retroactividad, restricciones de dia ni duplicados, y cada registro queda aprobado en los 3 niveles.")]
     [ProducesResponseType<RegistrosRangoResultadoDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

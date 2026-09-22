@@ -1,7 +1,7 @@
 using KPG.Timesheet.Application.Common.Interfaces;
-using KPG.Timesheet.Application.Common.Services;
 using KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistrosRango;
 using KPG.Timesheet.Domain.Entities;
+using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using ValidationException = KPG.Timesheet.Application.Common.Exceptions.ValidationException;
@@ -10,8 +10,9 @@ using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.RegistroHoras;
 
 /// <summary>
-/// Registrar un rango no puede ser un atajo para saltarse las reglas del registro diario:
-/// cada dia se evalua por separado.
+/// Es una carga masiva a proposito: no pasa por la ventana de retroactividad, ni por
+/// restricciones de dia, ni evita duplicados, y queda aprobada en los 3 niveles de una
+/// vez — como la importacion de Excel. Solo se saltan los dias no laborables.
 /// </summary>
 public class CreateRegistrosRangoCommandHandlerTests
 {
@@ -31,22 +32,22 @@ public class CreateRegistrosRangoCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldSaltarDomingosSinReportarlos()
+    public async Task Handle_ShouldSaltarDomingosSiempre()
     {
-        // Un domingo no es un problema que el usuario deba resolver: se omite en silencio.
-        await using var context = await EscenarioAsync(ventanaDias: 30);
+        await using var context = await EscenarioAsync();
 
-        var resultado = await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14));
+        await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14));
 
-        resultado.Omitidos.Should().NotContain(o => o.Fecha.DayOfWeek == DayOfWeek.Sunday);
+        var fechas = await context.RegistrosHoras.Select(r => r.FechaRegistro).ToListAsync();
+        fechas.Should().NotContain(f => f.DayOfWeek == DayOfWeek.Sunday);
     }
 
     [Fact]
     public async Task Handle_SinIncluirSabados_ShouldOmitirlos()
     {
-        await using var context = await EscenarioAsync(ventanaDias: 30);
+        await using var context = await EscenarioAsync();
 
-        var resultado = await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14));
+        await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14));
 
         var fechas = await context.RegistrosHoras.Select(r => r.FechaRegistro).ToListAsync();
         fechas.Should().NotContain(f => f.DayOfWeek == DayOfWeek.Saturday);
@@ -55,63 +56,80 @@ public class CreateRegistrosRangoCommandHandlerTests
     [Fact]
     public async Task Handle_IncluyendoSabados_ShouldCrearlos()
     {
-        await using var context = await EscenarioAsync(ventanaDias: 30);
+        await using var context = await EscenarioAsync();
 
-        var resultado = await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14),
-            incluirSabados: true);
+        await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14), incluirSabados: true);
 
         var fechas = await context.RegistrosHoras.Select(r => r.FechaRegistro).ToListAsync();
         fechas.Should().Contain(new DateOnly(2026, 5, 9));   // sabado
     }
 
     [Fact]
-    public async Task Handle_ConDiasFueraDeLaVentana_ShouldOmitirlosYExplicarlo()
+    public async Task Handle_ConRestriccionDeDiaActiva_ShouldIgnorarlaYCrearIgual()
     {
-        // Ventana de 3 dias habiles desde el jueves 14: no alcanza al viernes 8.
-        await using var context = await EscenarioAsync(ventanaDias: 3);
+        // La carga masiva no consulta restricciones de dia: es una carga ya validada.
+        await using var context = await EscenarioAsync();
+        context.ParametrosRestriccionDia.Add(
+            ParametroRestriccionDia.ParaUsuario(DayOfWeek.Monday, "user-1"));
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var resultado = await Handle(context, new DateOnly(2026, 5, 11), new DateOnly(2026, 5, 14));
+
+        resultado.Creados.Should().Be(4);
+        var fechas = await context.RegistrosHoras.Select(r => r.FechaRegistro).ToListAsync();
+        fechas.Should().Contain(new DateOnly(2026, 5, 11));   // lunes, pese a la restriccion
+    }
+
+    [Fact]
+    public async Task Handle_ConDiasFueraDeLaVentanaDeRetroactividad_ShouldCrearlosIgual()
+    {
+        // Sin ventana de retroactividad configurada (valor por defecto muy corto): la carga
+        // masiva no la respeta, a diferencia del registro individual.
+        await using var context = await EscenarioAsync(ventanaDias: 1);
 
         var resultado = await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14));
 
-        resultado.Omitidos.Should().Contain(o =>
-            o.Fecha == new DateOnly(2026, 5, 8) && o.Motivo.Contains("ventana"));
+        resultado.Creados.Should().Be(5);   // 8, 11, 12, 13, 14 (viernes a jueves, sin fin de semana)
     }
 
     [Fact]
-    public async Task Handle_ConExcepcionAprobada_ShouldCrearElDiaFueraDeVentana()
+    public async Task Handle_ConDiaYaRegistrado_ShouldCrearOtroRegistroSinOmitir()
     {
-        await using var context = await EscenarioAsync(ventanaDias: 3);
-        context.SolicitudesExcepcion.Add(AprobadaPara(new DateOnly(2026, 5, 8)));
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        await Handle(context, new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 14));
-
-        var fechas = await context.RegistrosHoras.Select(r => r.FechaRegistro).ToListAsync();
-        fechas.Should().Contain(new DateOnly(2026, 5, 8));
-    }
-
-    [Fact]
-    public async Task Handle_ConDiasYaRegistrados_ShouldOmitirlosSinDuplicar()
-    {
+        // La carga masiva no evita duplicados: es responsabilidad de quien la ejecuta.
         await using var context = await EscenarioAsync();
         context.RegistrosHoras.Add(RegistroExistente(new DateOnly(2026, 5, 13)));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var resultado = await Handle(context, new DateOnly(2026, 5, 11), new DateOnly(2026, 5, 14));
 
-        resultado.Creados.Should().Be(3);
-        resultado.Omitidos.Should().Contain(o =>
-            o.Fecha == new DateOnly(2026, 5, 13) && o.Motivo.Contains("Ya tienes"));
+        resultado.Creados.Should().Be(4);
+        (await context.RegistrosHoras.CountAsync(r => r.FechaRegistro == new DateOnly(2026, 5, 13)))
+            .Should().Be(2);
     }
 
     [Fact]
-    public async Task Handle_ConFechasFuturas_ShouldOmitirlas()
+    public async Task Handle_ConFechasFuturas_ShouldCrearlasIgual()
     {
         await using var context = await EscenarioAsync();
 
         var resultado = await Handle(context, new DateOnly(2026, 5, 14), new DateOnly(2026, 5, 20));
 
-        resultado.Omitidos.Should().Contain(o => o.Motivo.Contains("futura"));
-        (await context.RegistrosHoras.CountAsync()).Should().Be(1);   // solo hoy
+        resultado.Creados.Should().Be(5);   // jueves 14, viernes 15, lunes 18, martes 19, miercoles 20
+        (await context.RegistrosHoras.CountAsync()).Should().Be(5);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldQuedarAprobadoEnLosTresNiveles()
+    {
+        await using var context = await EscenarioAsync();
+
+        await Handle(context, new DateOnly(2026, 5, 11), new DateOnly(2026, 5, 14));
+
+        var registros = await context.RegistrosHoras.ToListAsync();
+        registros.Should().OnlyContain(r => r.Estado == EstadoAprobacion.Aprobado);
+
+        var aprobaciones = await context.AprobacionesRegistro.ToListAsync();
+        aprobaciones.Should().HaveCount(registros.Count * 3);
     }
 
     [Fact]
@@ -158,8 +176,7 @@ public class CreateRegistrosRangoCommandHandlerTests
     {
         var proyectoId = await context.Proyectos.Select(p => p.Id).FirstAsync();
         var handler = new CreateRegistrosRangoCommandHandler(
-            context, new TestUser("user-1"), new TestClock(Hoy), new NullBitacora(),
-            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)));
+            context, new TestUser("user-1"), new TestClock(Hoy), new NullBitacora());
 
         return await handler.Handle(new CreateRegistrosRangoCommand(
             desde, hasta,
@@ -167,13 +184,6 @@ public class CreateRegistrosRangoCommandHandlerTests
             null, null, null, null,
             proyectoId, "Remoto", "Consultor", "Desarrollo", "Bogota", incluirSabados),
             CancellationToken.None);
-    }
-
-    private static SolicitudExcepcion AprobadaPara(DateOnly fecha)
-    {
-        var solicitud = new SolicitudExcepcion("user-1", fecha, "Justificacion valida");
-        solicitud.Aprobar();
-        return solicitud;
     }
 
     private static RegistroHorasEntity RegistroExistente(DateOnly fecha) =>

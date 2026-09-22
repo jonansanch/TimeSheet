@@ -82,7 +82,7 @@ public class VentanaRetroactivoTests
     }
 
     private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context, DateOnly today) =>
-        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora(), VentanaService(context));
+        new(context, new TestUser("user-1"), new TestClock(today), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
 
     private static CreateRegistroHorasCommand CommandForDate(DateOnly fecha) =>
         new(fecha,

@@ -18,7 +18,7 @@ public class SupervisorRegistroHorasTests
     public async Task Handle_WhenSupervisorCreatesRegistro_ShouldPersistWithSupervisorUserId()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>(), VentanaService(context));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("supervisor-1"), new TestClock(TestToday), Substitute.For<IBitacoraService>(), VentanaService(context), new RestriccionDiaService(context));
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 

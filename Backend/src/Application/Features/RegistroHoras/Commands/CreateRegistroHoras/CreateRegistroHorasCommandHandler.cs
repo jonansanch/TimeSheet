@@ -16,19 +16,22 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
     private readonly IClock _clock;
     private readonly IBitacoraService _bitacora;
     private readonly IVentanaRetroactividadService _ventana;
+    private readonly IRestriccionDiaService _restriccionDia;
 
     public CreateRegistroHorasCommandHandler(
         IApplicationDbContext context,
         IUser user,
         IClock clock,
         IBitacoraService bitacora,
-        IVentanaRetroactividadService ventana)
+        IVentanaRetroactividadService ventana,
+        IRestriccionDiaService restriccionDia)
     {
-        _context  = context;
-        _user     = user;
-        _clock    = clock;
-        _bitacora = bitacora;
-        _ventana  = ventana;
+        _context        = context;
+        _user           = user;
+        _clock          = clock;
+        _bitacora       = bitacora;
+        _ventana        = ventana;
+        _restriccionDia = restriccionDia;
     }
 
     public async Task<RegistroHorasDto> Handle(CreateRegistroHorasCommand request, CancellationToken cancellationToken)
@@ -36,6 +39,13 @@ public class CreateRegistroHorasCommandHandler : IRequestHandler<CreateRegistroH
         var userId = _user.Id;
         if (string.IsNullOrWhiteSpace(userId))
             throw new UnauthorizedAccessException("No existe usuario autenticado para asociar el registro.");
+
+        var (puedeRegistrar, motivoRestriccion) = await _restriccionDia.PuedeRegistrarEnDiaAsync(
+            userId, _user.Roles, request.FechaRegistro, cancellationToken);
+
+        if (!puedeRegistrar)
+            throw new ApplicationValidationException([
+                new ValidationFailure(nameof(request.FechaRegistro), motivoRestriccion)]);
 
         // Ventana de retroactividad efectiva: puede tener excepcion por persona o por rol.
         var windowDays = await _ventana.GetDiasAsync(userId, _user.Roles, cancellationToken);

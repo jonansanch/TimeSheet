@@ -127,6 +127,10 @@ public class SolicitudExcepcion : BaseAuditableEntity
         if (entrada.HasValue && salida!.Value <= entrada.Value)
             throw new DomainRuleException(
                 $"La hora de salida del horario {numero} debe ser mayor que la hora de entrada.");
+        if (entrada.HasValue &&
+            (entrada.Value.Minute % 15 != 0 || salida!.Value.Minute % 15 != 0))
+            throw new DomainRuleException(
+                $"Los minutos del horario {numero} deben estar en cuartos de hora (00, 15, 30, 45).");
     }
 
     private static void ThrowIfBlank(string value, string parameterName)

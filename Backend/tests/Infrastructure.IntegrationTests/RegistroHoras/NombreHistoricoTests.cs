@@ -97,7 +97,8 @@ public class NombreHistoricoTests
 
     private static CreateRegistroHorasCommandHandler MakeHandler(ApplicationDbContext context) =>
         new(context, new TestUser("user-1"), new TestClock(Hoy), new NullBitacora(),
-            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)));
+            new VentanaRetroactividadService(context, new ParametrosSistemaService(context)),
+            new RestriccionDiaService(context));
 
     private static CreateRegistroHorasCommand Command(int proyectoId) =>
         new(Hoy,

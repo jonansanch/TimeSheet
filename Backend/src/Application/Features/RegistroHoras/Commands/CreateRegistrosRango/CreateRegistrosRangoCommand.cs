@@ -1,8 +1,7 @@
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Security;
-using KPG.Timesheet.Domain.Common;
 using KPG.Timesheet.Domain.Constants;
-using KPG.Timesheet.Domain.Enums;
+using KPG.Timesheet.Domain.Entities;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
 
 namespace KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegistrosRango;
@@ -12,8 +11,9 @@ namespace KPG.Timesheet.Application.Features.RegistroHoras.Commands.CreateRegist
 /// repetidas: una semana entera en el mismo proyecto con el mismo horario.
 ///
 /// <para>
-/// Los sabados y domingos se saltan, y cada dia se valida por separado contra la ventana
-/// de retroactividad: el rango no es una via para saltarsela.
+/// Los sabados y domingos se saltan. Es una carga masiva a proposito: no pasa por la
+/// ventana de retroactividad, ni por restricciones de dia, ni evita duplicados, y queda
+/// aprobada en los 3 niveles de una vez — como la importacion de Excel.
 /// </para>
 /// </summary>
 [Authorize(Roles = $"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
@@ -33,14 +33,10 @@ public record CreateRegistrosRangoCommand(
     string    Lugar,
     bool      IncluirSabados = false) : IRequest<RegistrosRangoResultadoDto>;
 
-public record RegistrosRangoResultadoDto(
-    int Creados,
-    IReadOnlyList<DiaOmitidoDto> Omitidos)
+public record RegistrosRangoResultadoDto(int Creados)
 {
     public bool SinCambios => Creados == 0;
 }
-
-public record DiaOmitidoDto(DateOnly Fecha, string Motivo);
 
 public class CreateRegistrosRangoCommandValidator : AbstractValidator<CreateRegistrosRangoCommand>
 {
@@ -73,8 +69,7 @@ public class CreateRegistrosRangoCommandHandler(
     IApplicationDbContext context,
     IUser user,
     IClock clock,
-    IBitacoraService bitacora,
-    IVentanaRetroactividadService ventana)
+    IBitacoraService bitacora)
     : IRequestHandler<CreateRegistrosRangoCommand, RegistrosRangoResultadoDto>
 {
     public async Task<RegistrosRangoResultadoDto> Handle(
@@ -94,30 +89,8 @@ public class CreateRegistrosRangoCommandHandler(
                     nameof(request.ProyectoId),
                     "El proyecto seleccionado no existe, esta inactivo o su cliente esta inactivo.")]);
 
-        var windowDays      = await ventana.GetDiasAsync(userId, user.Roles, cancellationToken);
-        var hoy             = clock.Today;
-        var fechaMasAntigua = BusinessDayCalculator.GetEarliestAllowedDate(hoy, windowDays);
-
-        var existentes = (await context.RegistrosHoras
-            .Where(r => r.UserId == userId
-                     && r.ProyectoId == request.ProyectoId
-                     && r.FechaRegistro >= request.Desde
-                     && r.FechaRegistro <= request.Hasta)
-            .Select(r => r.FechaRegistro)
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
-
-        var excepciones = (await context.SolicitudesExcepcion
-            .Where(s => s.UserId == userId
-                     && s.Estado == EstadoSolicitud.Aprobada
-                     && s.FechaRegistro >= request.Desde
-                     && s.FechaRegistro <= request.Hasta)
-            .Select(s => s.FechaRegistro)
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
-
-        var omitidos = new List<DiaOmitidoDto>();
-        var nuevos   = new List<RegistroHorasEntity>();
+        var hoy    = clock.Today;
+        var nuevos = new List<RegistroHorasEntity>();
 
         for (var fecha = request.Desde; fecha <= request.Hasta; fecha = fecha.AddDays(1))
         {
@@ -125,38 +98,35 @@ public class CreateRegistrosRangoCommandHandler(
                (fecha.DayOfWeek == DayOfWeek.Saturday && !request.IncluirSabados))
                 continue;   // no laborable: se salta en silencio, no es un problema
 
-            if (fecha > hoy)
-            {
-                omitidos.Add(new DiaOmitidoDto(fecha, "Es una fecha futura."));
-                continue;
-            }
-
-            if (existentes.Contains(fecha))
-            {
-                omitidos.Add(new DiaOmitidoDto(fecha, "Ya tienes un registro de ese dia en este proyecto."));
-                continue;
-            }
-
-            if (fecha < fechaMasAntigua && !excepciones.Contains(fecha))
-            {
-                omitidos.Add(new DiaOmitidoDto(fecha,
-                    $"Esta fuera de la ventana de registro ({windowDays} dias habiles) y no tiene excepcion aprobada."));
-                continue;
-            }
-
-            nuevos.Add(new RegistroHorasEntity(
+            var registro = new RegistroHorasEntity(
                 userId, fecha,
                 request.HoraEntrada1, request.HoraSalida1,
                 request.HoraEntrada2, request.HoraSalida2,
                 request.HoraEntrada3, request.HoraSalida3,
                 request.ProyectoId, proyecto.Cliente, proyecto.Proyecto,
                 request.Modalidad, request.Recurso, request.Descripcion, request.Lugar,
-                esRetroactivo: fecha < hoy));
+                esRetroactivo: fecha < hoy);
+
+            // Carga masiva ya validada por quien la registra: se aprueba en los 3 niveles
+            // de una vez, igual que la importacion de Excel.
+            registro.Aprobar(1);
+            registro.Aprobar(2);
+            registro.Aprobar(3);
+
+            nuevos.Add(registro);
         }
 
         if (nuevos.Count > 0)
         {
             context.RegistrosHoras.AddRange(nuevos);
+            await context.SaveChangesAsync(cancellationToken);
+
+            // El historial de aprobacion necesita el Id, que solo existe tras guardar.
+            foreach (var registro in nuevos)
+                for (var nivel = 1; nivel <= 3; nivel++)
+                    context.AprobacionesRegistro.Add(new AprobacionRegistro(
+                        registro.Id, AprobacionRegistro.AccionAprobar, nivel, userId,
+                        "Aprobado automaticamente al registrar por rango de fechas."));
 
             await bitacora.RegistrarAsync(
                 TipoEventoBitacora.RegistroHorasCreado,
@@ -168,6 +138,6 @@ public class CreateRegistrosRangoCommandHandler(
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        return new RegistrosRangoResultadoDto(nuevos.Count, omitidos);
+        return new RegistrosRangoResultadoDto(nuevos.Count);
     }
 }

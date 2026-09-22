@@ -32,6 +32,11 @@
                         IconColor="Color.Secondary">
                 @L["Nav_MisSolicitudes"]
             </MudNavLink>
+            <MudNavLink Href="/reportar"
+                        Icon="@Icons.Material.Filled.Feedback"
+                        IconColor="Color.Secondary">
+                @L["Nav_Reportar"]
+            </MudNavLink>
         </Authorized>
     </AuthorizeView>
 
@@ -109,6 +114,9 @@
                 </MudNavLink>
                 <MudNavLink Href="/admin/bitacora" Class="kpg-nav-child">
                     @L["Nav_AdminBitacora"]
+                </MudNavLink>
+                <MudNavLink Href="/admin/reportes-usuario" Class="kpg-nav-child">
+                    @L["Nav_ReportesAdmin"]
                 </MudNavLink>
             </MudNavGroup>
 

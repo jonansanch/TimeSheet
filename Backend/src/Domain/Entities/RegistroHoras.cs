@@ -250,6 +250,9 @@ public class RegistroHoras : BaseAuditableEntity
     {
         if (horaSalida <= horaEntrada)
             throw new DomainRuleException("La hora de salida debe ser mayor que la hora de entrada.");
+        if (horaEntrada.Minute % 15 != 0 || horaSalida.Minute % 15 != 0)
+            throw new DomainRuleException(
+                "Los minutos deben estar en cuartos de hora (00, 15, 30, 45).");
 
         for (var numero = 1; numero <= TotalBloques; numero++)
         {
@@ -336,6 +339,19 @@ public class RegistroHoras : BaseAuditableEntity
         if (entrada.HasValue && salida!.Value <= entrada.Value)
             throw new DomainRuleException(
                 $"La hora de salida del horario {numero} debe ser mayor que la hora de entrada.");
+        if (entrada.HasValue)
+        {
+            ThrowIfNoEsCuartoDeHora(entrada.Value, numero, "entrada");
+            ThrowIfNoEsCuartoDeHora(salida!.Value, numero, "salida");
+        }
+    }
+
+    /// <summary>Los minutos solo pueden ser 0, 15, 30 o 45: igual que exige el formulario.</summary>
+    private static void ThrowIfNoEsCuartoDeHora(TimeOnly hora, int numero, string tipo)
+    {
+        if (hora.Minute % 15 != 0)
+            throw new DomainRuleException(
+                $"La hora de {tipo} del horario {numero} debe estar en cuartos de hora (00, 15, 30, 45).");
     }
 
     private static void ValidarSinCruces(

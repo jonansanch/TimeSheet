@@ -15,7 +15,7 @@ public class CreateRegistroHorasCommandHandlerTests
     public async Task Handle_WhenValid_ShouldPersistRegistroForAuthenticatedUser()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
 
         var result = await handler.Handle(ValidCommand(), CancellationToken.None);
 
@@ -31,7 +31,7 @@ public class CreateRegistroHorasCommandHandlerTests
     public async Task Handle_WhenSameDateSecondCall_ShouldUpsertAddingPMBlock()
     {
         await using var context = CreateContextWithVentana(3);
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
 
         // First call: AM block only
         await handler.Handle(ValidCommand(), CancellationToken.None);
@@ -62,7 +62,7 @@ public class CreateRegistroHorasCommandHandlerTests
         context.SolicitudesExcepcion.Add(solicitud);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context));
+        var handler = new CreateRegistroHorasCommandHandler(context, new TestUser("user-1"), new TestClock(TestToday), new NullBitacora(), VentanaService(context), new RestriccionDiaService(context));
         var command = new CreateRegistroHorasCommand(
             fechaFuera,
             new TimeOnly(8, 0), new TimeOnly(13, 0),

@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IParametroSistemaRepository SistemaRepo
 @inject IReglaVentanaRepository ReglasRepo
+@inject IRestriccionDiaRepository RestriccionesRepo
 @inject IUserAdminRepository UsuariosRepo
 @inject IDialogService DialogService
 @inject IStringLocalizer<SharedResource> L
@@ -126,6 +127,72 @@
                 }
             </MudStack>
         </MudPaper>
+
+        @* ── Restricciones de dia ──────────────────────────────────────── *@
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Spacing="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                    <div>
+                        <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Params_DayRestrictionsTitle"]</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Params_DayRestrictionsSubtitle"]</MudText>
+                    </div>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               Disabled="_isSaving"
+                               OnClick="AbrirRestriccionAsync">
+                        @L["Params_DayRestrictionNew"]
+                    </MudButton>
+                </MudStack>
+
+                @if (_restricciones.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">@L["Params_DayRestrictionsEmpty"]</MudAlert>
+                }
+                else
+                {
+                    <MudDataGrid T="RestriccionDiaResponse" Items="_restricciones" Dense="true"
+                                 Filterable="false" SortMode="SortMode.None" RowsPerPage="50">
+                        <Columns>
+                            <TemplateColumn Title="@L["Params_DayRestrictionDay"]" Sortable="false">
+                                <CellTemplate>@NombreDia(context.Item.DiaDelaSemana)</CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="@L["Params_WindowRuleApplies"]" Sortable="false">
+                                <CellTemplate>
+                                    @if (context.Item.Rol is not null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">
+                                            @L["Users_ColRole"]: @context.Item.Rol
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <span>@NombreUsuario(context.Item.UserId)</span>
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
+                                <CellTemplate>
+                                    <KpgEstadoChip Activo="@context.Item.Activo" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
+                                <CellTemplate>
+                                    <MudTooltip Text="@(context.Item.Activo ? L["Btn_Deactivate"].Value : L["Btn_Activate"].Value)">
+                                        <MudIconButton Icon="@(context.Item.Activo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
+                                                       Color="@(context.Item.Activo ? Color.Warning : Color.Success)"
+                                                       Size="Size.Small"
+                                                       aria-label="@(context.Item.Activo ? L["Btn_Deactivate"] : L["Btn_Activate"])"
+                                                       Disabled="_isSaving"
+                                                       OnClick="@(() => ToggleRestriccionAsync(context.Item))" />
+                                    </MudTooltip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                }
+            </MudStack>
+        </MudPaper>
     }
 </MudStack>
 
@@ -142,6 +209,7 @@
     private int  _ventana = 3;
     private int  _umbral  = 3;
     private List<ReglaVentanaResponse> _reglas = [];
+    private List<RestriccionDiaResponse> _restricciones = [];
     private List<UserAdminResponse> _usuarios = [];
 
     protected override async Task OnInitializedAsync()
@@ -152,12 +220,14 @@
             var vTask = SistemaRepo.GetVentanaRetroactividadGlobalAsync();
             var uTask = SistemaRepo.GetUmbralNotificacionAsync();
             var rTask = ReglasRepo.GetAllAsync();
+            var rdTask = RestriccionesRepo.GetAllAsync();
             var usTask = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
-            await Task.WhenAll(vTask, uTask, rTask, usTask);
-            _ventana  = await vTask;
-            _umbral   = await uTask;
-            _reglas   = await rTask;
-            _usuarios = (await usTask).Items;
+            await Task.WhenAll(vTask, uTask, rTask, rdTask, usTask);
+            _ventana        = await vTask;
+            _umbral         = await uTask;
+            _reglas         = await rTask;
+            _restricciones  = await rdTask;
+            _usuarios       = (await usTask).Items;
         }
         catch { Snackbar.Add(L["Params_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
@@ -225,6 +295,60 @@
         {
             var (ok, _) = await ReglasRepo.ToggleAsync(item.Id);
             if (ok) _reglas = await ReglasRepo.GetAllAsync();
+            else Snackbar.Add(L["Params_ErrorSave"].Value, Severity.Error);
+        }
+        finally { _isSaving = false; }
+    }
+
+    private string NombreDia(DayOfWeek dia) => dia switch
+    {
+        DayOfWeek.Monday    => L["Day_Monday"].Value,
+        DayOfWeek.Tuesday   => L["Day_Tuesday"].Value,
+        DayOfWeek.Wednesday => L["Day_Wednesday"].Value,
+        DayOfWeek.Thursday  => L["Day_Thursday"].Value,
+        DayOfWeek.Friday    => L["Day_Friday"].Value,
+        DayOfWeek.Saturday  => L["Day_Saturday"].Value,
+        DayOfWeek.Sunday    => L["Day_Sunday"].Value,
+        _                    => dia.ToString()
+    };
+
+    private async Task AbrirRestriccionAsync()
+    {
+        var parameters = new DialogParameters<KpgRestriccionDiaDialog>
+        {
+            { x => x.Usuarios, _usuarios }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialog = await DialogService.ShowAsync<KpgRestriccionDiaDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not GuardarRestriccionDiaRequest request)
+            return;
+
+        _isSaving = true;
+        try
+        {
+            var (ok, _, error) = await RestriccionesRepo.CrearAsync(request);
+            if (ok)
+            {
+                _restricciones = await RestriccionesRepo.GetAllAsync();
+                Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(error ?? L["Params_ErrorSave"].Value, Severity.Error);
+            }
+        }
+        finally { _isSaving = false; }
+    }
+
+    private async Task ToggleRestriccionAsync(RestriccionDiaResponse item)
+    {
+        _isSaving = true;
+        try
+        {
+            var (ok, _) = await RestriccionesRepo.ToggleAsync(item.Id);
+            if (ok) _restricciones = await RestriccionesRepo.GetAllAsync();
             else Snackbar.Add(L["Params_ErrorSave"].Value, Severity.Error);
         }
         finally { _isSaving = false; }

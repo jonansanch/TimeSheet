@@ -174,6 +174,54 @@ public class RegistroHorasTests
         act.Should().Throw<DomainRuleException>().WithMessage("*se cruzan*");
     }
 
+    // ── Cuartos de hora ─────────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData(8, 5)]
+    [InlineData(8, 10)]
+    [InlineData(8, 37)]
+    [InlineData(8, 59)]
+    public void Constructor_WhenEntradaIsNotQuarterHour_ShouldThrow(int hora, int minuto)
+    {
+        var act = () => CreateRegistro(horaEntrada1: new TimeOnly(hora, minuto));
+
+        act.Should().Throw<DomainRuleException>().WithMessage("*cuartos de hora*");
+    }
+
+    [Theory]
+    [InlineData(13, 5)]
+    [InlineData(13, 44)]
+    public void Constructor_WhenSalidaIsNotQuarterHour_ShouldThrow(int hora, int minuto)
+    {
+        var act = () => CreateRegistro(horaSalida1: new TimeOnly(hora, minuto));
+
+        act.Should().Throw<DomainRuleException>().WithMessage("*cuartos de hora*");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(15)]
+    [InlineData(30)]
+    [InlineData(45)]
+    public void Constructor_WhenMinutesAreQuarterHour_ShouldNotThrow(int minuto)
+    {
+        var act = () => CreateRegistro(
+            horaEntrada1: new TimeOnly(8, minuto),
+            horaSalida1: new TimeOnly(13, minuto));
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void AgregarHorario_WhenMinutesAreNotQuarterHour_ShouldThrow()
+    {
+        var registro = CreateRegistro();   // 08:00-13:00
+
+        var act = () => registro.AgregarHorario(new TimeOnly(13, 10), new TimeOnly(14, 0));
+
+        act.Should().Throw<DomainRuleException>().WithMessage("*cuartos de hora*");
+    }
+
     /// <summary>El dominio solo exige un id positivo; la existencia la valida la capa de aplicacion.</summary>
     private const int ProyectoIdValido = 1;
 
