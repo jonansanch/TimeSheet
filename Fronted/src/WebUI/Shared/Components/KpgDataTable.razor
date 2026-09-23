@@ -1,0 +1,57 @@
+@typeparam TItem
+
+<KpgCard Compact="true" Class="kpg-data-table-card">
+    @if (Loading)
+    {
+        <KpgTableSkeleton Rows="@LoadingRows" />
+    }
+    else if (_rows.Count == 0)
+    {
+        <KpgEmptyState Title="@EmptyTitle" Description="@EmptyDescription" Icon="@EmptyIcon" Action="@EmptyAction" />
+    }
+    else
+    {
+        <MudTable T="TItem" Items="@_rows" Hover="true" Dense="@Dense" Breakpoint="Breakpoint.Sm"
+                  Elevation="0" @attributes="AdditionalAttributes" Class="@TableClass">
+            <HeaderContent>@HeaderContent</HeaderContent>
+            <RowTemplate>@RowTemplate(context)</RowTemplate>
+            <PagerContent>
+                @if (PagerContent is not null)
+                {
+                    @PagerContent
+                }
+            </PagerContent>
+        </MudTable>
+    }
+</KpgCard>
+
+@code {
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter, EditorRequired] public RenderFragment? HeaderContent { get; set; }
+    [Parameter, EditorRequired] public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+    [Parameter] public RenderFragment? PagerContent { get; set; }
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public int LoadingRows { get; set; } = 5;
+    [Parameter] public bool Dense { get; set; }
+    [Parameter] public string? EmptyTitle { get; set; }
+    [Parameter] public string? EmptyDescription { get; set; }
+    [Parameter] public string EmptyIcon { get; set; } = Icons.Material.Outlined.Inbox;
+    [Parameter] public RenderFragment? EmptyAction { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+    private IReadOnlyList<TItem> _rows = [];
+    private string TableClass => $"kpg-data-table {Class}".Trim();
+
+    [Inject] private IStringLocalizer<SharedResource> L { get; set; } = default!;
+
+    protected override void OnParametersSet()
+    {
+        _rows = Items switch
+        {
+            null => [],
+            IReadOnlyList<TItem> rows => rows,
+            _ => Items.ToList()
+        };
+        EmptyTitle ??= L["Common_NoData"].Value;
+    }
+}

@@ -1,1 +1,20 @@
-/* MudBlazor handles all layout — no custom CSS needed */
+.kpg-topbar {
+    min-height: 64px;
+    border-bottom: 1px solid var(--kpg-border-default);
+    box-shadow: var(--kpg-shadow-xs);
+    color: var(--kpg-text-primary);
+}
+
+.kpg-topbar-title { color: var(--kpg-text-primary); font-weight: 700; letter-spacing: -0.01em; }
+.kpg-user-menu-button { color: var(--kpg-text-primary); font-size: var(--kpg-font-size-sm); text-transform: none; }
+.kpg-user-menu-caption { color: var(--kpg-text-secondary); line-height: 1.2; }
+.kpg-sidebar { background: var(--kpg-surface-sidebar); border-right: 0; }
+.kpg-sidebar-brand { min-height: 64px; padding: 0 var(--kpg-space-4); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.kpg-sidebar-logo { width: 100%; max-height: 52px; object-fit: contain; mix-blend-mode: lighten; }
+.kpg-main-content { min-height: 100vh; background: var(--kpg-surface-page); }
+.kpg-content-container { margin-inline: auto; padding: var(--kpg-space-8); }
+
+@media (max-width: 959.98px) {
+    .kpg-content-container { padding: var(--kpg-space-5) var(--kpg-space-4); }
+    .kpg-topbar-title { font-size: var(--kpg-font-size-md); }
+}

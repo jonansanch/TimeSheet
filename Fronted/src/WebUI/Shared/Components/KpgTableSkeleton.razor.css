@@ -1,0 +1,2 @@
+.kpg-table-skeleton { display: grid; gap: var(--kpg-space-2); width: 100%; }
+.kpg-table-skeleton__row { border-radius: var(--kpg-radius-sm); }

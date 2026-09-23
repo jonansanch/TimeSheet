@@ -1,99 +1,13 @@
 html, body {
-    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--kpg-font-sans);
+    background: var(--kpg-surface-page);
+    color: var(--kpg-text-primary);
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
+h1, h2, h3, h4, h5, h6 { font-family: var(--kpg-font-sans); color: var(--kpg-text-primary); }
 
 h1:focus {
     outline: none;
-}
-
-/* KPG Sidebar navy (Dirección A) */
-.mud-drawer .mud-nav-link {
-    color: #FFFFFF !important;
-    border-radius: 0 !important;
-    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 0.9rem;
-    padding: 10px 20px !important;
-    transition: background-color 0.15s ease;
-}
-
-.mud-drawer .mud-nav-link:hover {
-    background-color: #1B4F73 !important;
-    color: #FFFFFF !important;
-}
-
-.mud-drawer .mud-nav-link.active {
-    border-left: 3px solid #5BB8D4 !important;
-    background-color: rgba(255, 255, 255, 0.12) !important;
-    color: white !important;
-    font-weight: 500;
-}
-
-.mud-drawer .mud-nav-link .mud-nav-link-icon {
-    color: #5BB8D4 !important;
-}
-
-.mud-drawer .mud-nav-link.active .mud-nav-link-icon {
-    color: white !important;
-}
-
-/* Nav grupos padre — comportamiento de ítem clicable */
-.mud-drawer .mud-nav-group > .mud-nav-group-header {
-    color: #FFFFFF !important;
-    font-size: 0.9rem !important;
-    font-weight: 500 !important;
-    text-transform: none !important;
-    letter-spacing: normal;
-    padding: 10px 20px !important;
-    opacity: 1 !important;
-    background: transparent !important;
-    transition: background-color 0.15s ease;
-}
-
-.mud-drawer .mud-nav-group > .mud-nav-group-header:hover {
-    background-color: #1B4F73 !important;
-}
-
-.mud-drawer .mud-nav-group > .mud-nav-group-header .mud-icon-root {
-    color: #5BB8D4 !important;
-    font-size: 1.2rem !important;
-}
-
-/* Flecha de expansión — color fijo en colapsado y expandido (MudBlazor usa mud-nav-link-expand-icon + mud-transform) */
-.mud-drawer .mud-nav-link-expand-icon,
-.mud-drawer .mud-nav-link-expand-icon.mud-transform {
-    color: #5BB8D4 !important;
-    fill: #5BB8D4 !important;
-    opacity: 1 !important;
-}
-
-/* Nav hijos — indent, sin icono */
-.mud-drawer .kpg-nav-child {
-    padding-left: 36px !important;
-    font-size: 0.85rem !important;
-    opacity: 0.88;
-}
-
-.mud-drawer .kpg-nav-child:hover {
-    opacity: 1;
-}
-
-.mud-drawer .kpg-nav-child.active {
-    opacity: 1;
-    border-left: 3px solid #5BB8D4 !important;
-}
-
-/* Ocultar el espacio reservado para el icono en hijos */
-.mud-drawer .kpg-nav-child .mud-nav-link-icon-wrapper {
-    display: none !important;
-}
-
-/* Separador visual sutil sobre cada grupo */
-.mud-drawer .mud-nav-group {
-    margin-top: 4px;
 }
 
 .content {
@@ -195,7 +109,6 @@ h1:focus {
     width: var(--blazor-load-percentage, 0%);
     background-color: #5BB8D4;
     border-radius: 2px;
-    transition: width 0.1s ease-in-out;
 }
 
 code {
@@ -270,4 +183,23 @@ input:-webkit-autofill:active {
 @keyframes kpg-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.35; }
+}
+
+/* Baseline accesible compartido por controles nativos y MudBlazor. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--kpg-focus-ring);
+    outline-offset: 2px;
+}
+
+.mud-paper { border-color: var(--kpg-border-default); }
+.mud-input-outlined-border { border-color: var(--kpg-border-strong); }
+.mud-table-container { border-radius: var(--kpg-radius-md); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

@@ -1,12 +1,10 @@
-<MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
-    <MudStack Spacing="1">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icon" Color="@Color" Size="Size.Medium" />
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@Label</MudText>
-        </MudStack>
-        <MudText Typo="Typo.h4" Style="font-weight:700;">@Value</MudText>
-    </MudStack>
-</MudPaper>
+<KpgCard Compact="true" Class="kpg-stat-card">
+    <div class="kpg-stat-card__header">
+        <span class="kpg-stat-card__icon"><MudIcon Icon="@Icon" Color="@Color" Size="Size.Medium" /></span>
+        <MudText Typo="Typo.body2" Class="kpg-stat-card__label">@Label</MudText>
+    </div>
+    <MudText Typo="Typo.h4" Class="kpg-stat-card__value">@Value</MudText>
+</KpgCard>
 
 @code {
     [Parameter, EditorRequired] public string Label { get; set; } = default!;

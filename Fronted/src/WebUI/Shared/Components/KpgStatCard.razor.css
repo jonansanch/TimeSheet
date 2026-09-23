@@ -1,0 +1,5 @@
+.kpg-stat-card { height: 100%; }
+.kpg-stat-card__header { display: flex; align-items: center; gap: var(--kpg-space-3); }
+.kpg-stat-card__icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--kpg-radius-sm); background: var(--kpg-surface-subtle); }
+.kpg-stat-card__label { color: var(--kpg-text-secondary); }
+.kpg-stat-card__value { margin-top: var(--kpg-space-3); color: var(--kpg-text-primary); font-weight: 700; }

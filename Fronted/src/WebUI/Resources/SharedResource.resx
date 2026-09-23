@@ -665,4 +665,5 @@
   <data name="RepAdmin_CommentRequiredOnReject"><value>El rechazo requiere un comentario.</value></data>
   <data name="RepAdmin_SavedOk"><value>Estado actualizado.</value></data>
   <data name="RepAdmin_ErrorSave"><value>No se pudo actualizar el estado.</value></data>
+  <data name="Common_NoData"><value>No hay datos disponibles</value></data>
 </root>

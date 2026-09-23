@@ -1,0 +1,2 @@
+.kpg-card { padding: var(--kpg-space-6); border: 1px solid var(--kpg-border-default); border-radius: var(--kpg-radius-lg); background: var(--kpg-surface-card); box-shadow: var(--kpg-shadow-xs); }
+.kpg-card--compact { padding: var(--kpg-space-4); }

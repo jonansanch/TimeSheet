@@ -6,13 +6,14 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<SharedResource> L
 
-<MudLayout>
-    <MudAppBar Elevation="1" Color="Color.Primary" Dense="false" Style="height:64px;">
+<MudLayout Class="kpg-app-shell">
+    <MudAppBar Elevation="0" Color="Color.Surface" Dense="false" Class="kpg-topbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Color="Color.Inherit"
+                       Color="Color.Default"
                        Edge="Edge.Start"
+                       aria-label="@L["Nav_Menu"]"
                        OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="font-family:'Poppins',sans-serif; font-weight:600; letter-spacing:0.5px;">
+        <MudText Typo="Typo.h6" Class="kpg-topbar-title">
             KPG Timesheet
         </MudText>
         <MudSpacer />
@@ -22,14 +23,14 @@
                          TransformOrigin="Origin.TopCenter"
                          Class="d-none d-sm-block me-1">
                     <ActivatorContent>
-                        <MudButton Color="Color.Inherit"
+                        <MudButton Color="Color.Default"
                                    EndIcon="@Icons.Material.Filled.ArrowDropDown"
-                                   Style="text-transform:none; opacity:0.85; font-size:0.875rem;">
+                                   Class="kpg-user-menu-button">
                             <MudStack Spacing="0" AlignItems="AlignItems.Start">
                                 <span>@NombreParaMostrar(context.User)</span>
                                 @if (context.User.FindFirst("lider")?.Value is { Length: > 0 } lider)
                                 {
-                                    <MudText Typo="Typo.caption" Style="opacity:0.7;line-height:1;">
+                                    <MudText Typo="Typo.caption" Class="kpg-user-menu-caption">
                                         @L["Org_LedBy"] @lider
                                     </MudText>
                                 }
@@ -51,7 +52,7 @@
                 </MudMenu>
                 <KpgLanguageSelector />
                 <MudIconButton Icon="@Icons.Material.Filled.Logout"
-                               Color="Color.Inherit"
+                               Color="Color.Default"
                                title="Cerrar sesión"
                                Class="d-sm-none"
                                OnClick="HandleLogout" />
@@ -63,18 +64,18 @@
                Variant="DrawerVariant.Responsive"
                Breakpoint="Breakpoint.Md"
                Elevation="0"
-               Style="background-color:#0D3B5E; border-right:none;">
-        <MudDrawerHeader Style="height:64px; display:flex; align-items:center; justify-content:center; padding:0 16px;">
-            <img src="images/kpg-logo.jpg" alt="KPG" style="width:100%; max-height:90px; object-fit:contain; mix-blend-mode:lighten;" />
+               Class="kpg-sidebar">
+        <MudDrawerHeader Class="kpg-sidebar-brand">
+            <img src="images/kpg-logo.jpg" alt="KPG" class="kpg-sidebar-logo" />
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
 
-    <MudMainContent>
+    <MudMainContent Class="kpg-main-content">
         @* Las pantallas de tablas necesitan todo el ancho: con el tope de lectura de
            1200px el renglon se corta y hay que hacer scroll horizontal. El resto lo
            conserva, porque un formulario o un texto a 2000px se lee mal. *@
-        <MudContainer MaxWidth="MaxWidth.False" Class="py-6 px-6" Style="@EstiloContenedor">
+        <MudContainer MaxWidth="MaxWidth.False" Class="kpg-content-container" Style="@EstiloContenedor">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -107,7 +108,8 @@
         get
         {
             var ruta = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/');
-            return RutasAnchas.Any(r => ruta.StartsWith(r, StringComparison.OrdinalIgnoreCase))
+            return RutasAnchas.Any(r => ruta.Equals(r, StringComparison.OrdinalIgnoreCase)
+                                        || ruta.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase))
                 ? "max-width:100%;"
                 : "max-width:1200px;";
         }

@@ -1,0 +1,4 @@
+.kpg-data-table-card { padding: 0; overflow: hidden; }
+.kpg-data-table .mud-table-head { background: var(--kpg-surface-subtle); }
+.kpg-data-table .mud-table-cell { padding: var(--kpg-space-3) var(--kpg-space-4); border-color: var(--kpg-border-default); }
+.kpg-data-table .mud-table-head .mud-table-cell { color: var(--kpg-text-secondary); font-size: var(--kpg-font-size-xs); font-weight: 700; }

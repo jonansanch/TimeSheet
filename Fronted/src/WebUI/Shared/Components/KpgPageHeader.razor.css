@@ -1,0 +1,6 @@
+.kpg-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--kpg-space-6); margin-bottom: var(--kpg-space-6); }
+.kpg-page-header__copy { min-width: 0; }
+.kpg-page-header__breadcrumbs { margin-bottom: var(--kpg-space-2); color: var(--kpg-text-muted); font-size: var(--kpg-font-size-xs); }
+::deep .kpg-page-header__subtitle { margin-top: var(--kpg-space-1); color: var(--kpg-text-secondary); }
+.kpg-page-header__actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--kpg-space-2); }
+@media (max-width: 599.98px) { .kpg-page-header { flex-direction: column; } .kpg-page-header__actions { width: 100%; } }

@@ -1,0 +1,19 @@
+<section class="kpg-empty-state" aria-live="polite">
+    <span class="kpg-empty-state__icon" aria-hidden="true"><MudIcon Icon="@Icon" Size="Size.Large" /></span>
+    <MudText Typo="Typo.h6" HtmlTag="h2">@Title</MudText>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <MudText Typo="Typo.body2" Class="kpg-empty-state__description">@Description</MudText>
+    }
+    @if (Action is not null)
+    {
+        <div class="kpg-empty-state__action">@Action</div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string Icon { get; set; } = Icons.Material.Outlined.Inbox;
+    [Parameter] public RenderFragment? Action { get; set; }
+}

@@ -1,0 +1,12 @@
+<MudPaper Class="@CssClass" Elevation="0" Outlined="@Outlined" @attributes="AdditionalAttributes">
+    @ChildContent
+</MudPaper>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool Outlined { get; set; } = true;
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+    private string CssClass => $"kpg-card{(Compact ? " kpg-card--compact" : string.Empty)} {Class}".Trim();
+}
