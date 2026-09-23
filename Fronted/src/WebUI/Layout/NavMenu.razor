@@ -6,6 +6,7 @@
 
     <AuthorizeView>
         <Authorized>
+            <div class="kpg-nav-section-label">@L["Nav_SectionMain"]</div>
             <MudNavLink Href="/"
                         Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Home"
@@ -42,6 +43,7 @@
 
     <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
         <Authorized>
+            <div class="kpg-nav-section-label">@L["Nav_SectionTeam"]</div>
             <MudNavLink Href="/dashboard"
                         Icon="@Icons.Material.Filled.Dashboard"
                         IconColor="Color.Secondary">
@@ -91,6 +93,7 @@
 
     <AuthorizeView Roles="@Roles.Admin">
         <Authorized>
+            <div class="kpg-nav-section-label">@L["Nav_SectionAdmin"]</div>
             <MudNavGroup Title="@L["Nav_Admin"]"
                          Icon="@Icons.Material.Filled.AdminPanelSettings"
                          @bind-Expanded="_adminExpanded">

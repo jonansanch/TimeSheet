@@ -592,6 +592,10 @@
 
   <!-- === PERFIL === -->
   <data name="Nav_Profile"><value>Mi perfil</value></data>
+  <data name="Nav_SectionMain"><value>Principal</value></data>
+  <data name="Nav_SectionTeam"><value>Equipo</value></data>
+  <data name="Nav_SectionAdmin"><value>Administración</value></data>
+  <data name="A11y_SkipToContent"><value>Saltar al contenido principal</value></data>
   <data name="Profile_Title"><value>Mi perfil</value></data>
   <data name="Profile_Subtitle"><value>Gestiona tu información y seguridad de cuenta.</value></data>
   <data name="Profile_SectionInfo"><value>Información de cuenta</value></data>

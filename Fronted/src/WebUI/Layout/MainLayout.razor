@@ -6,55 +6,68 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<SharedResource> L
 
+<a class="kpg-skip-link" href="#kpg-main-content">@L["A11y_SkipToContent"]</a>
+
 <MudLayout Class="kpg-app-shell">
     <MudAppBar Elevation="0" Color="Color.Surface" Dense="false" Class="kpg-topbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Default"
                        Edge="Edge.Start"
                        aria-label="@L["Nav_Menu"]"
+                       Class="kpg-topbar-menu"
                        OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="kpg-topbar-title">
-            KPG Timesheet
-        </MudText>
+        <div class="kpg-topbar-context" aria-hidden="true">
+            <MudText Typo="Typo.subtitle2" Class="kpg-topbar-title">KPG Timesheet</MudText>
+        </div>
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
+                <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+                    <Authorized Context="notificationContext">
+                        <MudTooltip Text="@L["Nav_Notifications"]">
+                            <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
+                                           Href="/notificaciones"
+                                           Color="Color.Default"
+                                           Class="kpg-topbar-action"
+                                           aria-label="@L["Nav_Notifications"]" />
+                        </MudTooltip>
+                    </Authorized>
+                </AuthorizeView>
+                <span class="kpg-topbar-divider" aria-hidden="true"></span>
+                <KpgLanguageSelector />
                 <MudMenu AnchorOrigin="Origin.BottomCenter"
                          TransformOrigin="Origin.TopCenter"
-                         Class="d-none d-sm-block me-1">
+                         Class="kpg-user-menu d-none d-sm-block">
                     <ActivatorContent>
                         <MudButton Color="Color.Default"
-                                   EndIcon="@Icons.Material.Filled.ArrowDropDown"
-                                   Class="kpg-user-menu-button">
-                            <MudStack Spacing="0" AlignItems="AlignItems.Start">
-                                <span>@NombreParaMostrar(context.User)</span>
-                                @if (context.User.FindFirst("lider")?.Value is { Length: > 0 } lider)
-                                {
-                                    <MudText Typo="Typo.caption" Class="kpg-user-menu-caption">
-                                        @L["Org_LedBy"] @lider
-                                    </MudText>
-                                }
-                            </MudStack>
+                                   EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                                   Class="kpg-user-menu-button"
+                                   aria-label="@($"{L["Nav_Profile"]}: {NombreParaMostrar(context.User)}")">
+                            <span class="kpg-user-avatar" aria-hidden="true">@InicialUsuario(context.User)</span>
+                            <span class="kpg-user-copy">
+                                <span class="kpg-user-name">@NombreParaMostrar(context.User)</span>
+                                <span class="kpg-user-role">@RolParaMostrar(context.User)</span>
+                            </span>
                         </MudButton>
                     </ActivatorContent>
                     <ChildContent>
                         <MudMenuItem Href="/perfil"
                                      Icon="@Icons.Material.Filled.AccountCircle">
-                            Mi Perfil
+                            @L["Nav_Profile"]
                         </MudMenuItem>
                         <MudDivider />
                         <MudMenuItem OnClick="HandleLogout"
                                      Icon="@Icons.Material.Filled.Logout"
                                      IconColor="Color.Error">
-                            Cerrar sesión
+                            @L["Nav_Logout"]
                         </MudMenuItem>
                     </ChildContent>
                 </MudMenu>
-                <KpgLanguageSelector />
                 <MudIconButton Icon="@Icons.Material.Filled.Logout"
                                Color="Color.Default"
-                               title="Cerrar sesión"
-                               Class="d-sm-none"
+                               aria-label="@L["Nav_Logout"]"
+                               title="@L["Nav_Logout"]"
+                               Class="kpg-topbar-action d-sm-none"
                                OnClick="HandleLogout" />
             </Authorized>
         </AuthorizeView>
@@ -66,12 +79,16 @@
                Elevation="0"
                Class="kpg-sidebar">
         <MudDrawerHeader Class="kpg-sidebar-brand">
-            <img src="images/kpg-logo.jpg" alt="KPG" class="kpg-sidebar-logo" />
+            <img src="images/kpg-logo.jpg" alt="" class="kpg-sidebar-logo" />
+            <span class="kpg-sidebar-brand-copy">
+                <span class="kpg-sidebar-brand-name">KPG</span>
+                <span class="kpg-sidebar-brand-product">Timesheet</span>
+            </span>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
 
-    <MudMainContent Class="kpg-main-content">
+    <MudMainContent Class="kpg-main-content" id="kpg-main-content">
         @* Las pantallas de tablas necesitan todo el ancho: con el tope de lectura de
            1200px el renglon se corta y hay que hacer scroll horizontal. El resto lo
            conserva, porque un formulario o un texto a 2000px se lee mal. *@
@@ -134,6 +151,17 @@
                ?? user.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
                ?? user.Identity?.Name;
     }
+
+    private static string InicialUsuario(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var nombre = NombreParaMostrar(user);
+        return string.IsNullOrWhiteSpace(nombre) ? "K" : nombre.Trim()[0].ToString().ToUpperInvariant();
+    }
+
+    private static string RolParaMostrar(System.Security.Claims.ClaimsPrincipal user)
+        => user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+           ?? user.FindFirst("role")?.Value
+           ?? string.Empty;
 
     protected override void OnInitialized()
     {
