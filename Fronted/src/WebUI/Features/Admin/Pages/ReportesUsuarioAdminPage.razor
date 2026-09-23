@@ -9,11 +9,9 @@
 <PageTitle>@L["RepAdmin_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="4">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["RepAdmin_Title"]</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["RepAdmin_Subtitle"]</MudText>
-    </div>
+    <KpgPageHeader Title="@L["RepAdmin_Title"]" Subtitle="@L["RepAdmin_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+    </KpgPageHeader>
 
     @if (_isLoading)
     {
@@ -25,7 +23,7 @@
     }
     else if (_reportes.Count == 0)
     {
-        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Inbox">@L["RepAdmin_NoReports"]</MudAlert>
+        <KpgEmptyState Title="@L["RepAdmin_NoReports"]" Icon="@Icons.Material.Filled.Inbox" />
     }
     else
     {

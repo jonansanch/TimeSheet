@@ -12,16 +12,16 @@ Secuencia obligatoria: **análisis → design system → shell → páginas → 
 | 3 | Inicio | Completada |
 | 4 | Registro de jornada | Completada |
 | 5 | Mis Registros y Mis Solicitudes | Completada |
-| 6 | Dashboard | Pendiente |
-| 7 | Aprobaciones | Pendiente |
-| 8 | Organigrama | Pendiente |
-| 9 | Administración | Pendiente |
-| 10 | Reportar falla/mejora | Pendiente |
+| 6 | Dashboard | Completada |
+| 7 | Aprobaciones | Completada |
+| 8 | Organigrama | Completada |
+| 9 | Administración | Completada |
+| 10 | Reportar falla/mejora | Completada |
 | 11 | Login y recuperación | Completada |
-| 12 | Estados transversales | Pendiente |
-| 13 | Responsive | Pendiente |
-| 14 | Accesibilidad | Pendiente |
-| 15 | QA final | Pendiente |
+| 12 | Estados transversales | Completada |
+| 13 | Responsive | Completada |
+| 14 | Accesibilidad | Completada |
+| 15 | QA final | Completada |
 
 ## Fase 0 — Análisis
 
