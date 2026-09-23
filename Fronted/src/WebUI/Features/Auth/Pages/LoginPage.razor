@@ -1,13 +1,12 @@
 @page "/login"
 @layout LoginLayout
-@using System.Security.Claims
 @inject KpgAuthStateProvider AuthProvider
 @inject NavigationManager Navigation
 @inject IStringLocalizer<SharedResource> L
 
 <PageTitle>@L["Login_Title"] — KPG Timesheet</PageTitle>
 
-<section class="auth-form" aria-labelledby="login-title">
+<section class="auth-form" aria-labelledby="login-title" aria-busy="@_isLoading.ToString().ToLowerInvariant()">
     <header class="auth-form__header">
         <MudText Typo="Typo.h4" HtmlTag="h1" Class="auth-form__title" id="login-title">@L["Login_Title"]</MudText>
         <MudText Typo="Typo.body2" Class="auth-form__subtitle">@L["Login_Subtitle"]</MudText>
@@ -17,29 +16,25 @@
     {
         <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
-    @if (!string.IsNullOrEmpty(_welcomeName))
-    {
-        <MudAlert Severity="Severity.Success" Class="mb-4" Dense="true" aria-live="polite">@L["Login_Welcome"] @_welcomeName</MudAlert>
-    }
-
     <MudForm @ref="_form" @bind-IsValid="_formIsValid">
         <MudTextField T="string" Label="@L["Label_Email"]" @bind-Value="_email"
-                      InputType="InputType.Email" Required="true" RequiredError="@L["Label_Email"]"
+                      InputType="InputType.Email" Required="true" RequiredError="@L["Login_EmailRequired"]"
                       Class="mb-3" Variant="Variant.Outlined" ShrinkLabel="true"
                       Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email"
                       Disabled="@_isLoading" autocomplete="email" />
 
         <MudTextField T="string" Label="@L["Label_Password"]" @bind-Value="_password"
-                      InputType="@_passwordInputType" Required="true" RequiredError="@L["Label_Password"]"
+                      InputType="@_passwordInputType" Required="true" RequiredError="@L["Login_PasswordRequired"]"
                       Class="mb-4" Variant="Variant.Outlined" ShrinkLabel="true"
                       Adornment="Adornment.End" AdornmentIcon="@_passwordIcon"
+                      AdornmentAriaLabel="@PasswordToggleLabel"
                       OnAdornmentClick="TogglePasswordVisibility" Disabled="@_isLoading"
                       autocomplete="current-password" />
 
         <KpgButton FullWidth="true" Size="Size.Large" Disabled="@_isLoading" OnClick="HandleLogin" Class="mb-4">
             @if (_isLoading)
             {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" aria-label="@L["Login_Loading"]" />
                 <span>@L["Login_Loading"]</span>
             }
             else
@@ -58,12 +53,12 @@
     private string _email = string.Empty;
     private string _password = string.Empty;
     private string? _errorMessage;
-    private string? _welcomeName;
     private bool _isLoading;
     private bool _formIsValid;
     private bool _showPassword;
     private InputType _passwordInputType => _showPassword ? InputType.Text : InputType.Password;
     private string _passwordIcon => _showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+    private string PasswordToggleLabel => _showPassword ? L["Login_HidePassword"] : L["Login_ShowPassword"];
     private void TogglePasswordVisibility() => _showPassword = !_showPassword;
 
     private async Task HandleLogin()
@@ -72,21 +67,13 @@
         if (!_formIsValid) return;
         _isLoading = true;
         _errorMessage = null;
-        _welcomeName = null;
         try
         {
             await AuthProvider.LoginAsync(_email, _password);
-            var state = await AuthProvider.GetAuthenticationStateAsync();
-            _welcomeName = NombreDelToken(state.User);
-            StateHasChanged();
-            await Task.Delay(800);
             Navigation.NavigateTo("/");
         }
         catch (UnauthorizedAccessException) { _errorMessage = L["Login_Error"]; }
         catch { _errorMessage = L["Error_Server"]; }
         finally { _isLoading = false; }
     }
-
-    private static string? NombreDelToken(ClaimsPrincipal user) =>
-        user.FindFirst("name")?.Value ?? user.FindFirst(ClaimTypes.Name)?.Value;
 }

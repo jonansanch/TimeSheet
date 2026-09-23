@@ -148,6 +148,16 @@
   <data name="Login_Loading"><value>Verificando...</value></data>
   <data name="Login_Welcome"><value>Bienvenido,</value></data>
   <data name="Login_ContactAdmin"><value>¿Problemas para acceder? Contacte al Administrador del sistema.</value></data>
+  <data name="Login_EmailRequired"><value>Ingresa tu correo electrónico.</value></data>
+  <data name="Login_PasswordRequired"><value>Ingresa tu contraseña.</value></data>
+  <data name="Login_ShowPassword"><value>Mostrar contraseña</value></data>
+  <data name="Login_HidePassword"><value>Ocultar contraseña</value></data>
+  <data name="Login_BrandTagline"><value>El tiempo impulsa grandes proyectos</value></data>
+  <data name="Login_BrandBenefitsLabel"><value>Beneficios de KPG Timesheet</value></data>
+  <data name="Login_BrandBenefitTime"><value>Registra tus horas</value></data>
+  <data name="Login_BrandBenefitTeam"><value>Colabora con tu equipo</value></data>
+  <data name="Login_BrandBenefitResults"><value>Construye mejores resultados</value></data>
+  <data name="Login_BrandValues"><value>Personas · Proyectos · Resultados</value></data>
 
   <!-- === REGISTRO DE JORNADA === -->
   <data name="Reg_Title"><value>Registro de Jornada</value></data>

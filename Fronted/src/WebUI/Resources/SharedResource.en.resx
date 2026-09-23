@@ -148,6 +148,16 @@
   <data name="Login_Loading"><value>Verifying...</value></data>
   <data name="Login_Welcome"><value>Welcome,</value></data>
   <data name="Login_ContactAdmin"><value>Having trouble? Contact your system administrator.</value></data>
+  <data name="Login_EmailRequired"><value>Enter your email address.</value></data>
+  <data name="Login_PasswordRequired"><value>Enter your password.</value></data>
+  <data name="Login_ShowPassword"><value>Show password</value></data>
+  <data name="Login_HidePassword"><value>Hide password</value></data>
+  <data name="Login_BrandTagline"><value>Time drives great projects</value></data>
+  <data name="Login_BrandBenefitsLabel"><value>KPG Timesheet benefits</value></data>
+  <data name="Login_BrandBenefitTime"><value>Track your time</value></data>
+  <data name="Login_BrandBenefitTeam"><value>Collaborate with your team</value></data>
+  <data name="Login_BrandBenefitResults"><value>Build better results</value></data>
+  <data name="Login_BrandValues"><value>People · Projects · Results</value></data>
 
   <!-- === DAILY REGISTER === -->
   <data name="Reg_Title"><value>Daily Work Log</value></data>
