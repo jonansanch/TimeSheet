@@ -12,14 +12,12 @@
 <PageTitle>@L["Apr_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Apr_Title"]</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Apr_Subtitle"]</MudText>
-    </div>
+    <KpgPageHeader Title="@L["Apr_Title"]" Subtitle="@L["Apr_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+    </KpgPageHeader>
 
     @* ── Navegación de periodo + filtros ──────────────────────────── *@
-    <MudPaper Elevation="1" Class="pa-3">
+    <KpgCard Compact="true">
         <MudStack Spacing="3">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
                 <MudTooltip Text="@(L["Apr_PreviousPeriod"].Value)">
@@ -97,7 +95,7 @@
                 </MudItem>
             </MudGrid>
         </MudStack>
-    </MudPaper>
+    </KpgCard>
 
     @if (_isLoading)
     {

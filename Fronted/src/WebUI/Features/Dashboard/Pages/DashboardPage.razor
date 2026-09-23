@@ -11,12 +11,9 @@
 
 <MudStack Spacing="4">
 
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
-        <div>
-            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Dash_Title"]</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_Subtitle"]</MudText>
-        </div>
+    <KpgPageHeader Title="@L["Dash_Title"]" Subtitle="@L["Dash_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+        <Actions>
         <MudDatePicker Label="@L["Label_Date"]"
                        Date="_fechaDate"
                        DateChanged="OnFechaChangedAsync"
@@ -26,7 +23,8 @@
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Style="max-width:180px;" />
-    </MudStack>
+        </Actions>
+    </KpgPageHeader>
 
     @if (_isLoadingEstado)
     {
