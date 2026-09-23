@@ -5,79 +5,68 @@
 
 <PageTitle>@L["Nav_Home"] — KPG Timesheet</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-2" Style="font-family: 'Poppins', sans-serif; font-weight: 600;">
-    @L["Home_Welcome"]
-</MudText>
-
-<AuthorizeView>
-    <Authorized>
-        <MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
-            @(context.User.FindFirst("email")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? context.User.Identity?.Name)
-        </MudText>
-    </Authorized>
-</AuthorizeView>
-
-<MudGrid>
-    <AuthorizeView Roles="@($"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+<section class="home-page" aria-labelledby="home-title">
+    <AuthorizeView>
         <Authorized>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Register"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardRegisterDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/registro">@L["Home_GoToRegister"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
+            <KpgPageHeader Title="@L["Home_Welcome"]"
+                           Subtitle="@(context.User.FindFirst("email")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? context.User.Identity?.Name)" />
         </Authorized>
     </AuthorizeView>
 
-    <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
-        <Authorized>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Dashboard"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardDashboardDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/dashboard">@L["Home_GoToDashboard"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Reports"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardReportsDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/reportes/horas">@L["Home_GoToReports"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        </Authorized>
-    </AuthorizeView>
+    <MudGrid Spacing="3" Class="home-actions">
+        <AuthorizeView Roles="@($"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+            <Authorized>
+                <MudItem xs="12" sm="6" lg="4">
+                    <a class="home-action-card" href="/registro" aria-label="@L["Home_GoToRegister"]">
+                        <span class="home-action-card__icon home-action-card__icon--primary" aria-hidden="true"><MudIcon Icon="@Icons.Material.Filled.EditCalendar" /></span>
+                        <span class="home-action-card__content">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">@L["Nav_Register"]</MudText>
+                            <MudText Typo="Typo.body2">@L["Home_CardRegisterDesc"]</MudText>
+                        </span>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="home-action-card__arrow" aria-hidden="true" />
+                    </a>
+                </MudItem>
+            </Authorized>
+        </AuthorizeView>
 
-    <AuthorizeView Roles="@Roles.Admin">
-        <Authorized>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Admin"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardAdminDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Warning" Href="/admin/usuarios">@L["Home_GoToAdmin"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        </Authorized>
-    </AuthorizeView>
-</MudGrid>
+        <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+            <Authorized>
+                <MudItem xs="12" sm="6" lg="4">
+                    <a class="home-action-card" href="/dashboard" aria-label="@L["Home_GoToDashboard"]">
+                        <span class="home-action-card__icon home-action-card__icon--info" aria-hidden="true"><MudIcon Icon="@Icons.Material.Filled.Dashboard" /></span>
+                        <span class="home-action-card__content">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">@L["Nav_Dashboard"]</MudText>
+                            <MudText Typo="Typo.body2">@L["Home_CardDashboardDesc"]</MudText>
+                        </span>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="home-action-card__arrow" aria-hidden="true" />
+                    </a>
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <a class="home-action-card" href="/reportes/horas" aria-label="@L["Home_GoToReports"]">
+                        <span class="home-action-card__icon home-action-card__icon--success" aria-hidden="true"><MudIcon Icon="@Icons.Material.Filled.BarChart" /></span>
+                        <span class="home-action-card__content">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">@L["Nav_Reports"]</MudText>
+                            <MudText Typo="Typo.body2">@L["Home_CardReportsDesc"]</MudText>
+                        </span>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="home-action-card__arrow" aria-hidden="true" />
+                    </a>
+                </MudItem>
+            </Authorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="@Roles.Admin">
+            <Authorized>
+                <MudItem xs="12" sm="6" lg="4">
+                    <a class="home-action-card" href="/admin/usuarios" aria-label="@L["Home_GoToAdmin"]">
+                        <span class="home-action-card__icon home-action-card__icon--warning" aria-hidden="true"><MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" /></span>
+                        <span class="home-action-card__content">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">@L["Nav_Admin"]</MudText>
+                            <MudText Typo="Typo.body2">@L["Home_CardAdminDesc"]</MudText>
+                        </span>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Class="home-action-card__arrow" aria-hidden="true" />
+                    </a>
+                </MudItem>
+            </Authorized>
+        </AuthorizeView>
+    </MudGrid>
+</section>

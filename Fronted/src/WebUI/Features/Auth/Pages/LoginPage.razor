@@ -7,89 +7,51 @@
 
 <PageTitle>@L["Login_Title"] — KPG Timesheet</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 100vh;">
-    <MudPaper Class="pa-8" Elevation="4" Style="width: 100%; max-width: 420px;">
+<section class="auth-form" aria-labelledby="login-title">
+    <header class="auth-form__header">
+        <MudText Typo="Typo.h4" HtmlTag="h1" Class="auth-form__title" id="login-title">@L["Login_Title"]</MudText>
+        <MudText Typo="Typo.body2" Class="auth-form__subtitle">@L["Login_Subtitle"]</MudText>
+    </header>
 
-        <div class="d-flex flex-column align-center mb-6">
-            <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-family: Poppins, sans-serif; font-weight: 700;">
-                KPG Timesheet
-            </MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
-                @L["Login_Subtitle"]
-            </MudText>
-        </div>
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
+    @if (!string.IsNullOrEmpty(_welcomeName))
+    {
+        <MudAlert Severity="Severity.Success" Class="mb-4" Dense="true" aria-live="polite">@L["Login_Welcome"] @_welcomeName</MudAlert>
+    }
 
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
-        }
+    <MudForm @ref="_form" @bind-IsValid="_formIsValid">
+        <MudTextField T="string" Label="@L["Label_Email"]" @bind-Value="_email"
+                      InputType="InputType.Email" Required="true" RequiredError="@L["Label_Email"]"
+                      Class="mb-3" Variant="Variant.Outlined" ShrinkLabel="true"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email"
+                      Disabled="@_isLoading" autocomplete="email" />
 
-        @if (!string.IsNullOrEmpty(_welcomeName))
-        {
-            <MudAlert Severity="Severity.Success" Class="mb-4" Dense="true" aria-live="polite">
-                @L["Login_Welcome"] @_welcomeName
-            </MudAlert>
-        }
+        <MudTextField T="string" Label="@L["Label_Password"]" @bind-Value="_password"
+                      InputType="@_passwordInputType" Required="true" RequiredError="@L["Label_Password"]"
+                      Class="mb-4" Variant="Variant.Outlined" ShrinkLabel="true"
+                      Adornment="Adornment.End" AdornmentIcon="@_passwordIcon"
+                      OnAdornmentClick="TogglePasswordVisibility" Disabled="@_isLoading"
+                      autocomplete="current-password" />
 
-        <MudForm @ref="_form" @bind-IsValid="_formIsValid">
-            <MudTextField T="string"
-                          Label="@L["Label_Email"]"
-                          @bind-Value="_email"
-                          InputType="InputType.Email"
-                          Required="true"
-                          RequiredError="@L["Label_Email"]"
-                          Class="mb-3"
-                          Variant="Variant.Outlined"
-                          ShrinkLabel="true"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Email" />
+        <KpgButton FullWidth="true" Size="Size.Large" Disabled="@_isLoading" OnClick="HandleLogin" Class="mb-4">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>@L["Login_Loading"]</span>
+            }
+            else
+            {
+                <span>@L["Login_Button"]</span>
+            }
+        </KpgButton>
+    </MudForm>
 
-            <MudTextField T="string"
-                          Label="@L["Label_Password"]"
-                          @bind-Value="_password"
-                          InputType="@_passwordInputType"
-                          Required="true"
-                          RequiredError="@L["Label_Password"]"
-                          Class="mb-4"
-                          Variant="Variant.Outlined"
-                          ShrinkLabel="true"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@_passwordIcon"
-                          OnAdornmentClick="TogglePasswordVisibility" />
-
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       FullWidth="true"
-                       Size="Size.Large"
-                       Disabled="@_isLoading"
-                       OnClick="HandleLogin"
-                       Class="mb-4">
-                @if (_isLoading)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>@L["Login_Loading"]</span>
-                }
-                else
-                {
-                    <span>@L["Login_Button"]</span>
-                }
-            </MudButton>
-        </MudForm>
-
-        <MudStack Spacing="1" AlignItems="AlignItems.Center" Class="mt-1">
-            <MudLink Href="/forgot-password" Typo="Typo.body2" Color="Color.Primary">
-                @L["Login_ForgotPassword"]
-            </MudLink>
-        </MudStack>
-
-        <MudDivider Class="my-2" />
-
-        <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-3" Color="Color.Secondary">
-            @L["Login_ContactAdmin"]
-        </MudText>
-
-    </MudPaper>
-</MudContainer>
+    <MudLink Href="/forgot-password" Typo="Typo.body2" Color="Color.Primary" Class="auth-form__link">@L["Login_ForgotPassword"]</MudLink>
+    <MudText Typo="Typo.caption" Class="auth-form__help">@L["Login_ContactAdmin"]</MudText>
+</section>
 
 @code {
     private MudForm _form = default!;
@@ -100,47 +62,29 @@
     private bool _isLoading;
     private bool _formIsValid;
     private bool _showPassword;
-
     private InputType _passwordInputType => _showPassword ? InputType.Text : InputType.Password;
-    private string _passwordIcon => _showPassword
-        ? Icons.Material.Filled.Visibility
-        : Icons.Material.Filled.VisibilityOff;
-
+    private string _passwordIcon => _showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
     private void TogglePasswordVisibility() => _showPassword = !_showPassword;
 
     private async Task HandleLogin()
     {
         await _form.Validate();
         if (!_formIsValid) return;
-
         _isLoading = true;
         _errorMessage = null;
         _welcomeName = null;
-
         try
         {
             await AuthProvider.LoginAsync(_email, _password);
-
             var state = await AuthProvider.GetAuthenticationStateAsync();
             _welcomeName = NombreDelToken(state.User);
             StateHasChanged();
-
             await Task.Delay(800);
-
             Navigation.NavigateTo("/");
         }
-        catch (UnauthorizedAccessException)
-        {
-            _errorMessage = L["Login_Error"];
-        }
-        catch
-        {
-            _errorMessage = L["Error_Server"];
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        catch (UnauthorizedAccessException) { _errorMessage = L["Login_Error"]; }
+        catch { _errorMessage = L["Error_Server"]; }
+        finally { _isLoading = false; }
     }
 
     private static string? NombreDelToken(ClaimsPrincipal user) =>

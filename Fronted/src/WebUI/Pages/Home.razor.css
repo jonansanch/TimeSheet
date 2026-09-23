@@ -1,0 +1,29 @@
+.home-page { width: 100%; }
+.home-actions { align-items: stretch; }
+.home-actions ::deep .mud-grid-item { display: flex; }
+.home-action-card {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
+    gap: var(--kpg-space-4); width: 100%; min-height: 132px; padding: var(--kpg-space-6);
+    color: var(--kpg-text-primary); text-decoration: none; background: var(--kpg-surface-card);
+    border: 1px solid var(--kpg-border-default); border-radius: var(--kpg-radius-lg); box-shadow: var(--kpg-shadow-xs);
+    transition: border-color var(--kpg-transition-fast), box-shadow var(--kpg-transition-fast), transform var(--kpg-transition-fast);
+}
+.home-action-card:hover { color: var(--kpg-text-primary); border-color: var(--kpg-border-strong); box-shadow: var(--kpg-shadow-sm); transform: translateY(-2px); }
+.home-action-card:focus-visible { outline: 3px solid var(--kpg-focus-ring); outline-offset: 3px; }
+.home-action-card__icon {
+    display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px;
+    color: var(--kpg-color-primary); background: var(--kpg-blue-100); border-radius: var(--kpg-radius-md);
+}
+.home-action-card__icon--info { color: var(--kpg-status-info); background: var(--kpg-status-info-bg); }
+.home-action-card__icon--success { color: var(--kpg-status-success); background: var(--kpg-status-success-bg); }
+.home-action-card__icon--warning { color: var(--kpg-status-warning); background: var(--kpg-status-warning-bg); }
+.home-action-card__content { min-width: 0; }
+.home-action-card__content ::deep h2 { margin-bottom: var(--kpg-space-1); }
+.home-action-card__content ::deep p { color: var(--kpg-text-secondary); }
+.home-action-card__arrow { color: var(--kpg-text-muted); transition: color var(--kpg-transition-fast), transform var(--kpg-transition-fast); }
+.home-action-card:hover .home-action-card__arrow { color: var(--kpg-color-primary); transform: translateX(3px); }
+@media (max-width: 599.98px) { .home-action-card { min-height: 112px; padding: var(--kpg-space-5); } }
+@media (prefers-reduced-motion: reduce) {
+    .home-action-card, .home-action-card__arrow { transition: none; }
+    .home-action-card:hover, .home-action-card:hover .home-action-card__arrow { transform: none; }
+}
