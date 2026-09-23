@@ -1,0 +1,49 @@
+.historial-page {
+    width: 100%;
+}
+
+.historial-page__filters ::deep .mud-stack-row {
+    gap: var(--kpg-space-3);
+}
+
+.historial-page__month {
+    width: min(100%, 12.5rem);
+}
+
+.historial-page__year {
+    width: min(100%, 8rem);
+}
+
+.historial-page__table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+}
+
+.historial-page__table-card ::deep .mud-data-grid {
+    border: 0;
+}
+
+.historial-page__table-card ::deep .mud-table-head .mud-table-cell {
+    background: var(--kpg-surface-subtle);
+    color: var(--kpg-text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.historial-page__table-card ::deep .mud-table-row:hover {
+    background: var(--kpg-slate-50);
+}
+
+@media (max-width: 599.98px) {
+    .historial-page__filters ::deep .mud-stack-row {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .historial-page__month,
+    .historial-page__year,
+    .historial-page__filters ::deep .mud-input-control {
+        width: 100% !important;
+    }
+}

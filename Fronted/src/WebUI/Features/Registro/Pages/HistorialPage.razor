@@ -11,37 +11,43 @@
 
 <PageTitle>@L["Hist_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-            @L["Hist_Title"]
-        </MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">
-            @L["Hist_Subtitle"]
-        </MudText>
-    </div>
+<MudStack Spacing="3" Class="historial-page">
+    <KpgPageHeader Title="@L["Hist_Title"]" Subtitle="@L["Hist_Subtitle"]">
+        <Breadcrumbs>
+            <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+        </Breadcrumbs>
+        <Actions>
+            <KpgButton Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Outlined.Add"
+                       OnClick="@(() => Navigation.NavigateTo("/registro"))">
+                @L["Btn_RegisterHours"]
+            </KpgButton>
+        </Actions>
+    </KpgPageHeader>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
 
-    <MudPaper Elevation="1" Class="pa-3">
+    <section class="historial-page__filters" aria-label="@L["Common_Filters"]">
+    <KpgCard Compact="true">
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <div class="historial-page__month">
             <MudSelect T="int"
                        Label="@L["Label_Month"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Value="_mes"
                        ValueChanged="OnMesChangedAsync"
-                       Style="max-width:200px;"
                        aria-label="@L["Label_Month"]">
                 @foreach (var (numero, nombre) in _meses)
                 {
                     <MudSelectItem Value="@numero">@nombre</MudSelectItem>
                 }
             </MudSelect>
+            </div>
+            <div class="historial-page__year">
             <MudNumericField T="int"
                              Label="@L["Label_Year"]"
                              Variant="Variant.Outlined"
@@ -50,8 +56,8 @@
                              ValueChanged="OnAnioChangedAsync"
                              Min="2020"
                              Max="2099"
-                             Style="max-width:120px;"
                              aria-label="@L["Label_Year"]" />
+            </div>
             <MudTooltip Text="@(L["Hist_CurrentMonth"].Value)">
                 <MudButton Variant="Variant.Text"
                            Size="Size.Small"
@@ -61,11 +67,14 @@
                 </MudButton>
             </MudTooltip>
         </MudStack>
-    </MudPaper>
+    </KpgCard>
+    </section>
 
     @* El scroll horizontal queda como respaldo para pantallas angostas: en monitores
        normales el contenedor ya da el ancho suficiente. *@
-    <div style="overflow-x:auto;">
+    <section class="historial-page__table-card" aria-label="@L["Hist_Title"]">
+    <KpgCard Compact="true">
+    <div class="historial-page__table-scroll">
     <MudDataGrid @ref="_grid"
                  T="HistorialRegistroResponse"
                  ServerData="CargarDatosAsync"
@@ -207,6 +216,8 @@
         </PagerContent>
     </MudDataGrid>
     </div>
+    </KpgCard>
+    </section>
 
     @if (_totalCount > 0)
     {

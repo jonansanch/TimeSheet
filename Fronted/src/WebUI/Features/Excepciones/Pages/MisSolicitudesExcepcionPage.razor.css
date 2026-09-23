@@ -1,0 +1,24 @@
+.solicitudes-page {
+    width: 100%;
+}
+
+.solicitudes-page__table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+}
+
+.solicitudes-page__table-card ::deep .mud-data-grid {
+    border: 0;
+}
+
+.solicitudes-page__table-card ::deep .mud-table-head .mud-table-cell {
+    background: var(--kpg-surface-subtle);
+    color: var(--kpg-text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.solicitudes-page__table-card ::deep .mud-table-row:hover {
+    background: var(--kpg-slate-50);
+}

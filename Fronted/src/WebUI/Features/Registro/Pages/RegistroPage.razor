@@ -7,17 +7,14 @@
 
 <PageTitle>@L["Reg_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-            @L["Reg_Title"]
-        </MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">
-            @L["Reg_Subtitle"]
-        </MudText>
-    </div>
+<MudStack Spacing="3" Class="registro-page">
+    <KpgPageHeader Title="@L["Reg_Title"]" Subtitle="@L["Reg_Subtitle"]">
+        <Breadcrumbs>
+            <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+        </Breadcrumbs>
+    </KpgPageHeader>
 
+    <div class="registro-page__workspace">
     <MudGrid Spacing="3">
         <MudItem xs="12" md="4">
             <KpgMiniCalendario PrimerDiaMes="@_primerDiaMes"
@@ -35,6 +32,7 @@
             <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado" />
         </MudItem>
     </MudGrid>
+    </div>
 </MudStack>
 
 @code {
