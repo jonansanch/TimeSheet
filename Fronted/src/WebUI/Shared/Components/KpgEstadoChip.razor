@@ -1,22 +1,13 @@
 @inject IStringLocalizer<SharedResource> L
 
-@* Estado de un elemento de catalogo: verde = activo, gris = inactivo.
-   Los colores van explicitos porque Color.Default de MudBlazor se ve casi
-   transparente sobre el fondo de la grilla y no se lee como "inactivo". *@
 <MudTooltip Text="@Texto">
-    <MudChip T="string"
-             Size="Size.Small"
-             Variant="Variant.Filled"
-             Style="@(Activo ? EstiloActivo : EstiloInactivo)">
-        @Texto
-    </MudChip>
+    <KpgStatusBadge Text="@Texto"
+                    Status="@(Activo ? "success" : "neutral")"
+                    Icon="@(Activo ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RemoveCircleOutline)" />
 </MudTooltip>
 
 @code {
     [Parameter, EditorRequired] public bool Activo { get; set; }
-
-    private const string EstiloActivo   = "background-color:#2E7D32;color:#fff;font-weight:600;";
-    private const string EstiloInactivo = "background-color:#9E9E9E;color:#fff;font-weight:600;";
 
     private string Texto => Activo ? L["Label_Active"].Value : L["Label_Inactive"].Value;
 }
