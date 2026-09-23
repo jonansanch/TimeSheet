@@ -97,6 +97,20 @@ public record HistorialRegistroResponse(
 
     /// <summary>Aprobado en los tres niveles: ya no se edita ni se elimina.</summary>
     public bool EstaCerrado => Estado == EstadoAprobacion.Aprobado;
+
+    /// <summary>
+    /// Minutos trabajados en el dia, sumando los tres bloques. Se calcula en el cliente
+    /// porque la API no lo manda: un bloque sin cerrar (entrada sin salida) no suma.
+    /// </summary>
+    public int TotalMinutos =>
+        Bloque(HoraEntrada1, HoraSalida1) +
+        Bloque(HoraEntrada2, HoraSalida2) +
+        Bloque(HoraEntrada3, HoraSalida3);
+
+    private static int Bloque(TimeOnly? entrada, TimeOnly? salida) =>
+        entrada is { } e && salida is { } s && s > e
+            ? (int)(s - e).TotalMinutes
+            : 0;
 }
 
 /// <summary>Un paso del registro por la cadena de aprobacion.</summary>

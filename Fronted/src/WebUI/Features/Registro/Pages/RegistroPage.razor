@@ -10,7 +10,7 @@
 <MudStack Spacing="3">
     <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+        <MudText Typo="Typo.h4" Style="font-weight:600;">
             @L["Reg_Title"]
         </MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -32,7 +32,9 @@
                                OnDiaSeleccionado="@HandleDiaSeleccionado" />
         </MudItem>
         <MudItem xs="12" md="8">
-            <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado" />
+            <KpgShiftForm @ref="_shiftForm"
+                          MinutosDiaCompleto="@_minutosDiaCompleto"
+                          OnGuardado="@HandleRegistroGuardado" />
         </MudItem>
     </MudGrid>
 </MudStack>

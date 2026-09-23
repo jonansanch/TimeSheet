@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-22T00:00:00Z",
+  "title": "Design System: KPG Timesheet",
+  "extensions": {
+    "colorMeta": {
+      "navy-kpg": {
+        "role": "primary",
+        "displayName": "Navy KPG",
+        "canonical": "#0D3B5E",
+        "tonalRamp": [
+          "#04151F",
+          "#072438",
+          "#0D3B5E",
+          "#1B4F73",
+          "#2E6B94",
+          "#5B93B8",
+          "#9CC2D9",
+          "#DCEAF3"
+        ]
+      },
+      "navy-hover": {
+        "role": "primary",
+        "displayName": "Navy Hover",
+        "canonical": "#1B4F73",
+        "tonalRamp": [
+          "#061621",
+          "#0C2A3D",
+          "#123A55",
+          "#1B4F73",
+          "#2A6894",
+          "#5390BA",
+          "#95BFD9",
+          "#D9E8F2"
+        ]
+      },
+      "cielo-kpg": {
+        "role": "secondary",
+        "displayName": "Celeste KPG",
+        "canonical": "#5BB8D4",
+        "tonalRamp": [
+          "#10333E",
+          "#17505F",
+          "#1F6C81",
+          "#2E8BA4",
+          "#43A6C1",
+          "#5BB8D4",
+          "#96D3E5",
+          "#D5EEF6"
+        ]
+      },
+      "verde-completo": {
+        "role": "tertiary",
+        "displayName": "Verde Completo",
+        "canonical": "#2E7D32",
+        "tonalRamp": [
+          "#0C240E",
+          "#143C17",
+          "#1D5520",
+          "#256B29",
+          "#2E7D32",
+          "#4BA450",
+          "#83C787",
+          "#D3EBD5"
+        ]
+      },
+      "ambar-pendiente": {
+        "role": "tertiary",
+        "displayName": "Ámbar Pendiente",
+        "canonical": "#F9A825",
+        "tonalRamp": [
+          "#3D2800",
+          "#5C3D00",
+          "#7A5200",
+          "#A36D00",
+          "#C98700",
+          "#F9A825",
+          "#FBC868",
+          "#FEEBC8"
+        ]
+      },
+      "rojo-rechazo": {
+        "role": "tertiary",
+        "displayName": "Rojo Rechazo",
+        "canonical": "#C62828",
+        "tonalRamp": [
+          "#2E0808",
+          "#4A0D0D",
+          "#6B1414",
+          "#8F1C1C",
+          "#C62828",
+          "#DF5555",
+          "#EB9090",
+          "#F8DADA"
+        ]
+      },
+      "morado-excepcion": {
+        "role": "tertiary",
+        "displayName": "Morado Excepción",
+        "canonical": "#7B1FA2",
+        "tonalRamp": [
+          "#1D0727",
+          "#310C41",
+          "#48115E",
+          "#61177E",
+          "#7B1FA2",
+          "#A342CD",
+          "#C688E2",
+          "#EEDAF7"
+        ]
+      },
+      "amarillo-alerta": {
+        "role": "tertiary",
+        "displayName": "Amarillo Alerta",
+        "canonical": "#FFD300",
+        "tonalRamp": [
+          "#3D3300",
+          "#5C4C00",
+          "#7A6600",
+          "#A38800",
+          "#CCAA00",
+          "#FFD300",
+          "#FFE466",
+          "#FFF6C7"
+        ]
+      },
+      "naranja-info": {
+        "role": "tertiary",
+        "displayName": "Naranja Info",
+        "canonical": "#F57C20",
+        "tonalRamp": [
+          "#3B1A03",
+          "#5C2906",
+          "#7D390A",
+          "#A64C0D",
+          "#CE5F11",
+          "#F57C20",
+          "#F9AC74",
+          "#FDE4CF"
+        ]
+      },
+      "gris-vacio": {
+        "role": "neutral",
+        "displayName": "Gris Vacío",
+        "canonical": "#E0E0E0",
+        "tonalRamp": [
+          "#242424",
+          "#3D3D3D",
+          "#575757",
+          "#757575",
+          "#9E9E9E",
+          "#C4C4C4",
+          "#E0E0E0",
+          "#F5F5F5"
+        ]
+      },
+      "gris-inactivo": {
+        "role": "neutral",
+        "displayName": "Gris Inactivo",
+        "canonical": "#9E9E9E",
+        "tonalRamp": [
+          "#1F1F1F",
+          "#363636",
+          "#4F4F4F",
+          "#6B6B6B",
+          "#878787",
+          "#9E9E9E",
+          "#C6C6C6",
+          "#EDEDED"
+        ]
+      },
+      "fondo-app": {
+        "role": "neutral",
+        "displayName": "Fondo App",
+        "canonical": "#F5F5F5",
+        "tonalRamp": [
+          "#212121",
+          "#3A3A3A",
+          "#545454",
+          "#727272",
+          "#9B9B9B",
+          "#C7C7C7",
+          "#E5E5E5",
+          "#F5F5F5"
+        ]
+      },
+      "superficie": {
+        "role": "neutral",
+        "displayName": "Superficie",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#333333",
+          "#4D4D4D",
+          "#6E6E6E",
+          "#999999",
+          "#C2C2C2",
+          "#E8E8E8",
+          "#FFFFFF"
+        ]
+      },
+      "texto-cuerpo": {
+        "role": "neutral",
+        "displayName": "Texto Cuerpo",
+        "canonical": "#212121",
+        "tonalRamp": [
+          "#000000",
+          "#121212",
+          "#212121",
+          "#3D3D3D",
+          "#5C5C5C",
+          "#8A8A8A",
+          "#BDBDBD",
+          "#EEEEEE"
+        ]
+      },
+      "ambar-texto": {
+        "role": "tertiary",
+        "displayName": "Ámbar Texto",
+        "canonical": "#856500",
+        "tonalRamp": [
+          "#1F1800",
+          "#332700",
+          "#4D3A00",
+          "#684E00",
+          "#856500",
+          "#B98E00",
+          "#E5B92E",
+          "#F7E4A8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display / H4",
+        "purpose": "Título de pantalla y cifra grande de KpgStatCard."
+      },
+      "headline": {
+        "displayName": "Headline / H5",
+        "purpose": "Título de sección y de diálogo."
+      },
+      "title": {
+        "displayName": "Title / Subtitle1",
+        "purpose": "Encabezado de tarjeta, mes del calendario, etiqueta de grupo."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto de lectura y valores de formulario; Body2 a 14px para secundario."
+      },
+      "label": {
+        "displayName": "Label / Caption",
+        "purpose": "Leyendas, ayudas, días de la semana y metadatos de fila."
+      }
+    },
+    "shadows": [
+      {
+        "name": "apoyo",
+        "value": "0 2px 4px -1px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08)",
+        "purpose": "Elevation 1 — superficies de apoyo: calendario, barra superior, banner de confirmación."
+      },
+      {
+        "name": "contenido",
+        "value": "0 3px 5px -1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.10)",
+        "purpose": "Elevation 2 — la tarjeta de contenido por defecto. El valor más usado del sistema."
+      },
+      {
+        "name": "flotante",
+        "value": "0 8px 16px -4px rgba(0,0,0,0.16), 0 4px 8px rgba(0,0,0,0.12)",
+        "purpose": "Lo que de verdad flota sobre el contenido: diálogos, menús, popovers."
+      },
+      {
+        "name": "estructura",
+        "value": "none",
+        "purpose": "Elevation 0 — el sidebar no flota porque es estructura, no superficie."
+      }
+    ],
+    "motion": [
+      {
+        "name": "nav-transition",
+        "value": "background-color 0.15s ease",
+        "purpose": "Hover de los ítems de navegación y de los botones. La única transición del armazón."
+      },
+      {
+        "name": "load-bar",
+        "value": "width 0.1s ease-in-out",
+        "purpose": "Barra de progreso de la carga inicial del bundle WASM."
+      },
+      {
+        "name": "voice-pulse",
+        "value": "kpg-pulse 1s ease-in-out infinite",
+        "purpose": "Pulso de opacidad 1 → 0.35 mientras la captura por voz está grabando."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "600px"
+      },
+      {
+        "name": "md",
+        "value": "960px"
+      },
+      {
+        "name": "content-max",
+        "value": "1200px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón Primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Relleno navy. Exclusivo de guardar y confirmar: el botón que cierra una transacción.",
+      "html": "<button class=\"ds-btn-primary\">Guardar jornada</button>",
+      "css": ".ds-btn-primary { background: #0D3B5E; color: #fff; font-family: Inter, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 500; padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-primary:hover { background: #1B4F73; } .ds-btn-primary:focus-visible { outline: 2px solid #0D3B5E; outline-offset: 3px; } .ds-btn-primary:active { background: #072438; }"
+    },
+    {
+      "name": "Botón Secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Contorno navy. La voz por defecto del sistema: filtrar, exportar, abrir un diálogo.",
+      "html": "<button class=\"ds-btn-secondary\">Exportar Excel</button>",
+      "css": ".ds-btn-secondary { background: #fff; color: #0D3B5E; font-family: Inter, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 500; padding: 6px 16px; border: 1px solid rgba(13,59,94,0.5); border-radius: 4px; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; } .ds-btn-secondary:hover { background: rgba(13,59,94,0.06); border-color: #0D3B5E; } .ds-btn-secondary:focus-visible { outline: 2px solid #0D3B5E; outline-offset: 3px; }"
+    },
+    {
+      "name": "Chip de Estado",
+      "kind": "chip",
+      "refersTo": "chip-estado",
+      "description": "Estado de un registro o de un catálogo. Relleno sólido del color semántico, siempre con su palabra.",
+      "html": "<span class=\"ds-chip ds-chip-aprobado\">Aprobado 3/3</span> <span class=\"ds-chip ds-chip-pendiente\">Pendiente</span> <span class=\"ds-chip ds-chip-rechazado\">Rechazado</span> <span class=\"ds-chip ds-chip-nivel\">Nivel 1 1/3</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; margin-right: 6px; border-radius: 12px; color: #fff; font-family: Inter, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 600; white-space: nowrap; } .ds-chip-aprobado { background: #2E7D32; } .ds-chip-pendiente { background: #F9A825; } .ds-chip-rechazado { background: #C62828; } .ds-chip-nivel { background: #0D3B5E; }"
+    },
+    {
+      "name": "Tarjeta de Estadística",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "KpgStatCard: ícono + etiqueta arriba, cifra grande abajo. La cifra es el elemento, la etiqueta es el pie.",
+      "html": "<div class=\"ds-stat-card\"><div class=\"ds-stat-head\"><svg class=\"ds-stat-icon\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"#0D3B5E\"><path d=\"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z\"/></svg><span class=\"ds-stat-label\">Registros pendientes</span></div><div class=\"ds-stat-value\">139</div></div>",
+      "css": ".ds-stat-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 3px 5px -1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.10); font-family: Inter, 'Segoe UI', Roboto, sans-serif; min-width: 200px; } .ds-stat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; } .ds-stat-label { font-size: 14px; color: rgba(0,0,0,0.6); } .ds-stat-value { font-size: 24px; font-weight: 700; color: #212121; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Campo de Formulario",
+      "kind": "input",
+      "refersTo": "button-secondary",
+      "description": "Variant.Outlined es la norma absoluta en formularios. Borde visible, fondo blanco, autofill neutralizado.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Descripción</span><input class=\"ds-input\" type=\"text\" placeholder=\"Qué se trabajó\" /></label>",
+      "css": ".ds-field { display: inline-flex; flex-direction: column; gap: 4px; font-family: Inter, 'Segoe UI', Roboto, sans-serif; } .ds-field-label { font-size: 12px; color: rgba(0,0,0,0.6); letter-spacing: 0.3px; } .ds-input { background: #fff; color: #212121; font-size: 16px; padding: 10px 12px; border: 1px solid rgba(0,0,0,0.23); border-radius: 4px; min-width: 240px; transition: border-color 0.15s ease, box-shadow 0.15s ease; } .ds-input:hover { border-color: rgba(0,0,0,0.6); } .ds-input:focus { outline: none; border-color: #0D3B5E; box-shadow: inset 0 0 0 1px #0D3B5E; } .ds-input::placeholder { color: rgba(0,0,0,0.38); }"
+    },
+    {
+      "name": "Ítem de Navegación",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Sidebar navy sólido, radio 0, barra celeste de 3px en el activo y el ícono que pasa de celeste a blanco.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\"><svg class=\"ds-nav-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V8h14v11z\"/></svg>Registro</a><a class=\"ds-nav-link ds-nav-link--active\" href=\"#\"><svg class=\"ds-nav-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z\"/></svg>Aprobaciones</a><a class=\"ds-nav-link ds-nav-child\" href=\"#\">Mis registros</a></nav>",
+      "css": ".ds-nav { background: #0D3B5E; padding: 8px 0; min-width: 240px; font-family: Inter, 'Segoe UI', Roboto, sans-serif; } .ds-nav-link { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; font-size: 0.9rem; padding: 10px 20px; border-radius: 0; border-left: 3px solid transparent; transition: background-color 0.15s ease; } .ds-nav-icon { color: #5BB8D4; flex-shrink: 0; } .ds-nav-link:hover { background: #1B4F73; } .ds-nav-link--active { background: rgba(255,255,255,0.12); border-left-color: #5BB8D4; font-weight: 500; } .ds-nav-link--active .ds-nav-icon { color: #fff; } .ds-nav-child { padding-left: 36px; font-size: 0.85rem; opacity: 0.88; } .ds-nav-child:hover { opacity: 1; }"
+    },
+    {
+      "name": "Día de Calendario",
+      "kind": "custom",
+      "refersTo": "chip-estado",
+      "description": "KpgMiniCalendario: el relleno codifica completitud, los anillos codifican excepción y selección.",
+      "html": "<div class=\"ds-cal\"><span class=\"ds-cal-day ds-cal-completo\">3</span><span class=\"ds-cal-day ds-cal-incompleto\">4</span><span class=\"ds-cal-day ds-cal-vacio\">5</span><span class=\"ds-cal-day ds-cal-completo ds-cal-excepcion\">6</span><span class=\"ds-cal-day ds-cal-completo ds-cal-seleccionado\">7</span><span class=\"ds-cal-day ds-cal-vacio ds-cal-off\">8</span></div>",
+      "css": ".ds-cal { display: flex; gap: 8px; padding: 12px; background: #fff; border-radius: 12px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08); font-family: Inter, 'Segoe UI', Roboto, sans-serif; } .ds-cal-day { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; font-size: 12px; font-weight: 600; cursor: pointer; } .ds-cal-completo { background: #2E7D32; color: #fff; } .ds-cal-incompleto { background: #F9A825; color: #fff; } .ds-cal-vacio { background: #E0E0E0; color: #212121; } .ds-cal-excepcion { box-shadow: 0 0 0 2px #7B1FA2; } .ds-cal-seleccionado { box-shadow: 0 0 0 2px #0D3B5E; } .ds-cal-off { opacity: 0.3; cursor: not-allowed; }"
+    },
+    {
+      "name": "Banner de Confirmación",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "KpgSaveConfirmationBanner: repite lo que quedó grabado, porque el registro ya no se puede editar.",
+      "html": "<div class=\"ds-banner\" role=\"status\" aria-live=\"polite\"><svg class=\"ds-banner-icon\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"#2E7D32\"><path d=\"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z\"/></svg><div><div class=\"ds-banner-title\">Jornada guardada — 22/09/2026</div><div class=\"ds-banner-detail\">H1: 08:00–12:00 · H2: 13:00–17:00 | Banco Sur | Core Bancario</div></div></div>",
+      "css": ".ds-banner { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 3px 5px -1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.10); font-family: Inter, 'Segoe UI', Roboto, sans-serif; } .ds-banner-title { font-size: 16px; color: #212121; } .ds-banner-detail { font-size: 14px; color: rgba(0,0,0,0.6); font-variant-numeric: tabular-nums; margin-top: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Torre de Control",
+    "overview": "Esta no es una aplicación que se contempla: es una torre desde la que se despacha. Quien la abre necesita saber, antes de leer una sola palabra, qué falta, qué espera aprobación y qué está listo para facturar. Todo el sistema visual está subordinado a esa lectura instantánea: el color codifica estado, la posición codifica urgencia, y la tipografía mantiene alineadas columnas de horas que alguien va a convertir en una factura.\n\nEl carácter no viene de decorar. Viene de la precisión: un semáforo de estados que nunca miente, cifras que alinean, y superficies que se distinguen sin gritar. La navegación es un bloque navy sólido que ancla la pantalla por el costado izquierdo; el área de trabajo es gris claro con tarjetas blancas flotando apenas sobre él. Nada compite con el dato.\n\nEl sistema rechaza dos cosas de forma explícita. Rechaza el color decorativo: si algo está coloreado, significa algo, y el resto es neutro. Y rechaza el estado comunicado solo por color: cada chip lleva su palabra, cada punto del calendario lleva su leyenda.",
+    "keyCharacteristics": [
+      "Navy institucional como marco permanente; el área de trabajo nunca se tiñe",
+      "Semáforo de estados de cinco colores, cada uno con significado único y exclusivo",
+      "Superficies blancas con esquinas de 12px, levantadas apenas (sombra suave)",
+      "Contorno como voz por defecto de los botones; el relleno se reserva para guardar y confirmar",
+      "Densidad alta tolerada: grillas de 50 filas, calendarios de 42 celdas, sin aire decorativo"
+    ],
+    "rules": [
+      {
+        "name": "La Regla del Color con Significado",
+        "body": "Si algo está coloreado, significa algo. Navy y celeste son marco y navegación; los cinco colores del semáforo son estado. No existe color decorativo en este sistema — ni en encabezados, ni en vacíos, ni en hitos. Un color nuevo solo entra si trae un significado nuevo que ningún color existente ya ocupa.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla del Anillo",
+        "body": "El relleno de una celda comunica completitud; los anillos comunican todo lo demás (excepción aprobada en morado, día seleccionado en navy). Dos anillos pueden superponerse sin competir; dos rellenos, no.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de la Palabra",
+        "body": "El color nunca es el único portador del estado. Todo chip lleva su texto, todo punto del calendario tiene su entrada en la leyenda, y todo ícono de estado tiene su tooltip.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de Una Sola Voz",
+        "body": "Un único tipo para todo el sistema. Poppins estaba declarada en 31 lugares — el título de casi toda pantalla — y se eliminó por completo. Nunca se cargó, así que esos títulos venían resolviendo al mismo fallback que el resto: la regla no cambió cómo se ven, cerró la puerta a que divergieran. Un título de pantalla no lleva font-family propia.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla de la Cifra Alineada",
+        "body": "Toda columna de horas, minutos o totales se renderiza con cifras tabulares y alineada a la derecha. Un total que no alinea con el de la fila de arriba obliga a leer dígito por dígito.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla del Ancho Declarado",
+        "body": "Ninguna pantalla decide su ancho por accidente. O está en la lista de rutas anchas de MainLayout, o se topa en 1200px.",
+        "section": "layout"
+      },
+      {
+        "name": "La Regla de la Elevación Plana entre Hermanos",
+        "body": "Dos superficies del mismo rango tienen la misma sombra. Si una necesita destacarse, se destaca por posición, tamaño o color de estado — nunca subiendo un escalón de sombra.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do usar 12px de radio en toda superficie de contenido y 0px en los ítems del sidebar.",
+      "Do acompañar todo color de estado con su palabra y su tooltip.",
+      "Do poner Variant.Outlined como opción por defecto de un botón nuevo, y reservar el relleno navy para el botón que guarda o confirma.",
+      "Do declarar el ancho de una pantalla nueva: o entra en la lista de rutas anchas de MainLayout, o vive dentro de los 1200px.",
+      "Do renderizar toda columna de horas o totales con cifras tabulares y alineada a la derecha.",
+      "Do pasar todo texto visible nuevo por el localizador, en SharedResource.resx y en SharedResource.en.resx. Una cadena hardcodeada rompe la paridad de 583 claves.",
+      "Do escribir los colores de estado explícitos en vez de apoyarse en Color.Default."
+    ],
+    "donts": [
+      "Don't introducir color decorativo. Un color nuevo solo entra con un significado nuevo.",
+      "Don't usar el celeste #5BB8D4 en texto menor a 18px: queda en 3.0:1 de contraste.",
+      "Don't reutilizar un color del semáforo para otra cosa. El morado es excepción aprobada y nada más; el ámbar es 'te espera a vos' y nada más.",
+      "Don't comunicar la excepción con relleno: es anillo, porque el fondo ya dice completitud.",
+      "Don't subir un escalón de sombra para destacar una tarjeta entre sus hermanas.",
+      "Don't agregar una segunda familia tipográfica. Una sola voz, jerarquía por peso y tamaño.",
+      "Don't cargar fuentes desde un CDN externo: red corporativa interna y 5 s de presupuesto de carga inicial.",
+      "Don't escribir Text=\"@L[Key]\" en un MudTooltip: las comillas anidadas dan el error RZ9986. Va Text=\"@(L[Key].Value)\"."
+    ]
+  }
+}

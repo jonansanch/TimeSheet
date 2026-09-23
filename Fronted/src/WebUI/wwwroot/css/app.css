@@ -1,3 +1,26 @@
+/* Inter auto-hospedada. No se usa un CDN externo a proposito: la red es corporativa
+   interna y el presupuesto de carga inicial es de 5 s (NFR1). Los dos subsets cubren
+   el espanol (latin) y los signos y diacriticos extendidos (latin-ext); el archivo es
+   variable, asi que un solo woff2 sirve todos los pesos entre 400 y 700.
+   Inter se eligio por sus cifras tabulares: la app es columnas de horas. */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('../fonts/inter-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('../fonts/inter-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 html, body {
     font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -261,6 +284,24 @@ input:-webkit-autofill:active {
     box-shadow: 0 0 0px 9999px #ffffff inset !important;
     -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
     transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Cifras tabulares. Toda columna de horas, minutos o totales la usa: con cifras
+   proporcionales un 1 ocupa menos que un 8 y los totales de filas consecutivas no
+   alinean, lo que obliga a leer digito por digito en vez de comparar de un vistazo.
+   Inter trae tabular-nums; el stack de respaldo del sistema tambien. */
+.kpg-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+}
+
+/* Celda numerica de grilla: tabular y alineada a la derecha, que es donde coinciden
+   las unidades de una columna de numeros. */
+.kpg-num-cell {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .kpg-voice-pulse {

@@ -14,7 +14,7 @@
 <MudStack Spacing="3">
     <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
     <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
+        <MudText Typo="Typo.h4" Style="font-weight:600;">
             @L["Hist_Title"]
         </MudText>
         <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -29,6 +29,21 @@
 
     <MudPaper Elevation="1" Class="pa-3">
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            @* El resumen del mes sale de resumen-mensual, no de la pagina cargada: con 50
+               filas por pagina un mes largo mostraria un total que miente. *@
+            <MudStack Spacing="0" Class="mr-4">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Hist_MonthTotal"]</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                    <MudText Typo="Typo.h5" Class="kpg-num" Style="font-weight:700;">
+                        @KpgFormat.Horas(_horasDelMes)
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Label_Hours"].ToString()?.ToLowerInvariant()</MudText>
+                </MudStack>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="kpg-num">
+                    @string.Format(L["Hist_MonthDays"], _diasConRegistro, _diasCompletos)
+                </MudText>
+            </MudStack>
+            <MudDivider Vertical="true" FlexItem="true" Class="mr-2" />
             <MudSelect T="int"
                        Label="@L["Label_Month"]"
                        Variant="Variant.Outlined"
@@ -86,12 +101,13 @@
             </MudAlert>
         </NoRecordsContent>
         <Columns>
-            <PropertyColumn Property="x => x.FechaRegistro" Title="@L["Label_Date"]" Sortable="false">
+            <PropertyColumn Property="x => x.FechaRegistro" Title="@L["Label_Date"]" Sortable="false"
+                            CellClass="kpg-num" CellStyle="white-space:nowrap;">
                 <CellTemplate>
                     @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
                 </CellTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="@L["Reg_Shift1"]" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Reg_Shift1"]" Sortable="false" CellClass="kpg-num" CellStyle="white-space:nowrap;">
                 <CellTemplate>
                     @if (context.Item.HoraEntrada1.HasValue && context.Item.HoraSalida1.HasValue)
                     {
@@ -103,7 +119,7 @@
                     }
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="@L["Reg_Shift2"]" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Reg_Shift2"]" Sortable="false" CellClass="kpg-num" CellStyle="white-space:nowrap;">
                 <CellTemplate>
                     @if (context.Item.HoraEntrada2.HasValue && context.Item.HoraSalida2.HasValue)
                     {
@@ -115,11 +131,28 @@
                     }
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="@L["Reg_Shift3"]" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Reg_Shift3"]" Sortable="false" CellClass="kpg-num" CellStyle="white-space:nowrap;">
                 <CellTemplate>
                     @if (context.Item.HoraEntrada3.HasValue && context.Item.HoraSalida3.HasValue)
                     {
                         @($"{context.Item.HoraEntrada3.Value:HH\\:mm} – {context.Item.HoraSalida3.Value:HH\\:mm}")
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary">—</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            @* Las horas del dia. Es el dato por el que se factura y hasta ahora habia que
+               restarlo mentalmente de tres pares de horas. *@
+            <TemplateColumn Title="@L["Label_Hours"]" Sortable="false"
+                            HeaderStyle="text-align:right;" CellClass="kpg-num-cell">
+                <CellTemplate>
+                    @if (context.Item.TotalMinutos > 0)
+                    {
+                        <MudTooltip Text="@string.Format(L["Hist_HoursTooltip"], KpgFormat.HorasMinutos(context.Item.TotalMinutos))">
+                            <span style="font-weight:600;">@KpgFormat.Horas(Math.Round(context.Item.TotalMinutos / 60m, 1))</span>
+                        </MudTooltip>
                     }
                     else
                     {
@@ -246,10 +279,38 @@
     private HistorialRegistroResponse? _pendiente;
     private MudMessageBox? _msgBox;
 
+    // Resumen del mes. Sale de resumen-mensual y no de la pagina cargada en la grilla:
+    // con 50 filas por pagina, sumar lo visible daria un total falso en un mes largo.
+    private decimal _horasDelMes;
+    private int _diasConRegistro;
+    private int _diasCompletos;
+
     protected override async Task OnInitializedAsync()
     {
         _puedeEditar = await CurrentUserService.IsInRoleAsync(Roles.Supervisor)
                     || await CurrentUserService.IsInRoleAsync(Roles.Admin);
+        await CargarResumenMensualAsync();
+    }
+
+    private async Task CargarResumenMensualAsync()
+    {
+        try
+        {
+            var resumen = await RegistroHorasRepository.GetResumenMensualAsync(_mes, _anio);
+            var minutos = resumen.Dias.Sum(d => d.TotalMinutos);
+
+            _horasDelMes     = Math.Round(minutos / 60m, 1);
+            _diasConRegistro = resumen.Dias.Count(d => d.TotalMinutos > 0);
+            _diasCompletos   = resumen.Dias.Count(d => d.TotalMinutos >= resumen.MinutosDiaCompleto);
+        }
+        catch
+        {
+            // El resumen es contexto, no el contenido de la pantalla: si falla, la grilla
+            // sigue sirviendo y el encabezado muestra cero en vez de tumbar la pagina.
+            _horasDelMes = 0;
+            _diasConRegistro = 0;
+            _diasCompletos = 0;
+        }
     }
 
     // El filtro arranca en el mes en curso, que es lo que el usuario quiere ver al entrar.
@@ -287,6 +348,8 @@
 
     private async Task RecargarAsync()
     {
+        await CargarResumenMensualAsync();
+
         if (_grid is not null)
             await _grid.ReloadServerData();
     }
@@ -417,6 +480,8 @@
             if (success)
             {
                 Snackbar.Add(string.Format(L["Hist_DeletedMsg"], item.FechaRegistro.ToString("dd/MM/yyyy")), Severity.Success);
+                // Borrar cambia las horas del mes: el encabezado tiene que seguirlo.
+                await CargarResumenMensualAsync();
                 await _grid!.ReloadServerData();
             }
             else

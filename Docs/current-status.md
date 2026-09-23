@@ -1,42 +1,57 @@
 # Current Status - KPG Timesheet
 
-Ultima actualizacion: 2026-09-16 — ronda de ajustes post-UAT en curso
+Ultima actualizacion: 2026-09-22 — verificado contra el codigo en `4cdb33f`
 
 ## Estado actual
 
-**Epicas 1-7 completas y GO-LIVE hecho (2026-06-02).** En produccion.
-
-Tras el UAT el cliente entrego un listado de ~45 ajustes, que se estan implementando
-en **6 fases**. Prioridad acordada: *"que el registro funcione full full"*.
+**Epicas 1-7 completas, GO-LIVE hecho (2026-06-02), y la ronda de ~45 ajustes post-UAT
+tambien esta cerrada.** En produccion.
 
 | Fase | Contenido | Estado |
 |------|-----------|--------|
 | **1A** | Horario 1/2/3 reemplaza AM/PM (+ tercer bloque) | ✅ |
 | **1B** | Calendario completo/incompleto, cuartos de hora, formato numerico, modalidades | ✅ |
 | **1C** | Filtro mes actual, 50 filas, tooltips, verde/gris, nombre obligatorio, nombre en login | ✅ |
-| **2** | Registros por rango de dias, solicitud de excepcion con registro completo | pendiente |
-| **3** | Voz por IA, limpiar al grabar, sugerencias de texto | pendiente |
-| **4** | Estructura organizacional (supervisores, organigrama) | ✅ parcial |
-| **5** | Aprobaciones en cascada (3 niveles) | pendiente |
-| **6** | Exportacion e importacion | pendiente |
+| **2** | Registros por rango de dias, solicitud de excepcion con registro completo | ✅ |
+| **3** | Voz por IA, limpiar al grabar, sugerencias de texto | ✅ |
+| **4** | Estructura organizacional (supervisores, organigrama) | ✅ |
+| **5** | Aprobaciones en cascada (3 niveles) | ✅ |
+| **6** | Exportacion e importacion | ✅ |
 
-## Punto exacto para retomar
+**Lo que queda no es desarrollo, es puesta en marcha.** Ver "Pendiente del cliente".
 
-**Cerrar Fase 4** — quedan dos items:
+### Evidencia de cada fase (verificada el 2026-09-22)
 
-1. Parametrizar dias de restriccion por rol o persona.
-2. Migrar `RegistroHoras.Cliente`/`Proyecto` (strings) → `ProyectoId`, y autocompletar
-   `Recurso` desde `AspNetUsers.PuestoId`.
+| Fase | Donde vive |
+|------|-----------|
+| 1A | `HoraEntrada3`/`HoraSalida3` en `Domain/Entities/RegistroHoras.cs` |
+| 1B | `GET /api/registros-horas/resumen-mensual` · `Shared/Utils/KpgFormat.cs` |
+| 1C | `Shared/Components/KpgEstadoChip.razor` · claim `Name` en `JwtTokenService.cs` |
+| 2 | `POST /api/registros-horas/rango` · `SolicitudExcepcion` carga el registro completo |
+| 3 | `Infrastructure/Voz/ClaudeInterpreteVoz.cs` detras de `IInterpreteVoz` |
+| 4 | `ApplicationUser.SupervisorUserId`/`PuestoId` · CRUD `/api/supervisores-puesto` |
+| 5 | 8 endpoints en `Api/Endpoints/Aprobaciones.cs` (incluye revertir y reenviar) |
+| 6 | 4 endpoints de export en `Api/Endpoints/Reportes.cs` · `Reportes/TimesheetImportParser.cs` |
 
-Al hacer la migracion, cerrar los **huecos diferidos del autocomplete de registro**
-(`CoerceValue` acepta texto libre · sin cliente se listan proyectos de todos los clientes ·
-`ProyectosFallback` hardcodeado). Se difirieron porque ese control se rehace como selector
-sobre IDs.
+## Pendiente del cliente (no requiere codigo)
 
-**El diagnostico de produccion dio 0 parejas invalidas sobre 141 registros**, asi que la
-migracion podra emparejar el 100% automaticamente.
+1. **Cerrar julio y agosto.** ~139 registros siguen en Pendiente; al primer supervisor que
+   abra `/aprobaciones` le cae toda esa cola. Usar `Docs/operations/cierre-mensual.sql`,
+   un mes por corrida (el bloque 0 lista que hay antes de tocar nada).
+2. **`Anthropic__ApiKey`** en Azure si se quiere la voz por IA. Sin ella todo funciona igual
+   con el parser de reglas del navegador — no rompe nada.
+3. **Probar a mano lo que ningun test cubre:** el reporte de horas, el Excel del timesheet
+   contra la plantilla real del cliente, y el PDF con un mes de datos.
+4. **Cargar el organigrama real de KPG** cuando exista, con
+   `Docs/operations/estructura-inicial-produccion.sql`. Lo que hay hoy en Azure es data de
+   demo (Laura, Miguel, Juan y clientes ficticios).
 
-Despues: Fase 5 (aprobaciones) es la que mas depende de Fase 4. Fases 2, 3 y 6 son independientes.
+## Decisiones abiertas
+
+- **No hay override de Admin en las aprobaciones.** Un nivel sin aprobador asignado no lo
+  aprueba nadie. Si el cliente lo pide (p. ej. supervisor de vacaciones), hay que decidirlo.
+- **Un tramo horario guardado es inmutable.** Corregir un `08:00` mal digitado obliga a
+  borrar el registro y rehacerlo. Se podria permitir editarlo mientras este Pendiente.
 
 ## Estado de compilacion y tests
 
@@ -46,40 +61,42 @@ dotnet build Backend\KPG.Timesheet.sln
 dotnet build Fronted\KPG.Timesheet.WebUI.sln
 ```
 
-Resultado al 2026-09-16:
-- Backend tests: **287/287 pasan** (75 Domain + 31 Application + 181 Integration).
-- Backend build: 0 errores, 0 warnings.
-- Frontend build: 0 errores, 0 warnings.
+Resultado al 2026-09-22 sobre `4cdb33f`:
 
-> El "231/231" de versiones anteriores de este documento estaba desactualizado: el proyecto
-> de tests llevaba tiempo sin compilar por dos roturas introducidas en commits previos
-> (`39fac2b` y `d8f3b48`), ambas corregidas el 2026-09-16.
+- Backend tests: **461/461 pasan** (125 Domain + 31 Application + 305 Integration).
+- Frontend build: 0 errores, 0 advertencias.
 
-## Lo ultimo implementado (2026-09-16)
+> Las versiones anteriores de este documento decian "287/287" y marcaban las fases 2, 3, 5
+> y 6 como pendientes. Estaban tres commits atrasadas.
 
-Detalle completo en `Docs/handoff/handoff-2026-09-16.md`.
+### Lo que el verde NO cubre
 
-### Modelo de datos nuevo
+El SQL crudo de `AprobacionesRepository`, `DashboardRepository` y `ReportesRepository` no
+esta cubierto por tests: el harness stubea `IDbConnection`, asi que esas consultas solo se
+validan contra una base real. Es justo donde vivia el reporte de horas que estaba roto.
 
-| Cambio | Ubicacion |
-|--------|-----------|
-| `RegistrosHoras`: AM/PM → `HoraEntrada1/2/3` + `HoraSalida1/2/3` | migracion `sp_rename`, preserva datos |
-| `AspNetUsers.SupervisorUserId` (FK auto-referencial) y `PuestoId` | organigrama + 1a/2a aprobacion |
-| `Proyectos.SupervisorUserId` | 3a aprobacion |
-| Tabla `SupervisoresPuesto` (`PuestoId`, `ClienteId` nullable, `SupervisorUserId`) | 1a aprobacion |
-| `ParametrosSistema.HorasDiaCompleto` (default 8) | umbral de dia completo |
+⚠️ **1 fallo en 23 corridas, no reproducible** (2026-09-20). Despues de eso, verde
+sostenido. Si reaparece, perseguirlo en serio.
 
-### Endpoints nuevos
+## Lo ultimo implementado
 
-- `GET /api/registros-horas/resumen-mensual` — minutos por dia + umbral, alimenta el calendario
-- `PUT /api/users/{id}/estructura` — asigna jefe directo y puesto
-- `GET /api/users/organigrama`
-- `GET|POST|PUT /api/supervisores-puesto` + `/{id}/toggle`
+### `d6a0fea` — Ajustes de retroactividad y puntos faltantes (2026-09-21)
 
-### Pantallas nuevas
+| Cambio | Donde |
+|--------|-------|
+| Ventana de retroactividad con reglas por persona y por rol | `/api/sistema/ventana-retroactividad` · `/api/reglas-ventana` |
+| **Restricciones de dia**: dias de la semana en que una persona o un rol no puede registrar | `ParametroRestriccionDia` · `/api/restricciones-dia` |
+| **Reportes de usuario**: el colaborador reporta una falla o una mejora desde `/reportar`; Admin las gestiona en `/admin/reportes-usuario` | `ReporteUsuario`, `TipoReporte` (Falla/Mejora), `EstadoReporte` (Nuevo/EnRevision/Resuelto/Rechazado) |
 
-- `/organigrama` — arbol jerarquico
-- `/admin/supervisores-puesto` — reglas de primer nivel
+Las restricciones de dia se acumulan: puede haber una por rol y otra por persona para el
+mismo dia y **cualquiera que coincida bloquea** — a diferencia de la ventana retroactiva,
+donde una regla gana sobre otra. La excepcion aprobada sigue siendo la valvula de escape.
+
+### `4cdb33f` — Estilos y ajustes UI/UX (2026-09-21)
+
+- **Logo de reportes configurable** desde `/admin/parametros/configuracion`: se guarda como
+  data URI en `ParametrosSistema` y lo consumen el Excel y el PDF (`LogoDataUri.cs`).
+- Pasada de estilos sobre los 6 catalogos de admin y los dialogos.
 
 ## Advertencias operativas
 
@@ -89,10 +106,10 @@ Detalle completo en `Docs/handoff/handoff-2026-09-16.md`.
    (ver `Program.cs`). Verificar que este habilitado en el primer arranque tras desplegar.
 2. **`Jwt:Key` esta vacia en `appsettings.json`** a proposito (la inyecta Azure). Los tests
    aportan la suya por variable de entorno desde `KpgWebApplicationFactory`.
-3. **Ningun usuario tiene jefe ni puesto todavia.** La cadena de aprobacion resuelve vacia
-   hasta que un admin los asigne desde `/admin/usuarios`.
-4. **El catalogo "Empleados" contiene PUESTOS, no personas** (`Consultor`, `Analista`, ...).
+3. **El catalogo "Empleados" contiene PUESTOS, no personas** (`Consultor`, `Analista`, ...).
    Las personas viven solo en `AspNetUsers`.
+4. **Nunca usar `dotnet build -t:Compile`** en este repo: deja artefactos inconsistentes.
+   Usar `dotnet build` o `-t:Rebuild`.
 
 ## Usuarios de prueba
 
@@ -124,11 +141,10 @@ dotnet run --project Fronted\src\WebUI\KPG.Timesheet.WebUI.csproj --launch-profi
 
 ## Documentos importantes
 
+- **Contexto de producto (para trabajo de diseño):** `PRODUCT.md` en la raiz
 - Handoff mas reciente: `Docs/handoff/handoff-2026-09-16.md`
-- Diagnostico cliente/proyecto: `Docs/operations/diagnostico-parejas-cliente-proyecto.sql`
 - Epics: `_bmad-output/planning-artifacts/epics.md`
 - PRD: `_bmad-output/planning-artifacts/prd.md`
 - Arquitectura: `_bmad-output/planning-artifacts/architecture.md`
-- Manual tecnico: `Docs/manuals/manual-tecnico.md`
-- Manual administrador: `Docs/manuals/manual-administrador.md`
-- Manual usuario: `Docs/manuals/manual-usuario.md`
+- Manuales: `Docs/manuals/manual-tecnico.md`, `manual-administrador.md`, `manual-usuario.md`
+- Operaciones: `Docs/operations/` (go-live, QA, UAT, hypercare, SQL de cierre mensual)

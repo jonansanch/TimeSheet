@@ -1,9 +1,10 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": [ "/_framework/*", "/css/*", "/js/*", "/images/*", "/*.{png,jpg,svg,ico,webmanifest}" ]
+    "exclude": [ "/_framework/*", "/css/*", "/js/*", "/images/*", "/fonts/*", "/*.{png,jpg,svg,ico,webmanifest,woff2}" ]
   },
   "mimeTypes": {
+    ".woff2": "font/woff2",
     ".wasm": "application/wasm",
     ".blat": "application/octet-stream",
     ".dat": "application/octet-stream",
@@ -20,6 +21,10 @@
     },
     {
       "route": "/_framework/*",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
+    },
+    {
+      "route": "/fonts/*",
       "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
     }
   ]

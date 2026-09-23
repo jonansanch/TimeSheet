@@ -7,6 +7,9 @@
     <title>KPG Timesheet</title>
     <base href="/" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <!-- La pantalla de carga ya muestra texto en Inter: sin este preload la fuente se
+         descubre recien al parsear app.css y el primer pintado sale con el fallback. -->
+    <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/jpeg" href="images/kpg-logo.jpg" />
     <link href="KPG.Timesheet.WebUI.styles.css" rel="stylesheet" />

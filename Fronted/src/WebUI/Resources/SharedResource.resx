@@ -665,4 +665,15 @@
   <data name="RepAdmin_CommentRequiredOnReject"><value>El rechazo requiere un comentario.</value></data>
   <data name="RepAdmin_SavedOk"><value>Estado actualizado.</value></data>
   <data name="RepAdmin_ErrorSave"><value>No se pudo actualizar el estado.</value></data>
+  <data name="Reg_LiveTotalLabel"><value>Total del día</value></data>
+  <data name="Reg_LiveTotalComplete"><value>Día completo</value></data>
+  <data name="Reg_LiveTotalMissing"><value>Faltan {0} para el día completo</value></data>
+  <data name="Reg_LiveTotalEmpty"><value>Sin horas cargadas</value></data>
+  <data name="Hist_MonthTotal"><value>Total del mes</value></data>
+  <data name="Hist_MonthDays"><value>{0} días con registro · {1} completos</value></data>
+  <data name="Hist_HoursTooltip"><value>Equivale a {0} horas:minutos</value></data>
+  <data name="Voice_Processing"><value>Procesando...</value></data>
+  <data name="Voice_Stop"><value>Detener dictado</value></data>
+  <data name="Voice_Start"><value>Dictar registro</value></data>
+  <data name="Voice_FillManually"><value>Completar manualmente: {0}</value></data>
 </root>

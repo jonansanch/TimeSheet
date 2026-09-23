@@ -56,16 +56,16 @@
                 @if (_voiceState == VoiceState.Processing)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
-                    <MudText Typo="Typo.caption" Class="ml-1">Procesando...</MudText>
+                    <MudText Typo="Typo.caption" Class="ml-1">@L["Voice_Processing"]</MudText>
                 }
                 else
                 {
-                    <MudTooltip Text="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")">
+                    <MudTooltip Text="@(_voiceState == VoiceState.Listening ? L["Voice_Stop"].Value : L["Voice_Start"].Value)">
                         <MudIconButton Icon="@(_voiceState == VoiceState.Listening ? Icons.Material.Filled.MicOff : Icons.Material.Filled.Mic)"
                                        Color="@(_voiceState == VoiceState.Listening ? Color.Error : Color.Default)"
                                        Class="@(_voiceState == VoiceState.Listening ? "kpg-voice-pulse" : "")"
                                        OnClick="ToggleVoiceAsync"
-                                       aria-label="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")" />
+                                       aria-label="@(_voiceState == VoiceState.Listening ? L["Voice_Stop"].Value : L["Voice_Start"].Value)" />
                     </MudTooltip>
                 }
             </MudStack>
@@ -76,7 +76,7 @@
             <MudAlert Severity="Severity.Warning" Dense="true"
                       ShowCloseIcon="true"
                       CloseIconClicked="@(() => _voiceCamposNoDetectados = [])">
-                Completar manualmente: @string.Join(", ", _voiceCamposNoDetectados)
+                @string.Format(L["Voice_FillManually"], string.Join(", ", _voiceCamposNoDetectados))
             </MudAlert>
         }
 
@@ -144,6 +144,26 @@
                     @L["Reg_AtLeastOneShift"]
                 </MudAlert>
             }
+
+            @* Total en vivo. Hasta ahora el dia solo se sumaba DESPUES de guardar, y como
+               el registro es inmutable, el error se descubria cuando ya no tenia arreglo.
+               El semaforo es el mismo del calendario: verde completo, ambar incompleto,
+               gris sin horas, y siempre acompanado de su palabra. *@
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"
+                      Class="mt-3 pa-3"
+                      Style="@($"background-color:{FondoTotalVivo};border-radius:4px;")"
+                      aria-live="polite">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@IconoTotalVivo" Size="Size.Small" Style="@($"color:{ColorTotalVivo};")" />
+                    <MudText Typo="Typo.body2">@L["Reg_LiveTotalLabel"]</MudText>
+                </MudStack>
+                <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="2">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@LeyendaTotalVivo</MudText>
+                    <MudText Typo="Typo.h6" Class="kpg-num" Style="@($"font-weight:700;color:{ColorTotalVivo};")">
+                        @KpgFormat.HorasMinutos(MinutosEnVivo)
+                    </MudText>
+                </MudStack>
+            </MudStack>
 
             @* ── Datos del día ──────────────────────────────── *@
             <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">@L["Reg_DayData"]</MudText>
@@ -274,6 +294,66 @@
 
 @code {
     [Parameter] public EventCallback<DateOnly> OnGuardado { get; set; }
+
+    /// <summary>
+    /// Umbral de dia completo, en minutos. Lo resuelve la pagina desde
+    /// <c>ParametrosSistema.HorasDiaCompleto</c>: no son 8 horas fijas.
+    /// </summary>
+    [Parameter] public int MinutosDiaCompleto { get; set; } = 480;
+
+    // ── Total en vivo ───────────────────────────────────────────────────────
+    // Colores del semaforo del calendario (ver KpgMiniCalendario): el mismo estado
+    // se dice con el mismo color en las dos pantallas.
+    private const string ColorCompleto    = "#2E7D32";
+    private const string ColorIncompleto  = "#F9A825";
+    private const string ColorSinRegistro = "#9E9E9E";
+
+    /// <summary>Minutos del dia sumando lo ya guardado y lo que se esta tecleando.</summary>
+    private int MinutosEnVivo =>
+        Enumerable.Range(1, TotalHorarios).Sum(MinutosBloqueEnVivo);
+
+    private int MinutosBloqueEnVivo(int numero)
+    {
+        var ocupado = BloqueOcupado(numero);
+        var entrada = ocupado ? EntradaGuardada(numero) : _model.GetEntrada(numero);
+        var salida  = ocupado ? SalidaGuardada(numero)  : _model.GetSalida(numero);
+
+        return entrada is { } e && salida is { } s && s > e
+            ? (int)(s - e).TotalMinutes
+            : 0;
+    }
+
+    private bool DiaCompletoEnVivo => MinutosEnVivo >= MinutosDiaCompleto;
+
+    private string ColorTotalVivo => MinutosEnVivo switch
+    {
+        0                        => ColorSinRegistro,
+        _ when DiaCompletoEnVivo => ColorCompleto,
+        _                        => ColorIncompleto
+    };
+
+    private string FondoTotalVivo => MinutosEnVivo switch
+    {
+        0                        => "rgba(158, 158, 158, 0.10)",
+        _ when DiaCompletoEnVivo => "rgba(46, 125, 50, 0.10)",
+        _                        => "rgba(249, 168, 37, 0.12)"
+    };
+
+    private string IconoTotalVivo => MinutosEnVivo switch
+    {
+        0                        => Icons.Material.Filled.Schedule,
+        _ when DiaCompletoEnVivo => Icons.Material.Filled.CheckCircle,
+        _                        => Icons.Material.Filled.HourglassBottom
+    };
+
+    private string LeyendaTotalVivo => MinutosEnVivo switch
+    {
+        0                        => L["Reg_LiveTotalEmpty"].Value,
+        _ when DiaCompletoEnVivo => L["Reg_LiveTotalComplete"].Value,
+        _                        => string.Format(
+                                        L["Reg_LiveTotalMissing"],
+                                        KpgFormat.HorasMinutos(MinutosDiaCompleto - MinutosEnVivo))
+    };
 
     /// <summary>Bloques horarios que admite un registro diario (ver RegistroHoras.TotalBloques).</summary>
     private const int TotalHorarios = 3;
