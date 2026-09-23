@@ -8,24 +8,10 @@
 <PageTitle>@L["Resources_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <div>
-            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-                @L["Resources_Title"]
-            </MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                @L["Resources_Subtitle"]
-            </MudText>
-        </div>
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.PersonAdd"
-                   Disabled="_isProcesando"
-                   OnClick="AbrirCrearAsync">
-            @L["Resources_NewResource"]
-        </MudButton>
-    </MudStack>
+    <KpgPageHeader Title="@L["Resources_Title"]" Subtitle="@L["Resources_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+        <Actions><KpgButton StartIcon="@Icons.Material.Filled.PersonAdd" Disabled="_isProcesando" OnClick="AbrirCrearAsync">@L["Resources_NewResource"]</KpgButton></Actions>
+    </KpgPageHeader>
 
     @if (_isLoading)
     {

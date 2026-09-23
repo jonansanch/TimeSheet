@@ -11,20 +11,10 @@
 <PageTitle>@L["SupPuesto_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
-        <div>
-            <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["SupPuesto_Title"]</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["SupPuesto_Subtitle"]</MudText>
-        </div>
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   Disabled="_isProcesando"
-                   OnClick="@(() => AbrirDialogoAsync(null))">
-            @L["SupPuesto_New"]
-        </MudButton>
-    </MudStack>
+    <KpgPageHeader Title="@L["SupPuesto_Title"]" Subtitle="@L["SupPuesto_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+        <Actions><KpgButton StartIcon="@Icons.Material.Filled.Add" Disabled="_isProcesando" OnClick="@(() => AbrirDialogoAsync(null))">@L["SupPuesto_New"]</KpgButton></Actions>
+    </KpgPageHeader>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {

@@ -6,11 +6,9 @@
 <PageTitle>@L["Org_Title"] - KPG Timesheet</PageTitle>
 
 <MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Org_Title"]</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Org_Subtitle"]</MudText>
-    </div>
+    <KpgPageHeader Title="@L["Org_Title"]" Subtitle="@L["Org_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+    </KpgPageHeader>
 
     @if (_isLoading)
     {
@@ -29,12 +27,12 @@
             </MudAlert>
         }
 
-        <MudPaper Elevation="1" Class="pa-4" Style="overflow-x:auto;">
+        <KpgCard Class="org-chart-surface">
             @foreach (var raiz in _raices)
             {
                 @RenderNodo(raiz, 0)
             }
-        </MudPaper>
+        </KpgCard>
     }
 </MudStack>
 
