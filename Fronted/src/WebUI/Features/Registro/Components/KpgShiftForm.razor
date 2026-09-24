@@ -175,48 +175,52 @@
         <KpgCard Class="kpg-shift-form__daydata">
             <h2 class="kpg-card__title">@L["Reg_DayData"]</h2>
             <div class="kpg-shift-form__fields">
-                <MudSelect T="int?"
-                           Label="@L["Label_Client"]"
-                           Class="kpg-shift-form__client"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Value="@_model.ClienteId"
-                           ValueChanged="HandleClienteChanged"
-                           Required="true"
-                           RequiredError="@L["Reg_ClientRequired"]"
-                           aria-label="@L["Label_Client"]">
-                    @foreach (var c in _catalogoClientes)
-                    {
-                        <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
+                <div class="kpg-shift-form__client">
+                    <MudSelect T="int?"
+                               Label="@L["Label_Client"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Value="@_model.ClienteId"
+                               ValueChanged="HandleClienteChanged"
+                               Required="true"
+                               RequiredError="@L["Reg_ClientRequired"]"
+                               aria-label="@L["Label_Client"]">
+                        @foreach (var c in _catalogoClientes)
+                        {
+                            <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
                 @* Sin cliente elegido no se ofrece ningun proyecto: antes se listaban
                    los de todos los clientes y se podia armar una pareja invalida. *@
-                <MudSelect T="int?"
-                           Label="@L["Label_Project"]"
-                           Class="kpg-shift-form__project"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Value="@_model.ProyectoId"
-                           ValueChanged="HandleProyectoChanged"
-                           Disabled="@(_model.ClienteId is null)"
-                           Required="true"
-                           RequiredError="@L["Reg_ProjectRequired"]"
-                           HelperText="@(_model.ClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
-                           aria-label="@L["Label_Project"]">
-                    @foreach (var p in ProyectosDelCliente)
-                    {
-                        <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect T="string" Label="@L["Label_Resource"]" Class="kpg-shift-form__resource" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]"
-                           HelperText="@(_puestoDelUsuario is null ? null : L["Reg_ResourceFromPuesto"].Value)">
-                    @foreach (var r in _recursos)
-                    {
-                        <MudSelectItem Value="@r">@r</MudSelectItem>
-                    }
-                </MudSelect>
+                <div class="kpg-shift-form__project">
+                    <MudSelect T="int?"
+                               Label="@L["Label_Project"]"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Value="@_model.ProyectoId"
+                               ValueChanged="HandleProyectoChanged"
+                               Disabled="@(_model.ClienteId is null)"
+                               Required="true"
+                               RequiredError="@L["Reg_ProjectRequired"]"
+                               HelperText="@(_model.ClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
+                               aria-label="@L["Label_Project"]">
+                        @foreach (var p in ProyectosDelCliente)
+                        {
+                            <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+                <div class="kpg-shift-form__resource">
+                    <MudSelect T="string" Label="@L["Label_Resource"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]"
+                               HelperText="@(_puestoDelUsuario is null ? null : L["Reg_ResourceFromPuesto"].Value)">
+                        @foreach (var r in _recursos)
+                        {
+                            <MudSelectItem Value="@r">@r</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
                 <div class="kpg-shift-form__modality">
                     <span id="modalidad-label" class="kpg-shift-form__modality-label">@L["Label_Modality"] *</span>
                     <div role="radiogroup" aria-labelledby="modalidad-label" class="kpg-segmented">
