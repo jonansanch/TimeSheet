@@ -8,15 +8,31 @@
 <PageTitle>@L["Reg_Title"] - KPG Timesheet</PageTitle>
 
 <section class="registro-page">
-    <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado">
-        <Header>
-            <KpgPageHeader Title="@L["Reg_Title"]" Subtitle="@L["Reg_Subtitle"]">
-                <Breadcrumbs>
-                    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-                </Breadcrumbs>
-            </KpgPageHeader>
-        </Header>
-    </KpgShiftForm>
+    <div class="registro-page__layout">
+        <div class="registro-page__calendar">
+            <KpgMiniCalendario PrimerDiaMes="@_primerDiaMes"
+                               MinutosPorDia="@_minutosPorDia"
+                               MinutosDiaCompleto="@_minutosDiaCompleto"
+                               DiasConExcepcionAprobada="@_diasConExcepcionAprobada"
+                               FechaSeleccionada="@_fechaSeleccionada"
+                               VentanaDias="@_windowDays"
+                               IsLoading="@_loadingCalendario"
+                               OnMesAnterior="@IrMesAnterior"
+                               OnMesSiguiente="@IrMesSiguiente"
+                               OnDiaSeleccionado="@HandleDiaSeleccionado" />
+        </div>
+        <div class="registro-page__form">
+            <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado">
+                <Header>
+                    <KpgPageHeader Title="@L["Reg_Title"]" Subtitle="@L["Reg_Subtitle"]">
+                        <Breadcrumbs>
+                            <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+                        </Breadcrumbs>
+                    </KpgPageHeader>
+                </Header>
+            </KpgShiftForm>
+        </div>
+    </div>
 </section>
 
 @code {
@@ -25,6 +41,12 @@
     private List<DateOnly> _diasConExcepcionAprobada = [];
     private DateOnly? _fechaSeleccionada;
 
+    private DateOnly _primerDiaMes = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private Dictionary<DateOnly, int> _minutosPorDia = [];
+    private int _minutosDiaCompleto = 480;
+    private int _windowDays = 3;
+    private bool _loadingCalendario = true;
+
     private BreadcrumbItem[] _breadcrumbs => [
         new(L["Nav_Home"].Value, "/"),
         new(L["Nav_Register"].Value, null, disabled: true)
@@ -32,7 +54,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarExcepcionesAsync();
+        try { _windowDays = await ParametroSistemaRepo.GetVentanaRetroactividadAsync(); } catch { }
+        await Task.WhenAll(CargarExcepcionesAsync(), CargarCalendarioAsync());
     }
 
     private async Task CargarExcepcionesAsync()
@@ -40,9 +63,43 @@
         try { _diasConExcepcionAprobada = await ExcepcionRepo.GetMisAprobadasAsync(); } catch { }
     }
 
-    private Task HandleRegistroGuardado(DateOnly fecha)
+    private async Task CargarCalendarioAsync()
+    {
+        _loadingCalendario = true;
+        try
+        {
+            var resumen = await RegistroRepo.GetResumenMensualAsync(_primerDiaMes.Month, _primerDiaMes.Year);
+            _minutosDiaCompleto = resumen.MinutosDiaCompleto;
+            _minutosPorDia = resumen.Dias.ToDictionary(d => d.Fecha, d => d.TotalMinutos);
+        }
+        catch { _minutosPorDia = []; }
+        finally { _loadingCalendario = false; }
+    }
+
+    private async Task IrMesAnterior()
+    {
+        _primerDiaMes = _primerDiaMes.AddMonths(-1);
+        await CargarCalendarioAsync();
+    }
+
+    private async Task IrMesSiguiente()
+    {
+        _primerDiaMes = _primerDiaMes.AddMonths(1);
+        await CargarCalendarioAsync();
+    }
+
+    private async Task HandleDiaSeleccionado(DateOnly fecha)
     {
         _fechaSeleccionada = fecha;
-        return Task.CompletedTask;
+        await _shiftForm.SetFechaAsync(fecha, _diasConExcepcionAprobada);
+    }
+
+    private async Task HandleRegistroGuardado(DateOnly fecha)
+    {
+        _fechaSeleccionada = fecha;
+        // Lo recien guardado cambia el total del dia: hay que refrescar el calendario
+        // para que el punto pase de "sin registro"/"incompleto" a su estado real.
+        if (fecha.Year == _primerDiaMes.Year && fecha.Month == _primerDiaMes.Month)
+            await CargarCalendarioAsync();
     }
 }

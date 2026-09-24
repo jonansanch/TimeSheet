@@ -317,6 +317,8 @@
   <data name="Reg_DescriptionTooLong"><value>The description cannot exceed {0} characters.</value></data>
   <data name="Cal_DayComplete"><value>Full day</value></data>
   <data name="Cal_DayIncomplete"><value>Incomplete day</value></data>
+  <data name="Cal_PrevMonth"><value>Previous month</value></data>
+  <data name="Cal_NextMonth"><value>Next month</value></data>
   <data name="Reg_RecentlyUsed"><value>Recently used:</value></data>
   <data name="Reg_RecentTitle"><value>Recently used</value></data>
   <data name="Reg_NoRecent"><value>No recent records yet.</value></data>

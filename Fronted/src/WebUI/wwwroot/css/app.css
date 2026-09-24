@@ -171,11 +171,9 @@ body { font-size: 14px; }
 .admin-table-card .mud-data-grid { border:0; border-radius:0; box-shadow:none; }
 /* ===== Registrar jornada (KpgShiftForm) ===== */
 .kpg-shift-form { display: flex; flex-direction: column; gap: var(--kpg-space-4); }
-.kpg-shift-form__top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--kpg-space-4); }
+.kpg-shift-form__top { display: flex; align-items: flex-end; gap: var(--kpg-space-4); }
 .kpg-shift-form__header { min-width: 0; }
 .kpg-shift-form__header .kpg-page-header { margin-bottom: 0; }
-.kpg-shift-form__date { flex: 0 0 220px; }
-.kpg-shift-form__date .mud-input-control { margin: 0; }
 .kpg-shift-form__form { display: flex; flex-direction: column; gap: var(--kpg-space-4); }
 .kpg-shift-form__grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--kpg-space-4); align-items: stretch; }
 .kpg-shift-form__voice-status { display: inline-flex; align-items: center; gap: var(--kpg-space-2); }
@@ -239,7 +237,6 @@ body { font-size: 14px; }
 @media (max-width: 959.98px) {
     .kpg-shift-form__grid { grid-template-columns: minmax(0, 1fr); }
     .kpg-shift-form__top { flex-direction: column; align-items: stretch; }
-    .kpg-shift-form__date { flex-basis: auto; max-width: 260px; }
 }
 
 @media (min-width: 960px) {
@@ -411,23 +408,6 @@ code {
     opacity: 0.3 !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
-}
-
-/* KpgDatePicker — semáforo de ventana retroactiva */
-.mud-picker-calendar-day.kpg-date-available {
-    background-color: rgba(46, 125, 50, 0.15);
-    color: #2E7D32 !important;
-    font-weight: 600;
-}
-
-.mud-picker-calendar-day.kpg-date-retroactive {
-    background-color: rgba(255, 211, 0, 0.25);
-    color: #856500 !important;
-}
-
-.mud-picker-calendar-day.kpg-date-blocked {
-    background-color: rgba(158, 158, 158, 0.2);
-    color: #9E9E9E !important;
 }
 
 /* Neutralizar el fondo azul/amarillo del autofill del browser en campos MudTextField */

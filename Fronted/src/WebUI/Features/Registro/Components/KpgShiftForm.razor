@@ -14,12 +14,6 @@
 <div class="kpg-shift-form">
     <div class="kpg-shift-form__top">
         <div class="kpg-shift-form__header">@Header</div>
-        <div class="kpg-shift-form__date">
-            <KpgDatePicker Label="@L["Label_Date"]"
-                           WindowDays="@_windowDays"
-                           Date="@_fecha"
-                           OnDateSelected="HandleDateSelected" />
-        </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
@@ -617,18 +611,6 @@
             ? _modalidades[(current + 1) % _modalidades.Count]
             : _modalidades[(current - 1 + _modalidades.Count) % _modalidades.Count];
         StateHasChanged();
-    }
-
-    private async Task HandleDateSelected((DateTime? Date, DateAvailability Availability) selection)
-    {
-        _fecha            = selection.Date;
-        _dateAvailability = selection.Availability;
-        _guardado         = false;
-        _response         = null;
-        _sinTurno         = false;
-        _errorMessage     = null;
-        _excepcionEnviada = false;
-        await CargarRegistroExistenteAsync();
     }
 
     /// <summary>Descarta lo que el usuario llevaba tecleado y recarga el estado guardado
