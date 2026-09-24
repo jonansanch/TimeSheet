@@ -175,10 +175,14 @@ body { font-size: 14px; }
 .kpg-shift-form__form { display: flex; flex-direction: column; gap: var(--kpg-space-4); }
 .kpg-shift-form__grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--kpg-space-4); align-items: stretch; }
 .kpg-shift-form__voice-status { display: inline-flex; align-items: center; gap: var(--kpg-space-2); }
-.kpg-shift-form__fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--kpg-space-3) var(--kpg-space-4); align-items: start; }
+.kpg-shift-form__fields { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--kpg-space-4); align-items: start; }
 .kpg-shift-form__fields .mud-input-control { margin-top: 0; }
-.kpg-shift-form__place { grid-column: 1 / 2; }
-.kpg-shift-form__description { grid-column: 2 / -1; }
+.kpg-shift-form__client,
+.kpg-shift-form__project,
+.kpg-shift-form__resource { grid-column: span 4; }
+.kpg-shift-form__modality,
+.kpg-shift-form__place { grid-column: span 6; }
+.kpg-shift-form__description { grid-column: 1 / -1; min-width: 0; }
 .kpg-shift-form__modality { display: flex; flex-direction: column; gap: 2px; }
 .kpg-shift-form__modality-label { color: var(--kpg-text-secondary); font-size: var(--kpg-font-size-xs); line-height: 1; }
 .kpg-shift-form__actions { display: flex; justify-content: flex-end; gap: var(--kpg-space-2); margin-top: var(--kpg-space-4); }
@@ -211,7 +215,11 @@ body { font-size: 14px; }
 
 @media (max-width: 1279.98px) {
     .kpg-shift-form__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kpg-shift-form__place, .kpg-shift-form__description { grid-column: auto; }
+    .kpg-shift-form__client,
+    .kpg-shift-form__project,
+    .kpg-shift-form__resource,
+    .kpg-shift-form__modality { grid-column: auto; }
+    .kpg-shift-form__place,
     .kpg-shift-form__description { grid-column: 1 / -1; }
 }
 @media (max-width: 959.98px) {
@@ -238,6 +246,12 @@ body { font-size: 14px; }
     .shift-table__row { grid-template-columns: 1fr 1fr 36px; }
     .shift-table__duration { grid-column: 1 / 3; }
     .kpg-shift-form__fields { grid-template-columns: minmax(0, 1fr); }
+    .kpg-shift-form__client,
+    .kpg-shift-form__project,
+    .kpg-shift-form__resource,
+    .kpg-shift-form__modality,
+    .kpg-shift-form__place,
+    .kpg-shift-form__description { grid-column: 1; }
     .kpg-shift-form__actions { flex-direction: column-reverse; }
 }
 
