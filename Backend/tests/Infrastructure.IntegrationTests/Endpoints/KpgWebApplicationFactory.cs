@@ -87,7 +87,8 @@ public class KpgWebApplicationFactory : WebApplicationFactory<Program>
                 var ctx         = sp.GetRequiredService<ApplicationDbContext>();
                 var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
                 var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
-                return new ApplicationDbContextInitialiser(logger, ctx, userManager, roleManager);
+                var environment = sp.GetRequiredService<IHostEnvironment>();
+                return new ApplicationDbContextInitialiser(logger, ctx, userManager, roleManager, environment);
             });
         });
     }

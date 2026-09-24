@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace KPG.Timesheet.Infrastructure.Data;
@@ -27,17 +28,20 @@ public class ApplicationDbContextInitialiser
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IHostEnvironment _environment;
 
     public ApplicationDbContextInitialiser(
         ILogger<ApplicationDbContextInitialiser> logger,
         ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        IHostEnvironment environment)
     {
         _logger = logger;
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _environment = environment;
     }
 
     public async Task InitialiseAsync()
@@ -105,6 +109,12 @@ public class ApplicationDbContextInitialiser
         await SeedEstructuraAsync(
             admin, gerente, supervisor, emp1, emp2, emp3,
             sup2, emp4, emp5, emp6, emp7);
+
+        // Dataset amplio para validar el organigrama y las bandejas de aprobacion.
+        // Tiene un guard adicional porque RunDatabaseInitialiser tambien puede habilitarse
+        // fuera de Development para tareas operativas y estas cuentas son solo de QA.
+        if (_environment.IsDevelopment())
+            await SeedOrganigramaQaAsync(gerente);
 
         // ── Registros de horas (histórico 2 meses) ───────────────────────────
         if (!_context.RegistrosHoras.Any())
@@ -316,6 +326,92 @@ public class ApplicationDbContextInitialiser
 
     private static int? BuscarPuesto(Dictionary<string, int> puestos, string nombre) =>
         puestos.TryGetValue(NormalizarNombre(nombre), out var id) ? id : null;
+
+    /// <summary>
+    /// Completa el dataset de desarrollo hasta 40 usuarios activos: 1 Admin, 3 Gerentes,
+    /// 8 Supervisores y 28 Empleados. Las cuentas tienen correos deterministas y la
+    /// asignacion es idempotente, por lo que reiniciar la API no crea duplicados.
+    /// </summary>
+    private async Task SeedOrganigramaQaAsync(ApplicationUser gerenteRaiz)
+    {
+        var gerente2 = await EnsureUserAsync(
+            "camila.vargas@kpg.com", "Gerente1234!", "Camila Vargas", Roles.Gerente);
+        var gerente3 = await EnsureUserAsync(
+            "ricardo.mendoza@kpg.com", "Gerente1234!", "Ricardo Mendoza", Roles.Gerente);
+
+        var supervisores = new[]
+        {
+            await EnsureUserAsync("natalia.gomez@kpg.com", "Supervisor1234!", "Natalia Gómez", Roles.Supervisor),
+            await EnsureUserAsync("felipe.castro@kpg.com", "Supervisor1234!", "Felipe Castro", Roles.Supervisor),
+            await EnsureUserAsync("daniela.ortiz@kpg.com", "Supervisor1234!", "Daniela Ortiz", Roles.Supervisor),
+            await EnsureUserAsync("jorge.herrera@kpg.com", "Supervisor1234!", "Jorge Herrera", Roles.Supervisor),
+            await EnsureUserAsync("mariana.silva@kpg.com", "Supervisor1234!", "Mariana Silva", Roles.Supervisor),
+            await EnsureUserAsync("sebastian.lopez@kpg.com", "Supervisor1234!", "Sebastián López", Roles.Supervisor)
+        };
+
+        var empleados = new[]
+        {
+            await EnsureUserAsync("lucia.ramirez@kpg.com", "Empleado1234!", "Lucía Ramírez", Roles.Empleado),
+            await EnsureUserAsync("mateo.sanchez@kpg.com", "Empleado1234!", "Mateo Sánchez", Roles.Empleado),
+            await EnsureUserAsync("isabella.torres@kpg.com", "Empleado1234!", "Isabella Torres", Roles.Empleado),
+            await EnsureUserAsync("santiago.moreno@kpg.com", "Empleado1234!", "Santiago Moreno", Roles.Empleado),
+            await EnsureUserAsync("valentina.castro@kpg.com", "Empleado1234!", "Valentina Castro", Roles.Empleado),
+            await EnsureUserAsync("emiliano.rojas@kpg.com", "Empleado1234!", "Emiliano Rojas", Roles.Empleado),
+            await EnsureUserAsync("mariana.gutierrez@kpg.com", "Empleado1234!", "Mariana Gutiérrez", Roles.Empleado),
+            await EnsureUserAsync("samuel.diaz@kpg.com", "Empleado1234!", "Samuel Díaz", Roles.Empleado),
+            await EnsureUserAsync("gabriela.martinez@kpg.com", "Empleado1234!", "Gabriela Martínez", Roles.Empleado),
+            await EnsureUserAsync("nicolas.vargas@kpg.com", "Empleado1234!", "Nicolás Vargas", Roles.Empleado),
+            await EnsureUserAsync("martina.herrera@kpg.com", "Empleado1234!", "Martina Herrera", Roles.Empleado),
+            await EnsureUserAsync("alejandro.ruiz@kpg.com", "Empleado1234!", "Alejandro Ruiz", Roles.Empleado),
+            await EnsureUserAsync("paulina.ortiz@kpg.com", "Empleado1234!", "Paulina Ortiz", Roles.Empleado),
+            await EnsureUserAsync("tomas.gomez@kpg.com", "Empleado1234!", "Tomás Gómez", Roles.Empleado),
+            await EnsureUserAsync("renata.silva@kpg.com", "Empleado1234!", "Renata Silva", Roles.Empleado),
+            await EnsureUserAsync("maximiliano.lopez@kpg.com", "Empleado1234!", "Maximiliano López", Roles.Empleado),
+            await EnsureUserAsync("julieta.mendoza@kpg.com", "Empleado1234!", "Julieta Mendoza", Roles.Empleado),
+            await EnsureUserAsync("thiago.cardenas@kpg.com", "Empleado1234!", "Thiago Cárdenas", Roles.Empleado),
+            await EnsureUserAsync("emma.navarro@kpg.com", "Empleado1234!", "Emma Navarro", Roles.Empleado),
+            await EnsureUserAsync("benjamin.reyes@kpg.com", "Empleado1234!", "Benjamín Reyes", Roles.Empleado),
+            await EnsureUserAsync("antonella.romero@kpg.com", "Empleado1234!", "Antonella Romero", Roles.Empleado)
+        };
+
+        var puestos = (await _context.Empleados.ToListAsync(CancellationToken.None))
+            .GroupBy(e => NormalizarNombre(e.Nombre))
+            .ToDictionary(g => g.Key, g => g.First().Id);
+
+        await AsignarEstructuraAsync(gerente2, puestos, "Gerente de Proyecto", gerenteRaiz.Id);
+        await AsignarEstructuraAsync(gerente3, puestos, "Gerente de Proyecto", gerenteRaiz.Id);
+
+        var jefesSupervisores = new[]
+        {
+            gerente2.Id, gerente2.Id,
+            gerente3.Id, gerente3.Id,
+            gerenteRaiz.Id, gerenteRaiz.Id
+        };
+
+        for (var i = 0; i < supervisores.Length; i++)
+            await AsignarEstructuraAsync(
+                supervisores[i], puestos, "Lider tecnico", jefesSupervisores[i]);
+
+        var puestosEmpleados = new[]
+        {
+            "Desarrollador", "Analista", "Consultor SAP", "QA",
+            "Arquitecto", "Disenador UX", "Soporte", "Consultor"
+        };
+        var tamanosEquipo = new[] { 4, 4, 4, 3, 3, 3 };
+        var empleadoIndex = 0;
+
+        for (var supervisorIndex = 0; supervisorIndex < supervisores.Length; supervisorIndex++)
+        {
+            for (var integrante = 0; integrante < tamanosEquipo[supervisorIndex]; integrante++)
+            {
+                var empleado = empleados[empleadoIndex];
+                var puesto = puestosEmpleados[empleadoIndex % puestosEmpleados.Length];
+                await AsignarEstructuraAsync(
+                    empleado, puestos, puesto, supervisores[supervisorIndex].Id);
+                empleadoIndex++;
+            }
+        }
+    }
 
     /// <summary>
     /// Minusculas y sin tildes, para que "Lider tecnico" encuentre a "Lider Tecnico".
