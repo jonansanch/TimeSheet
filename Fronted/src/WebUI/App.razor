@@ -1,6 +1,6 @@
 @inject NavigationManager Navigation
 
-<MudThemeProvider Theme="@KpgTheme" />
+<MudThemeProvider Theme="@KpgTheme.Default" />
 <MudPopoverProvider />
 <MudDialogProvider MaxWidth="MaxWidth.Small" FullWidth="true" />
 <MudSnackbarProvider />
@@ -30,49 +30,3 @@
         </Found>
     </Router>
 </CascadingAuthenticationState>
-
-@code {
-    private static readonly string[] SansFontStack =
-    [
-        "Inter",
-        "Segoe UI",
-        "Roboto",
-        "Helvetica Neue",
-        "Arial",
-        "sans-serif"
-    ];
-
-    private static readonly MudTheme KpgTheme = new()
-    {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#0D3B5E",
-            Secondary = "#5BB8D4",
-            Warning = "#FFD300",
-            Info = "#F57C20",
-            Success = "#2E7D32",
-            Error = "#C62828",
-            Background = "#F5F5F5",
-            DrawerBackground = "#0D3B5E",
-            DrawerText = "#FFFFFF",
-            DrawerIcon = "#5BB8D4",
-            AppbarBackground = "#0D3B5E",
-            AppbarText = "#FFFFFF"
-        },
-        Typography = new Typography
-        {
-            Default = new DefaultTypography { FontFamily = SansFontStack, FontSize = "16px" },
-            H1 = new H1Typography { FontFamily = SansFontStack },
-            H2 = new H2Typography { FontFamily = SansFontStack },
-            H3 = new H3Typography { FontFamily = SansFontStack },
-            H4 = new H4Typography { FontFamily = SansFontStack, FontSize = "24px", FontWeight = "600" },
-            H5 = new H5Typography { FontFamily = SansFontStack, FontSize = "20px", FontWeight = "600" },
-            H6 = new H6Typography { FontFamily = SansFontStack },
-            Body1 = new Body1Typography { FontFamily = SansFontStack, FontSize = "16px" },
-            Body2 = new Body2Typography { FontFamily = SansFontStack, FontSize = "14px" },
-            Caption = new CaptionTypography { FontFamily = SansFontStack, FontSize = "12px" },
-            Subtitle1 = new Subtitle1Typography { FontFamily = SansFontStack, FontSize = "14px" },
-            Subtitle2 = new Subtitle2Typography { FontFamily = SansFontStack, FontSize = "12px" }
-        }
-    };
-}

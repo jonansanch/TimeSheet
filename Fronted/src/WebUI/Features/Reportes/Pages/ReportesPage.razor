@@ -10,13 +10,11 @@
 
 <MudStack Spacing="4">
 
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Rep_Title"]</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Rep_Subtitle"]</MudText>
-    </div>
+    <KpgPageHeader Title="@L["Rep_Title"]" Subtitle="@L["Rep_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+    </KpgPageHeader>
 
-    <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+    <KpgCard>
         <MudGrid Spacing="2">
 
             <MudItem xs="12">
@@ -127,7 +125,7 @@
                 </MudStack>
             </MudItem>
         </MudGrid>
-    </MudPaper>
+    </KpgCard>
 
     @if (_isLoading && !_reporteGenerado)
     {
@@ -215,7 +213,7 @@
                 </MudAlert>
             </NoRecordsContent>
             <PagerContent>
-                <MudDataGridPager T="ReporteHorasItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                <MudDataGridPager T="ReporteHorasItemDto" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
             </PagerContent>
         </MudDataGrid>
     }

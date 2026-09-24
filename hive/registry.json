@@ -1,0 +1,18 @@
+{
+  "godId": "god",
+  "agents": {
+    "god": {
+      "id": "god",
+      "name": "Michael",
+      "provider": "antigravity",
+      "cwd": "C:\\Personal\\TimeSheet",
+      "isGod": true,
+      "role": "orchestrator (god)",
+      "capabilities": [],
+      "status": "idle",
+      "cwdValid": true,
+      "archived": false,
+      "lastSeen": 1790177707521
+    }
+  }
+}

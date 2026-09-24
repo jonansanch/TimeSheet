@@ -1,0 +1,6 @@
+.kpg-status-badge { display: inline-flex; align-items: center; gap: var(--kpg-space-1); min-height: 24px; max-width: 100%; padding: 2px var(--kpg-space-2); border: 1px solid currentColor; border-radius: var(--kpg-radius-pill); font-size: var(--kpg-font-size-xs); font-weight: 650; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+.kpg-status-badge--success { color: var(--kpg-status-success); background: var(--kpg-status-success-bg); }
+.kpg-status-badge--warning { color: var(--kpg-status-warning); background: var(--kpg-status-warning-bg); }
+.kpg-status-badge--error { color: var(--kpg-status-error); background: var(--kpg-status-error-bg); }
+.kpg-status-badge--info { color: var(--kpg-status-info); background: var(--kpg-status-info-bg); }
+.kpg-status-badge--neutral { color: var(--kpg-text-secondary); background: var(--kpg-surface-subtle); }

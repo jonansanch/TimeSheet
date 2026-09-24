@@ -1,0 +1,109 @@
+.historial-page {
+    width: 100%;
+}
+
+.historial-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--kpg-space-4);
+}
+
+/* KpgCard renderiza MudPaper: la tarjeta se alcanza con ::deep */
+.historial-page__table-card ::deep .historial-page__card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.historial-page__filters {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: var(--kpg-space-3);
+    padding: var(--kpg-space-4);
+    border-bottom: 1px solid var(--kpg-border-default);
+}
+
+.historial-page__filters ::deep .mud-stack-row {
+    flex: 1;
+    align-items: flex-end !important;
+    gap: var(--kpg-space-3);
+}
+
+.historial-page__month,
+.historial-page__client,
+.historial-page__status {
+    width: min(100%, 12.5rem);
+}
+
+.historial-page__year {
+    width: min(100%, 8rem);
+}
+
+.historial-page__filters ::deep .mud-input-control {
+    margin: 0;
+}
+
+.historial-page__filters ::deep .historial-page__clear {
+    margin-left: auto;
+}
+
+.historial-page__table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+}
+
+.historial-page__table-card ::deep .mud-data-grid {
+    border: 0;
+    box-shadow: none;
+}
+
+.historial-page__table-card ::deep .mud-table-cell {
+    padding: 10px var(--kpg-space-4);
+    font-size: var(--kpg-font-size-sm);
+}
+
+.historial-page__table-card ::deep .mud-table-head .mud-table-cell {
+    background: var(--kpg-surface-subtle);
+    color: var(--kpg-text-secondary);
+    font-size: var(--kpg-font-size-xs);
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.historial-page__table-card ::deep .mud-table-body .mud-table-row:hover {
+    background: var(--kpg-blue-100);
+}
+
+.historial-page__table-card ::deep .historial-page__rejection-comment {
+    max-width: 260px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 599.98px) {
+    .historial-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .historial-page__filters ::deep .mud-stack-row {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .historial-page__month,
+    .historial-page__year,
+    .historial-page__client,
+    .historial-page__status,
+    .historial-page__filters ::deep .mud-input-control {
+        width: 100% !important;
+    }
+
+    .historial-page__filters ::deep .historial-page__clear {
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 600px) and (max-width: 959.98px) {
+    .historial-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

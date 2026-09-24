@@ -2,15 +2,34 @@
 @attribute [Authorize(Roles = $"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")]
 @inject IUserAdminRepository Repo
 @inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
 
 <PageTitle>@L["Org_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Org_Title"]</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Org_Subtitle"]</MudText>
-    </div>
+<MudStack Spacing="3" Class="org-page">
+    <KpgPageHeader Title="@L["Org_Title"]" Subtitle="@L["Org_Subtitle"]">
+        <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+        <Actions>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="org-page__actions">
+                <MudTextField T="string" @bind-Value="_busqueda" Immediate="true" DebounceInterval="200"
+                              Placeholder="@L["Org_SearchPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true" Class="org-search" aria-label="@L["Org_SearchPlaceholder"]" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                           Disabled="@(_isLoading || _isExporting || _nodos.Count == 0)"
+                           OnClick="ExportarPdfAsync"
+                           aria-label="@L["Btn_ExportPdf"]">
+                    @if (_isExporting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                    }
+                    @L["Btn_ExportPdf"]
+                </MudButton>
+            </MudStack>
+        </Actions>
+    </KpgPageHeader>
 
     @if (_isLoading)
     {
@@ -29,12 +48,20 @@
             </MudAlert>
         }
 
-        <MudPaper Elevation="1" Class="pa-4" Style="overflow-x:auto;">
-            @foreach (var raiz in _raices)
+        <KpgCard Class="org-chart-surface">
+            @if (Buscando)
             {
-                @RenderNodo(raiz, 0)
+                <p class="org-search-result" aria-live="polite">@string.Format(L["Org_SearchResults"], Coincidencias)</p>
             }
-        </MudPaper>
+            <div class="org-tree-scroll">
+                <ul class="@($"org-tree{(Buscando ? " org-tree--searching" : "")}")" role="tree" aria-label="@L["Org_Title"]">
+                    @foreach (var raiz in _raices)
+                    {
+                        @RenderNodo(raiz, 0, [])
+                    }
+                </ul>
+            </div>
+        </KpgCard>
     }
 </MudStack>
 
@@ -49,6 +76,8 @@
     private List<OrganigramaNodoResponse> _huerfanos = [];
     private Dictionary<string, List<OrganigramaNodoResponse>> _hijosPorSupervisor = [];
     private bool _isLoading = true;
+    private bool _isExporting;
+    private HashSet<string> _colapsados = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -92,40 +121,106 @@
             .ToList();
     }
 
-    private RenderFragment RenderNodo(OrganigramaNodoResponse nodo, int nivel) => __builder =>
+    private RenderFragment RenderNodo(OrganigramaNodoResponse nodo, int nivel, HashSet<string> visitados) => __builder =>
     {
-        var hijos = _hijosPorSupervisor.TryGetValue(nodo.UserId, out var lista) ? lista : [];
+        if (!visitados.Add(nodo.UserId))
+        {
+            <li><MudAlert Severity="Severity.Warning" Dense="true">@nodo.Nombre</MudAlert></li>
+            return;
+        }
 
-        <div style="@($"margin-left:{nivel * 28}px;")" class="mb-1">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                @if (nivel > 0)
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.SubdirectoryArrowRight"
-                             Size="Size.Small" Color="Color.Secondary" />
-                }
-                <MudIcon Icon="@(hijos.Count > 0 ? Icons.Material.Filled.SupervisorAccount : Icons.Material.Filled.Person)"
-                         Size="Size.Small"
-                         Color="@(hijos.Count > 0 ? Color.Primary : Color.Default)" />
-                <MudText Typo="Typo.body1" Style="font-weight:600;">@nodo.Nombre</MudText>
-                @if (!string.IsNullOrWhiteSpace(nodo.PuestoNombre))
-                {
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">
-                        @nodo.PuestoNombre
-                    </MudChip>
-                }
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@nodo.Rol</MudText>
+        var hijos = _hijosPorSupervisor.TryGetValue(nodo.UserId, out var lista) ? lista : [];
+        var colapsado = _colapsados.Contains(nodo.UserId);
+        // Un grupo de solo hojas se apila en vertical: en fila, un equipo de 30 personas
+        // desborda cualquier pantalla.
+        var apilar = hijos.Count > 1 && hijos.All(h => !_hijosPorSupervisor.ContainsKey(h.UserId));
+
+        <li role="treeitem" aria-expanded="@(hijos.Count > 0 ? (!colapsado).ToString().ToLowerInvariant() : null)" aria-level="@(nivel + 1)">
+            <div class="@($"org-card{(Buscando && Coincide(nodo) ? " org-card--match" : "")}")">
+                <span class="org-card__avatar" style="@($"background:{ColorAvatar(nodo.Nombre)}")" aria-hidden="true">@Iniciales(nodo.Nombre)</span>
+                <span class="org-card__copy">
+                    <span class="org-card__name">@nodo.Nombre</span>
+                    @if (!string.IsNullOrWhiteSpace(nodo.PuestoNombre))
+                    {
+                        <span class="org-card__role">@nodo.PuestoNombre</span>
+                    }
+                    <span class="org-card__meta">
+                        @nodo.Rol
+                        @if (hijos.Count > 0)
+                        {
+                            <text> · </text><span class="org-card__reports">@string.Format(L["Org_ReportsCount"], hijos.Count)</span>
+                        }
+                    </span>
+                </span>
                 @if (hijos.Count > 0)
                 {
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">
-                        @string.Format(L["Org_ReportsCount"], hijos.Count)
-                    </MudText>
+                    <MudIconButton Icon="@(colapsado ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ExpandLess)"
+                                   Size="Size.Small" Class="org-card__toggle"
+                                   OnClick="@(() => AlternarNodo(nodo.UserId))"
+                                   aria-label="@(colapsado ? $"Expandir {nodo.Nombre}" : $"Contraer {nodo.Nombre}")" />
                 }
-            </MudStack>
-        </div>
-
-        @foreach (var hijo in hijos)
-        {
-            @RenderNodo(hijo, nivel + 1)
-        }
+            </div>
+            @if (hijos.Count > 0 && !colapsado)
+            {
+                <ul role="group" class="@(apilar ? "org-stack" : null)">
+                    @foreach (var hijo in hijos)
+                    {
+                        @RenderNodo(hijo, nivel + 1, new HashSet<string>(visitados, StringComparer.Ordinal))
+                    }
+                </ul>
+            }
+        </li>
     };
+
+    private string _busqueda = string.Empty;
+
+    private bool Buscando => !string.IsNullOrWhiteSpace(_busqueda);
+
+    private bool Coincide(OrganigramaNodoResponse n) =>
+        n.Nombre.Contains(_busqueda.Trim(), StringComparison.CurrentCultureIgnoreCase)
+        || (n.PuestoNombre?.Contains(_busqueda.Trim(), StringComparison.CurrentCultureIgnoreCase) ?? false);
+
+    private int Coincidencias => _nodos.Count(Coincide);
+
+    private static string Iniciales(string nombre) =>
+        string.Join("", nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    /// <summary>Color estable por persona; todos con contraste AA frente a texto blanco.</summary>
+    private static readonly string[] PaletaAvatar = ["#0B466A", "#0D557F", "#087EA4", "#15803D", "#B45309", "#64748B"];
+
+    private static string ColorAvatar(string nombre) =>
+        PaletaAvatar[(int)((uint)nombre.Aggregate(17, (h, c) => h * 31 + c) % PaletaAvatar.Length)];
+
+    private void AlternarNodo(string id)
+    {
+        if (!_colapsados.Add(id)) _colapsados.Remove(id);
+    }
+
+    private async Task ExportarPdfAsync()
+    {
+        _isExporting = true;
+        try
+        {
+            var archivo = await Repo.ExportarOrganigramaPdfAsync();
+            if (archivo is null)
+            {
+                Snackbar.Add(L["Error_Server"].Value, Severity.Error);
+                return;
+            }
+
+            await JS.InvokeVoidAsync(
+                "downloadFile",
+                archivo.Value.FileName,
+                archivo.Value.ContentType,
+                Convert.ToBase64String(archivo.Value.Contenido));
+        }
+        catch
+        {
+            Snackbar.Add(L["Error_Server"].Value, Severity.Error);
+        }
+        finally
+        {
+            _isExporting = false;
+        }
+    }
 }

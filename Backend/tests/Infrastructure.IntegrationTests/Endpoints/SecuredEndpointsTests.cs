@@ -31,6 +31,7 @@ public class SecuredEndpointsTests : IClassFixture<KpgWebApplicationFactory>, IA
     [InlineData("GET",    "api/empleados")]
     [InlineData("GET",    "api/dashboard/estado-equipo")]
     [InlineData("GET",    "api/sistema/ventana-retroactividad")]
+    [InlineData("GET",    "api/users/organigrama/pdf")]
     public async Task ProtectedEndpoint_WithoutToken_Returns401(string method, string path)
     {
         var request  = new HttpRequestMessage(new HttpMethod(method), path);
@@ -62,6 +63,7 @@ public class SecuredEndpointsTests : IClassFixture<KpgWebApplicationFactory>, IA
     [InlineData("GET",  "api/users")]
     [InlineData("GET",  "api/empleados")]
     [InlineData("GET",  "api/dashboard/admin")]
+    [InlineData("GET",  "api/users/organigrama/pdf")]
     public async Task AdminOnlyEndpoint_WithEmpleadoToken_Returns403(string method, string path)
     {
         var token = await GetTokenAsync(KpgWebApplicationFactory.EmpleadoEmail);
@@ -72,6 +74,22 @@ public class SecuredEndpointsTests : IClassFixture<KpgWebApplicationFactory>, IA
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task OrganigramaPdf_WithAdminToken_ReturnsPdf()
+    {
+        var token = await GetTokenAsync(KpgWebApplicationFactory.AdminEmail);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/users/organigrama/pdf");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.SendAsync(request);
+        var contenido = await response.Content.ReadAsByteArrayAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/pdf");
+        contenido.Should().StartWith("%PDF"u8.ToArray());
     }
 
     // ── ChangePassword ─────────────────────────────────────────────────────

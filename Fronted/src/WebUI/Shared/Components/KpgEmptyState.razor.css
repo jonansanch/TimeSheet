@@ -1,0 +1,4 @@
+.kpg-empty-state { display: flex; min-height: 220px; padding: var(--kpg-space-8); flex-direction: column; align-items: center; justify-content: center; gap: var(--kpg-space-2); text-align: center; color: var(--kpg-text-primary); }
+.kpg-empty-state__icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: var(--kpg-space-2); border-radius: 50%; color: var(--kpg-color-primary); background: var(--kpg-blue-100); }
+::deep .kpg-empty-state__description { max-width: 34rem; color: var(--kpg-text-secondary); }
+.kpg-empty-state__action { margin-top: var(--kpg-space-3); }

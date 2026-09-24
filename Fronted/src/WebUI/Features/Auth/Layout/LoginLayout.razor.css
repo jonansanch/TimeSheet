@@ -1,0 +1,50 @@
+.auth-layout, .auth-layout__main { min-height: 100vh; background: var(--kpg-surface-page); }
+.auth-layout__main { padding-top: 0; }
+.auth-shell { display: grid; grid-template-columns: minmax(340px, 1fr) minmax(0, 1fr); min-height: 100vh; }
+.auth-brand {
+    position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
+    padding: clamp(2rem, 5vw, 4.5rem); color: var(--kpg-text-inverse);
+    background: var(--kpg-navy-900);
+}
+.auth-brand__content, .auth-brand__footer { position: relative; z-index: 1; }
+.auth-brand__logo { display: block; width: min(172px, 68%); height: auto; margin-bottom: var(--kpg-space-6); border-radius: 0; mix-blend-mode: screen; }
+.auth-brand ::deep .auth-brand__title { margin-bottom: var(--kpg-space-3); color: inherit; font-weight: 700; }
+.auth-brand ::deep .auth-brand__tagline { max-width: 28ch; color: rgba(255, 255, 255, 0.86); font-weight: 400; line-height: 1.55; }
+.auth-brand__benefits { display: grid; gap: var(--kpg-space-4); padding: 0; margin: var(--kpg-space-8) 0 0; list-style: none; }
+.auth-brand__benefits li { display: flex; align-items: center; gap: var(--kpg-space-3); color: rgba(255, 255, 255, 0.9); font-size: var(--kpg-font-size-sm); }
+.auth-brand__benefits ::deep .mud-icon-root { flex: 0 0 auto; padding: 7px; box-sizing: content-box; border: 1px solid rgba(255, 255, 255, 0.32); border-radius: 50%; }
+.auth-brand ::deep .auth-brand__footer { color: rgba(255, 255, 255, 0.76); }
+.auth-content {
+    display: grid; grid-template-rows: auto 1fr auto; min-width: 0; min-height: 100vh;
+    padding: var(--kpg-space-6) clamp(1.25rem, 6vw, 6rem); background: var(--kpg-surface-card);
+}
+.auth-content__language { display: flex; justify-content: flex-end; min-height: 44px; }
+.auth-content__language ::deep .mud-button-root { min-width: 56px; min-height: 44px; }
+.auth-content__body { display: flex; align-items: center; justify-content: center; width: 100%; }
+.auth-content ::deep .auth-content__footer { padding-top: var(--kpg-space-6); color: var(--kpg-text-secondary); text-align: center; }
+.auth-content__body ::deep .auth-form { width: min(100%, 400px); padding: var(--kpg-space-6) 0; }
+.auth-content__body ::deep .auth-form__header { margin-bottom: var(--kpg-space-6); }
+.auth-content__body ::deep .auth-form__icon {
+    display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px;
+    margin-bottom: var(--kpg-space-4); color: var(--kpg-color-primary); background: var(--kpg-blue-100);
+    border-radius: var(--kpg-radius-lg);
+}
+.auth-content__body ::deep .auth-form__title { margin-bottom: var(--kpg-space-2); color: var(--kpg-text-primary); font-weight: 700; }
+.auth-content__body ::deep .auth-form__subtitle { color: var(--kpg-text-secondary); line-height: var(--kpg-line-height-normal); }
+.auth-content__body ::deep .auth-form__actions { margin-top: var(--kpg-space-5); }
+.auth-content__body ::deep .auth-form__link { display: block; text-align: center; }
+.auth-content__body ::deep .auth-form__help { margin-top: var(--kpg-space-6); color: var(--kpg-text-secondary); text-align: center; }
+.auth-content__body ::deep .auth-form .mud-input-control { margin-top: var(--kpg-space-2); }
+.auth-content__body ::deep .auth-form .mud-button-root { min-height: 44px; }
+@media (max-width: 767.98px) {
+    .auth-shell { display: block; }
+    .auth-brand { min-height: auto; padding: var(--kpg-space-4) var(--kpg-space-5); }
+    .auth-brand__content { display: flex; align-items: center; gap: var(--kpg-space-3); }
+    .auth-brand__tagline, .auth-brand__benefits, .auth-brand__footer { display: none; }
+    .auth-brand__logo { width: 92px; margin: 0; }
+    .auth-brand ::deep .auth-brand__title { margin: 0; font-size: var(--kpg-font-size-lg); }
+    .auth-content { min-height: calc(100vh - 68px); padding: var(--kpg-space-3) var(--kpg-space-5) var(--kpg-space-4); }
+    .auth-content__body { align-items: flex-start; }
+    .auth-content__body ::deep .auth-form { padding: var(--kpg-space-5) 0; }
+}
+@media (max-width: 389.98px) { .auth-content { padding-inline: var(--kpg-space-4); } }

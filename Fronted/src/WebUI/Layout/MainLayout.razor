@@ -6,54 +6,69 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<SharedResource> L
 
-<MudLayout>
-    <MudAppBar Elevation="1" Color="Color.Primary" Dense="false" Style="height:64px;">
+<a class="kpg-skip-link" href="#kpg-main-content">@L["A11y_SkipToContent"]</a>
+
+<MudLayout Class="kpg-app-shell">
+    <MudAppBar Elevation="0" Color="Color.Surface" Dense="false" Class="kpg-topbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Color="Color.Inherit"
+                       Color="Color.Default"
                        Edge="Edge.Start"
+                       aria-label="@L["Nav_Menu"]"
+                       Class="kpg-topbar-menu"
                        OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="font-family:'Poppins',sans-serif; font-weight:600; letter-spacing:0.5px;">
-            KPG Timesheet
-        </MudText>
+        <div class="kpg-topbar-context" aria-hidden="true">
+            <MudText Typo="Typo.subtitle2" Class="kpg-topbar-title">KPG Timesheet</MudText>
+        </div>
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
+                <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+                    <Authorized Context="notificationContext">
+                        <MudTooltip Text="@L["Nav_Notifications"]">
+                            <MudIconButton Icon="@Icons.Material.Outlined.Notifications"
+                                           Href="/notificaciones"
+                                           Color="Color.Default"
+                                           Class="kpg-topbar-action"
+                                           aria-label="@L["Nav_Notifications"]" />
+                        </MudTooltip>
+                    </Authorized>
+                </AuthorizeView>
+                <span class="kpg-topbar-divider" aria-hidden="true"></span>
+                <KpgLanguageSelector />
                 <MudMenu AnchorOrigin="Origin.BottomCenter"
                          TransformOrigin="Origin.TopCenter"
-                         Class="d-none d-sm-block me-1">
+                         Class="kpg-user-menu d-none d-sm-block">
                     <ActivatorContent>
-                        <MudButton Color="Color.Inherit"
-                                   EndIcon="@Icons.Material.Filled.ArrowDropDown"
-                                   Style="text-transform:none; opacity:0.85; font-size:0.875rem;">
-                            <MudStack Spacing="0" AlignItems="AlignItems.Start">
-                                <span>@NombreParaMostrar(context.User)</span>
-                                @if (context.User.FindFirst("lider")?.Value is { Length: > 0 } lider)
-                                {
-                                    <MudText Typo="Typo.caption" Style="opacity:0.7;line-height:1;">
-                                        @L["Org_LedBy"] @lider
-                                    </MudText>
-                                }
-                            </MudStack>
+                        <MudButton Color="Color.Default"
+                                   EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                                   Class="kpg-user-menu-button"
+                                   aria-label="@($"{L["Nav_Profile"]}: {ResumenUsuario(context.User)}")"
+                                   title="@ResumenUsuario(context.User)">
+                            <span class="kpg-user-avatar" aria-hidden="true">@InicialUsuario(context.User)</span>
+                            <span class="kpg-user-copy">
+                                <span class="kpg-user-name">@NombreParaMostrar(context.User)</span>
+                                <span class="kpg-user-role">@RolParaMostrar(context.User)</span>
+                            </span>
                         </MudButton>
                     </ActivatorContent>
                     <ChildContent>
                         <MudMenuItem Href="/perfil"
                                      Icon="@Icons.Material.Filled.AccountCircle">
-                            Mi Perfil
+                            @L["Nav_Profile"]
                         </MudMenuItem>
                         <MudDivider />
                         <MudMenuItem OnClick="HandleLogout"
                                      Icon="@Icons.Material.Filled.Logout"
                                      IconColor="Color.Error">
-                            Cerrar sesión
+                            @L["Nav_Logout"]
                         </MudMenuItem>
                     </ChildContent>
                 </MudMenu>
-                <KpgLanguageSelector />
                 <MudIconButton Icon="@Icons.Material.Filled.Logout"
-                               Color="Color.Inherit"
-                               title="Cerrar sesión"
-                               Class="d-sm-none"
+                               Color="Color.Default"
+                               aria-label="@L["Nav_Logout"]"
+                               title="@L["Nav_Logout"]"
+                               Class="kpg-topbar-action d-sm-none"
                                OnClick="HandleLogout" />
             </Authorized>
         </AuthorizeView>
@@ -63,18 +78,23 @@
                Variant="DrawerVariant.Responsive"
                Breakpoint="Breakpoint.Md"
                Elevation="0"
-               Style="background-color:#0D3B5E; border-right:none;">
-        <MudDrawerHeader Style="height:64px; display:flex; align-items:center; justify-content:center; padding:0 16px;">
-            <img src="images/kpg-logo.jpg" alt="KPG" style="width:100%; max-height:90px; object-fit:contain; mix-blend-mode:lighten;" />
+               Class="kpg-sidebar">
+        <MudDrawerHeader Class="kpg-sidebar-brand">
+            <img src="images/kpg-logo.jpg" alt="" class="kpg-sidebar-logo" />
+            <span class="kpg-sidebar-brand-copy">
+                <span class="kpg-sidebar-brand-name">KPG <span>Timesheet</span></span>
+            </span>
         </MudDrawerHeader>
-        <NavMenu />
+        <nav class="kpg-sidebar-navigation" aria-label="@L["Nav_Menu"]">
+            <NavMenu />
+        </nav>
     </MudDrawer>
 
-    <MudMainContent>
+    <MudMainContent Class="kpg-main-content" id="kpg-main-content" tabindex="-1">
         @* Las pantallas de tablas necesitan todo el ancho: con el tope de lectura de
            1200px el renglon se corta y hay que hacer scroll horizontal. El resto lo
            conserva, porque un formulario o un texto a 2000px se lee mal. *@
-        <MudContainer MaxWidth="MaxWidth.False" Class="py-6 px-6" Style="@EstiloContenedor">
+        <MudContainer MaxWidth="MaxWidth.False" Class="@ClaseContenedor">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -102,14 +122,14 @@
         "/mis-solicitudes"
     ];
 
-    private string EstiloContenedor
+    private string ClaseContenedor
     {
         get
         {
-            var ruta = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/');
-            return RutasAnchas.Any(r => ruta.StartsWith(r, StringComparison.OrdinalIgnoreCase))
-                ? "max-width:100%;"
-                : "max-width:1200px;";
+            var ruta = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+            var esAncha = RutasAnchas.Any(r => ruta.Equals(r, StringComparison.OrdinalIgnoreCase)
+                                                || ruta.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase));
+            return esAncha ? "kpg-content-container kpg-content-container--wide" : "kpg-content-container";
         }
     }
 
@@ -133,6 +153,24 @@
                ?? user.Identity?.Name;
     }
 
+    private static string InicialUsuario(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var nombre = NombreParaMostrar(user);
+        return string.IsNullOrWhiteSpace(nombre) ? "K" : nombre.Trim()[0].ToString().ToUpperInvariant();
+    }
+
+    private static string RolParaMostrar(System.Security.Claims.ClaimsPrincipal user)
+        => user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+           ?? user.FindFirst("role")?.Value
+           ?? string.Empty;
+
+    private static string ResumenUsuario(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var nombre = NombreParaMostrar(user) ?? string.Empty;
+        var rol = RolParaMostrar(user);
+        return string.IsNullOrWhiteSpace(rol) ? nombre : $"{nombre} — {rol}";
+    }
+
     protected override void OnInitialized()
     {
         SessionTimeout.OnWarning += HandleWarningAsync;
@@ -143,7 +181,8 @@
         Navigation.LocationChanged += HandleRutaCambiada;
     }
 
-    private void HandleRutaCambiada(object? _, LocationChangedEventArgs __) => StateHasChanged();
+    private void HandleRutaCambiada(object? _, LocationChangedEventArgs __)
+        => _ = InvokeAsync(StateHasChanged);
 
     private async Task HandleWarningAsync()
     {

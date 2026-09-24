@@ -1,0 +1,13 @@
+.registro-page { width: 100%; }
+
+.registro-page__layout {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: var(--kpg-space-4);
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .registro-page__layout { grid-template-columns: minmax(0, 1fr); }
+    .registro-page__calendar { max-width: 340px; }
+}

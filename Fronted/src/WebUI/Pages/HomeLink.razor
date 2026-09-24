@@ -1,0 +1,16 @@
+<a class="home-action-card" href="@Href">
+    <span class="home-action-card__icon home-action-card__icon--@Tone" aria-hidden="true"><MudIcon Icon="@Icon" /></span>
+    <span class="home-action-card__title">@Title</span>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <span class="home-action-card__desc">@Description</span>
+    }
+</a>
+
+@code {
+    [Parameter, EditorRequired] public string Href { get; set; } = default!;
+    [Parameter, EditorRequired] public string Icon { get; set; } = default!;
+    [Parameter, EditorRequired] public string Title { get; set; } = default!;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string Tone { get; set; } = "primary";
+}

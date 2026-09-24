@@ -53,14 +53,13 @@
                          QuickFilter="_quickFilter"
                          RowsPerPage="50">
                 <ToolBarContent>
-                    <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
                                   Placeholder="@($"{L["Label_Name"].Value}...")"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
                                   IconSize="Size.Small"
                                   Immediate="true"
-                                  Style="max-width:280px;" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-toolbar__search" />
                 </ToolBarContent>
                 <Columns>
                     <PropertyColumn Property="x => x.Nombre" Title="@L["Clients_ColClient"]" />
@@ -113,7 +112,7 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="ClienteResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                    <MudDataGridPager T="ClienteResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
                 </PagerContent>
             </MudDataGrid>
         }

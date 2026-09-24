@@ -27,9 +27,9 @@
 
     private string Estilo => Estado switch
     {
-        EstadoAprobacion.Aprobado  => "background-color:#2E7D32;color:#fff;font-weight:600;",
-        EstadoAprobacion.Rechazado => "background-color:#C62828;color:#fff;font-weight:600;",
-        EstadoAprobacion.Pendiente => "background-color:#F9A825;color:#fff;font-weight:600;",
-        _                           => "background-color:#0D3B5E;color:#fff;font-weight:600;"
+        EstadoAprobacion.Aprobado  => "background-color:var(--kpg-status-success);color:#fff;font-weight:600;",
+        EstadoAprobacion.Rechazado => "background-color:var(--kpg-status-error);color:#fff;font-weight:600;",
+        EstadoAprobacion.Pendiente => "background-color:var(--kpg-status-warning-fill);color:var(--kpg-text-primary);font-weight:600;",
+        _                           => "background-color:var(--kpg-status-info);color:#fff;font-weight:600;"
     };
 }

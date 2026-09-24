@@ -1,16 +1,27 @@
-<MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
-    <MudStack Spacing="1">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icon" Color="@Color" Size="Size.Medium" />
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@Label</MudText>
-        </MudStack>
-        <MudText Typo="Typo.h4" Style="font-weight:700;">@Value</MudText>
-    </MudStack>
-</MudPaper>
+<KpgCard Compact="true" Class="kpg-stat-card">
+    <span class="@IconClass" aria-hidden="true"><MudIcon Icon="@Icon" Size="Size.Small" /></span>
+    <span class="kpg-stat-card__copy">
+        <span class="kpg-stat-card__value">@(DisplayValue ?? Value.ToString())</span>
+        <span class="kpg-stat-card__label">@Label</span>
+    </span>
+</KpgCard>
 
 @code {
     [Parameter, EditorRequired] public string Label { get; set; } = default!;
     [Parameter, EditorRequired] public int Value { get; set; }
+    /// <summary>Texto a mostrar en lugar de <see cref="Value"/> (p. ej. "128 h").</summary>
+    [Parameter] public string? DisplayValue { get; set; }
     [Parameter, EditorRequired] public string Icon { get; set; } = default!;
     [Parameter] public Color Color { get; set; } = Color.Default;
+    /// <summary>Se conserva por compatibilidad; todas las tarjetas usan el ícono en círculo.</summary>
+    [Parameter] public bool Circular { get; set; }
+
+    private string IconClass => Color switch
+    {
+        Color.Success => "kpg-stat-card__icon kpg-stat-card__icon--success",
+        Color.Warning => "kpg-stat-card__icon kpg-stat-card__icon--warning",
+        Color.Error => "kpg-stat-card__icon kpg-stat-card__icon--error",
+        Color.Info => "kpg-stat-card__icon kpg-stat-card__icon--info",
+        _ => "kpg-stat-card__icon"
+    };
 }

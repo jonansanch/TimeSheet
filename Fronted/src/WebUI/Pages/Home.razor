@@ -1,83 +1,270 @@
 @page "/"
 @attribute [Authorize]
-@inject CurrentUserService CurrentUser
+@using System.Globalization
+@using KPG.Timesheet.WebUI.Features.Aprobaciones.Components
 @inject IStringLocalizer<SharedResource> L
+@inject IRegistroHorasRepository RegistroHorasRepo
 
 <PageTitle>@L["Nav_Home"] — KPG Timesheet</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-2" Style="font-family: 'Poppins', sans-serif; font-weight: 600;">
-    @L["Home_Welcome"]
-</MudText>
-
-<AuthorizeView>
-    <Authorized>
-        <MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
-            @(context.User.FindFirst("email")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? context.User.Identity?.Name)
-        </MudText>
-    </Authorized>
-</AuthorizeView>
-
-<MudGrid>
-    <AuthorizeView Roles="@($"{Roles.Empleado},{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+<section class="home-page">
+    <AuthorizeView>
         <Authorized>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Register"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardRegisterDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/registro">@L["Home_GoToRegister"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
+            <KpgPageHeader Title="@($"{L["Home_Hello"]}, {Nombre(context.User)}")" Subtitle="@L["Home_Subtitle"]">
+                <Actions>
+                    <span class="home-page__date">@FechaLarga</span>
+                    <KpgButton StartIcon="@Icons.Material.Filled.Add" Href="/registro">@L["Btn_RegisterDay"]</KpgButton>
+                </Actions>
+            </KpgPageHeader>
         </Authorized>
     </AuthorizeView>
 
-    <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
-        <Authorized>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Dashboard"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardDashboardDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/dashboard">@L["Home_GoToDashboard"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Reports"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardReportsDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/reportes/horas">@L["Home_GoToReports"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        </Authorized>
-    </AuthorizeView>
+    <nav class="home-actions" aria-label="@L["Home_ActionsAriaLabel"]">
+        <HomeLink Href="/registro" Icon="@Icons.Material.Outlined.EditCalendar" Title="@L["Btn_RegisterDay"]" Description="@L["Home_CardRegisterDesc"]" />
+        <HomeLink Href="/mis-registros" Icon="@Icons.Material.Outlined.Description" Title="@L["Nav_MyRecords"]" Description="@L["Home_CardRecordsDesc"]" />
+        <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+            <Authorized>
+                <HomeLink Href="/aprobaciones" Icon="@Icons.Material.Outlined.TaskAlt" Title="@L["Nav_Aprobaciones"]" Description="@L["Home_CardApprovalsDesc"]" Tone="success" />
+                <HomeLink Href="/dashboard" Icon="@Icons.Material.Outlined.BarChart" Title="@L["Nav_Dashboard"]" Description="@L["Home_CardDashboardDesc"]" />
+            </Authorized>
+            <NotAuthorized>
+                <HomeLink Href="/mis-solicitudes" Icon="@Icons.Material.Outlined.PendingActions" Title="@L["Nav_MisSolicitudes"]" Description="@L["Home_CardRequestsDesc"]" />
+                <HomeLink Href="/reportar" Icon="@Icons.Material.Outlined.Feedback" Title="@L["Nav_Reportar"]" Description="@L["Home_CardReportIssueDesc"]" />
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
 
-    <AuthorizeView Roles="@Roles.Admin">
-        <Authorized>
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Size="Size.Large" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Style="font-family: 'Poppins', sans-serif;">@L["Nav_Admin"]</MudText>
-                        <MudText Typo="Typo.body2">@L["Home_CardAdminDesc"]</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Warning" Href="/admin/usuarios">@L["Home_GoToAdmin"]</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        </Authorized>
-    </AuthorizeView>
-</MudGrid>
+    @if (_errorCarga)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="home-page__alert">@L["Home_LoadError"]</MudAlert>
+    }
+
+    <div class="home-grid">
+        <KpgCard Class="home-week">
+            <h2 class="kpg-card__title">@L["Home_WeekTitle"]</h2>
+            @if (_cargando)
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="92px" />
+            }
+            else
+            {
+                <ol class="home-week__days" aria-label="@L["Home_WeekTitle"]">
+                    @foreach (var dia in DiasSemana)
+                    {
+                        var minutos = MinutosDe(dia);
+                        var esHoy = dia == _hoy;
+                        <li class="@($"home-week__day{(esHoy ? " home-week__day--today" : "")}{(minutos == 0 ? " home-week__day--empty" : "")}")"
+                            aria-current="@(esHoy ? "date" : null)">
+                            <span class="home-week__name">@Cultura.DateTimeFormat.GetAbbreviatedDayName(dia.DayOfWeek).TrimEnd('.')</span>
+                            <span class="home-week__num">@dia.Day</span>
+                            <span class="home-week__hours">@(minutos > 0 ? $"{HorasDecimal(minutos)} h" : "–")</span>
+                        </li>
+                    }
+                </ol>
+                <p class="home-week__total">@L["Home_WeekHoursLabel"]: <strong>@HorasDecimal(MinutosSemana) h</strong></p>
+            }
+        </KpgCard>
+
+        <KpgCard Class="home-month">
+            <h2 class="kpg-card__title">@L["Home_MonthTitle"]</h2>
+            @if (_cargando)
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
+            }
+            else
+            {
+                <div class="home-month__body">
+                    <div class="home-month__ring" role="img"
+                         aria-label="@string.Format(L["Home_MonthRingAria"], HorasDecimal(_minutosMes), HorasDecimal(_minutosMeta))"
+                         style="@($"--pct:{PorcentajeMes}")">
+                        <span class="home-month__value">@HorasDecimal(_minutosMes) h</span>
+                        <span class="home-month__target">@string.Format(L["Home_MonthOfTarget"], HorasDecimal(_minutosMeta))</span>
+                    </div>
+                    <ul class="home-month__legend">
+                        <li><span class="home-dot home-dot--primary"></span><strong>@HorasDecimal(_minutosMes) h</strong> @L["Home_MonthRegistered"]</li>
+                        <li><span class="home-dot home-dot--success"></span><strong>@HorasDecimal(_minutosAprobados) h</strong> @L["Home_MonthApproved"]</li>
+                        <li><span class="home-dot home-dot--warning"></span><strong>@HorasDecimal(_minutosPendientes) h</strong> @L["Home_MonthPending"]</li>
+                        <li><span class="home-dot home-dot--muted"></span><strong>@HorasDecimal(Math.Max(0, _minutosMeta - _minutosMes)) h</strong> @L["Home_MonthRemaining"]</li>
+                    </ul>
+                </div>
+            }
+        </KpgCard>
+
+        <KpgCard Class="home-quick">
+            <h2 class="kpg-card__title">@L["Home_QuickAccessTitle"]</h2>
+            <nav class="home-list" aria-label="@L["Home_QuickAccessAriaLabel"]">
+                <a class="kpg-list-row" href="/mis-registros">
+                    <span class="kpg-list-row__icon"><MudIcon Icon="@Icons.Material.Outlined.History" Size="Size.Small" /></span>
+                    <span class="kpg-list-row__copy"><span class="kpg-list-row__title">@L["Nav_MyRecords"]</span><span class="kpg-list-row__meta">@L["Hist_Subtitle"]</span></span>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="kpg-list-row__chevron" />
+                </a>
+                <a class="kpg-list-row" href="/mis-solicitudes">
+                    <span class="kpg-list-row__icon"><MudIcon Icon="@Icons.Material.Outlined.PendingActions" Size="Size.Small" /></span>
+                    <span class="kpg-list-row__copy"><span class="kpg-list-row__title">@L["Nav_MisSolicitudes"]</span><span class="kpg-list-row__meta">@L["Home_CardRequestsDesc"]</span></span>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="kpg-list-row__chevron" />
+                </a>
+                <AuthorizeView Roles="@($"{Roles.Supervisor},{Roles.Gerente},{Roles.Admin}")">
+                    <a class="kpg-list-row" href="/reportes/horas">
+                        <span class="kpg-list-row__icon"><MudIcon Icon="@Icons.Material.Outlined.Assessment" Size="Size.Small" /></span>
+                        <span class="kpg-list-row__copy"><span class="kpg-list-row__title">@L["Nav_Reports"]</span><span class="kpg-list-row__meta">@L["Home_CardReportsDesc"]</span></span>
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="kpg-list-row__chevron" />
+                    </a>
+                </AuthorizeView>
+                <AuthorizeView Roles="@Roles.Admin">
+                    <a class="kpg-list-row" href="/admin/usuarios">
+                        <span class="kpg-list-row__icon"><MudIcon Icon="@Icons.Material.Outlined.AdminPanelSettings" Size="Size.Small" /></span>
+                        <span class="kpg-list-row__copy"><span class="kpg-list-row__title">@L["Nav_Admin"]</span><span class="kpg-list-row__meta">@L["Home_CardAdminDesc"]</span></span>
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="kpg-list-row__chevron" />
+                    </a>
+                </AuthorizeView>
+            </nav>
+        </KpgCard>
+
+        <KpgCard Class="home-activity">
+            <div class="kpg-card__head">
+                <h2 class="kpg-card__title">@L["Home_RecentActivityTitle"]</h2>
+                <MudLink Href="/mis-registros" Typo="Typo.body2">@L["Common_ViewAll"]</MudLink>
+            </div>
+            @if (_cargando)
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" />
+            }
+            else if (_recientes.Count == 0)
+            {
+                <p class="home-activity__empty">@L["Home_RecentActivityEmpty"]</p>
+            }
+            else
+            {
+                <ul class="home-activity__list">
+                    @foreach (var r in _recientes)
+                    {
+                        <li class="home-activity__item">
+                            <span class="@($"home-activity__icon home-activity__icon--{Tono(r.Estado)}")" aria-hidden="true">
+                                <MudIcon Icon="@IconoEstado(r.Estado)" Size="Size.Small" />
+                            </span>
+                            <span class="home-activity__copy">
+                                <span class="home-activity__title">@r.Cliente · @r.Proyecto</span>
+                                <span class="home-activity__meta">@r.FechaRegistro.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) · @HorasDecimal(TotalMinutos(r)) h</span>
+                            </span>
+                            <KpgEstadoAprobacionChip Estado="@r.Estado" />
+                        </li>
+                    }
+                </ul>
+            }
+        </KpgCard>
+    </div>
+</section>
+
+@code {
+    private static CultureInfo Cultura => CultureInfo.CurrentUICulture;
+
+    private readonly DateOnly _hoy = DateOnly.FromDateTime(DateTime.Today);
+    private Dictionary<DateOnly, int> _minutosPorDia = [];
+    private List<HistorialRegistroResponse> _recientes = [];
+    private int _minutosMes;
+    private int _minutosMeta;
+    private int _minutosAprobados;
+    private int _minutosPendientes;
+    private bool _cargando = true;
+    private bool _errorCarga;
+
+    private string FechaLarga
+    {
+        get
+        {
+            var texto = DateTime.Today.ToString("dddd, d MMMM yyyy", Cultura);
+            return string.IsNullOrEmpty(texto) ? texto : char.ToUpper(texto[0], Cultura) + texto[1..];
+        }
+    }
+
+    private DateOnly Lunes => _hoy.AddDays(-(((int)_hoy.DayOfWeek + 6) % 7));
+
+    /// <summary>Lunes a viernes siempre; sábado y domingo solo si tienen horas cargadas.</summary>
+    private IEnumerable<DateOnly> DiasSemana =>
+        Enumerable.Range(0, 7).Select(i => Lunes.AddDays(i))
+            .Where(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) || MinutosDe(d) > 0);
+
+    private int MinutosSemana => Enumerable.Range(0, 7).Sum(i => MinutosDe(Lunes.AddDays(i)));
+
+    private int PorcentajeMes => _minutosMeta <= 0 ? 0 : Math.Min(100, _minutosMes * 100 / _minutosMeta);
+
+    private int MinutosDe(DateOnly dia) => _minutosPorDia.TryGetValue(dia, out var m) ? m : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var inicioMes = new DateOnly(_hoy.Year, _hoy.Month, 1);
+            var finMes = inicioMes.AddMonths(1).AddDays(-1);
+
+            // La semana puede empezar en el mes anterior: se piden ambos resúmenes cuando aplica.
+            var resumenTask = RegistroHorasRepo.GetResumenMensualAsync(_hoy.Month, _hoy.Year);
+            var resumenPrevioTask = Lunes.Month != _hoy.Month
+                ? RegistroHorasRepo.GetResumenMensualAsync(Lunes.Month, Lunes.Year)
+                : Task.FromResult(ResumenMensualResponse.Vacio());
+            var historialTask = RegistroHorasRepo.GetHistorialAsync(1, 5000, inicioMes, finMes);
+            await Task.WhenAll(resumenTask, resumenPrevioTask, historialTask);
+
+            var resumen = resumenTask.Result;
+            _minutosPorDia = resumen.Dias.Concat(resumenPrevioTask.Result.Dias)
+                .GroupBy(d => d.Fecha)
+                .ToDictionary(g => g.Key, g => g.Sum(d => d.TotalMinutos));
+            _minutosMes = resumen.Dias.Sum(d => d.TotalMinutos);
+
+            // Meta = días hábiles (lunes a viernes) del mes por el umbral vigente de día completo.
+            var diasHabiles = Enumerable.Range(0, finMes.Day)
+                .Select(i => inicioMes.AddDays(i))
+                .Count(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
+            _minutosMeta = diasHabiles * resumen.MinutosDiaCompleto;
+
+            var registros = historialTask.Result.Items;
+            _minutosAprobados = registros.Where(r => r.EstaCerrado).Sum(TotalMinutos);
+            _minutosPendientes = registros.Where(r => !r.EstaCerrado && !r.EsRechazado).Sum(TotalMinutos);
+            _recientes = registros.OrderByDescending(r => r.FechaRegistro).ThenByDescending(r => r.Id).Take(4).ToList();
+        }
+        catch
+        {
+            _errorCarga = true;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private static int TotalMinutos(HistorialRegistroResponse item)
+    {
+        static int Tramo(TimeOnly? entrada, TimeOnly? salida) =>
+            entrada.HasValue && salida.HasValue ? Math.Max(0, (int)(salida.Value - entrada.Value).TotalMinutes) : 0;
+        return Tramo(item.HoraEntrada1, item.HoraSalida1)
+             + Tramo(item.HoraEntrada2, item.HoraSalida2)
+             + Tramo(item.HoraEntrada3, item.HoraSalida3);
+    }
+
+    private static string HorasDecimal(int minutos) => (minutos / 60m).ToString("0.#", CultureInfo.InvariantCulture);
+
+    private static string Tono(EstadoAprobacion estado) => estado switch
+    {
+        EstadoAprobacion.Aprobado => "success",
+        EstadoAprobacion.Rechazado => "error",
+        EstadoAprobacion.Pendiente => "warning",
+        _ => "info"
+    };
+
+    private static string IconoEstado(EstadoAprobacion estado) => estado switch
+    {
+        EstadoAprobacion.Aprobado => Icons.Material.Outlined.CheckCircle,
+        EstadoAprobacion.Rechazado => Icons.Material.Outlined.Cancel,
+        EstadoAprobacion.Pendiente => Icons.Material.Outlined.Schedule,
+        _ => Icons.Material.Outlined.HowToReg
+    };
+
+    private static string Nombre(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var completo = user.FindFirst("name")?.Value
+            ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+            ?? user.FindFirst("email")?.Value?.Split('@')[0]
+            ?? "KPG";
+        return completo.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? completo;
+    }
+}

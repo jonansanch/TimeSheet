@@ -1,0 +1,89 @@
+:root {
+    /* Primitives */
+    --kpg-navy-950: #052C45;
+    --kpg-navy-900: #073B5C;
+    --kpg-navy-800: #0B466A;
+    --kpg-navy-700: #0D557F;
+    --kpg-blue-700: #0A5F8A;
+    --kpg-blue-600: #087EA4;
+    --kpg-blue-500: #3B82F6;
+    --kpg-blue-100: #E6F0F7;
+    --kpg-slate-950: #172B3A;
+    --kpg-slate-800: #334155;
+    --kpg-slate-600: #64748B;
+    --kpg-slate-400: #8492A6;
+    --kpg-slate-300: #CBD5E1;
+    --kpg-slate-200: #E5EAF0;
+    --kpg-slate-100: #EEF2F6;
+    --kpg-slate-50: #F1F5F9;
+    --kpg-white: #ffffff;
+    --kpg-green-700: #15803D;
+    --kpg-green-50: #DCFCE7;
+    --kpg-amber-700: #B45309;
+    --kpg-amber-50: #FEF3C7;
+    --kpg-red-700: #DC2626;
+    --kpg-red-50: #FEE2E2;
+    --kpg-indigo-700: #2563EB;
+    --kpg-indigo-50: #DBEAFE;
+
+    /* Semantic colors */
+    --kpg-color-primary: var(--kpg-navy-800);
+    --kpg-color-primary-hover: var(--kpg-navy-900);
+    --kpg-color-primary-active: var(--kpg-navy-950);
+    --kpg-color-accent: var(--kpg-blue-600);
+    --kpg-text-primary: var(--kpg-slate-950);
+    --kpg-text-secondary: var(--kpg-slate-600);
+    --kpg-text-muted: var(--kpg-slate-400);
+    --kpg-text-inverse: var(--kpg-white);
+    --kpg-surface-page: #F6F8FA;
+    --kpg-surface-card: var(--kpg-white);
+    --kpg-surface-subtle: #F8FAFC;
+    --kpg-surface-sidebar: var(--kpg-navy-900);
+    --kpg-border-default: var(--kpg-slate-200);
+    --kpg-border-strong: var(--kpg-slate-300);
+    --kpg-focus-ring: #087EA4;
+    --kpg-status-success: var(--kpg-green-700);
+    --kpg-status-success-bg: var(--kpg-green-50);
+    --kpg-status-warning: var(--kpg-amber-700);
+    --kpg-status-warning-bg: var(--kpg-amber-50);
+    --kpg-status-warning-fill: #F59E0B;
+    --kpg-status-error: var(--kpg-red-700);
+    --kpg-status-error-bg: var(--kpg-red-50);
+    --kpg-status-info: var(--kpg-indigo-700);
+    --kpg-status-info-bg: var(--kpg-indigo-50);
+
+    /* Typography */
+    --kpg-font-sans: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --kpg-font-size-xs: 0.75rem;
+    --kpg-font-size-sm: 0.875rem;
+    --kpg-font-size-md: 1rem;
+    --kpg-font-size-lg: 1.125rem;
+    --kpg-font-size-xl: 1.25rem;
+    --kpg-font-size-2xl: 1.5rem;
+    --kpg-line-height-tight: 1.25;
+    --kpg-line-height-normal: 1.5;
+
+    /* Spacing, radii and elevation */
+    --kpg-space-1: 0.25rem;
+    --kpg-space-2: 0.5rem;
+    --kpg-space-3: 0.75rem;
+    --kpg-space-4: 1rem;
+    --kpg-space-5: 1.25rem;
+    --kpg-space-6: 1.5rem;
+    --kpg-space-8: 2rem;
+    --kpg-space-10: 2.5rem;
+    --kpg-radius-sm: 8px;
+    --kpg-radius-md: 10px;
+    --kpg-radius-lg: 12px;
+    --kpg-radius-pill: 999px;
+    --kpg-shadow-xs: 0 1px 2px rgba(16, 42, 61, 0.05);
+    --kpg-shadow-sm: 0 2px 8px rgba(16, 42, 61, 0.07);
+    --kpg-shadow-md: 0 8px 24px rgba(16, 42, 61, 0.09);
+    --kpg-transition-fast: 150ms cubic-bezier(.2,.8,.2,1);
+    --kpg-sidebar-width: 232px;
+    --kpg-topbar-height: 60px;
+    --kpg-nav-row-height: 38px;
+    --kpg-nav-active: #0d5f8f;
+    --kpg-content-max: 1440px;
+    --kpg-control-height: 40px;
+}

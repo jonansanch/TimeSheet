@@ -1,11 +1,29 @@
 @inherits LayoutComponentBase
+@inject IStringLocalizer<SharedResource> L
 
-<MudLayout>
-    <MudAppBar Elevation="0" Color="Color.Transparent" Fixed="true">
-        <MudSpacer />
-        <KpgLanguageSelector />
-    </MudAppBar>
-    <MudMainContent>
-        @Body
+<MudLayout Class="auth-layout">
+    <MudMainContent Class="auth-layout__main" Style="padding-top: 0;">
+        <div class="auth-shell">
+            <aside class="auth-brand" aria-label="KPG Timesheet">
+                <div class="auth-brand__content">
+                    <img class="auth-brand__logo" src="images/kpg-logo.jpg" alt="KPG" />
+                    <MudText Typo="Typo.h3" HtmlTag="p" Class="auth-brand__title">KPG Timesheet</MudText>
+                    <MudText Typo="Typo.h6" HtmlTag="p" Class="auth-brand__tagline">@L["Login_BrandTagline"]</MudText>
+
+                    <ul class="auth-brand__benefits" aria-label="@L["Login_BrandBenefitsLabel"]">
+                        <li><MudIcon Icon="@Icons.Material.Outlined.Schedule" aria-hidden="true" /><span>@L["Login_BrandBenefitTime"]</span></li>
+                        <li><MudIcon Icon="@Icons.Material.Outlined.Groups" aria-hidden="true" /><span>@L["Login_BrandBenefitTeam"]</span></li>
+                        <li><MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" aria-hidden="true" /><span>@L["Login_BrandBenefitResults"]</span></li>
+                    </ul>
+                </div>
+                <MudText Typo="Typo.caption" Class="auth-brand__footer">@L["Login_BrandValues"]</MudText>
+            </aside>
+
+            <main class="auth-content">
+                <div class="auth-content__language"><KpgLanguageSelector /></div>
+                <div class="auth-content__body">@Body</div>
+                <MudText Typo="Typo.caption" Class="auth-content__footer">© @DateTime.UtcNow.Year KPG Timesheet</MudText>
+            </main>
+        </div>
     </MudMainContent>
 </MudLayout>

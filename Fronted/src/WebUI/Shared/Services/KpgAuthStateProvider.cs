@@ -50,7 +50,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
         }
     }
 
-    public async Task LoginAsync(string email, string password)
+    public async Task LoginAsync(string email, string password, bool rememberMe = false)
     {
         var response = await _authRepository.LoginAsync(new LoginRequest(email, password));
 
@@ -58,7 +58,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
             throw new UnauthorizedAccessException("Credenciales invalidas.");
 
         _authState.SetToken(response.AccessToken);
-        await SetRefreshTokenInStorageAsync(response.RefreshToken);
+        await SetRefreshTokenInStorageAsync(response.RefreshToken, rememberMe);
         _sessionTimeout.StartTracking(response.ExpiresAt, response.WarningMinutes);
 
         NotifyAuthenticationStateChanged(Task.FromResult(BuildState(response.AccessToken)));
@@ -80,14 +80,14 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
 
     public async Task<bool> RefreshSessionAsync()
     {
-        var refreshToken = await GetRefreshTokenFromStorageAsync();
+        var (refreshToken, rememberMe) = await GetRefreshTokenWithSourceAsync();
         if (string.IsNullOrEmpty(refreshToken)) return false;
 
         var response = await _authRepository.RefreshAsync(refreshToken);
         if (response is null) return false;
 
         _authState.SetToken(response.AccessToken);
-        await SetRefreshTokenInStorageAsync(response.RefreshToken);
+        await SetRefreshTokenInStorageAsync(response.RefreshToken, rememberMe);
         _sessionTimeout.StartTracking(response.ExpiresAt, response.WarningMinutes);
 
         NotifyAuthenticationStateChanged(Task.FromResult(BuildState(response.AccessToken)));
@@ -96,7 +96,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
 
     private async Task<AuthenticationState> TryRestoreSessionAsync()
     {
-        var refreshToken = await GetRefreshTokenFromStorageAsync();
+        var (refreshToken, rememberMe) = await GetRefreshTokenWithSourceAsync();
         if (string.IsNullOrEmpty(refreshToken))
             return _anonymous;
 
@@ -108,7 +108,7 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
         }
 
         _authState.SetToken(response.AccessToken);
-        await SetRefreshTokenInStorageAsync(response.RefreshToken);
+        await SetRefreshTokenInStorageAsync(response.RefreshToken, rememberMe);
         _sessionTimeout.StartTracking(response.ExpiresAt, response.WarningMinutes);
 
         return BuildState(response.AccessToken);
@@ -122,19 +122,42 @@ public class KpgAuthStateProvider : AuthenticationStateProvider
 
     private async Task<string?> GetRefreshTokenFromStorageAsync()
     {
-        try { return await _js.InvokeAsync<string?>("sessionStorage.getItem", RefreshTokenKey); }
-        catch { return null; }
+        var (token, _) = await GetRefreshTokenWithSourceAsync();
+        return token;
     }
 
-    private async Task SetRefreshTokenInStorageAsync(string token)
+    /// <summary>"Recuérdame" decide el almacén: localStorage sobrevive a cerrar el navegador,
+    /// sessionStorage no. Al restaurar sesión no sabemos cuál se uso, así que se revisan los dos.</summary>
+    private async Task<(string? Token, bool RememberMe)> GetRefreshTokenWithSourceAsync()
     {
-        try { await _js.InvokeVoidAsync("sessionStorage.setItem", RefreshTokenKey, token); }
+        try
+        {
+            var persistente = await _js.InvokeAsync<string?>("localStorage.getItem", RefreshTokenKey);
+            if (!string.IsNullOrEmpty(persistente)) return (persistente, true);
+
+            var deSesion = await _js.InvokeAsync<string?>("sessionStorage.getItem", RefreshTokenKey);
+            return (deSesion, false);
+        }
+        catch { return (null, false); }
+    }
+
+    private async Task SetRefreshTokenInStorageAsync(string token, bool rememberMe)
+    {
+        try
+        {
+            await _js.InvokeVoidAsync(rememberMe ? "localStorage.setItem" : "sessionStorage.setItem", RefreshTokenKey, token);
+            await _js.InvokeVoidAsync(rememberMe ? "sessionStorage.removeItem" : "localStorage.removeItem", RefreshTokenKey);
+        }
         catch { }
     }
 
     private async Task RemoveRefreshTokenFromStorageAsync()
     {
-        try { await _js.InvokeVoidAsync("sessionStorage.removeItem", RefreshTokenKey); }
+        try
+        {
+            await _js.InvokeVoidAsync("sessionStorage.removeItem", RefreshTokenKey);
+            await _js.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
+        }
         catch { }
     }
 }

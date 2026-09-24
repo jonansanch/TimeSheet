@@ -7,45 +7,44 @@
 
 <PageTitle>@L["Reg_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
-    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
-    <div>
-        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">
-            @L["Reg_Title"]
-        </MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">
-            @L["Reg_Subtitle"]
-        </MudText>
-    </div>
-
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="4">
+<section class="registro-page">
+    <div class="registro-page__layout">
+        <div class="registro-page__calendar">
             <KpgMiniCalendario PrimerDiaMes="@_primerDiaMes"
                                MinutosPorDia="@_minutosPorDia"
                                MinutosDiaCompleto="@_minutosDiaCompleto"
                                DiasConExcepcionAprobada="@_diasConExcepcionAprobada"
                                FechaSeleccionada="@_fechaSeleccionada"
-                               VentanaDias="@_ventanaDias"
+                               VentanaDias="@_windowDays"
                                IsLoading="@_loadingCalendario"
                                OnMesAnterior="@IrMesAnterior"
                                OnMesSiguiente="@IrMesSiguiente"
                                OnDiaSeleccionado="@HandleDiaSeleccionado" />
-        </MudItem>
-        <MudItem xs="12" md="8">
-            <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado" />
-        </MudItem>
-    </MudGrid>
-</MudStack>
+        </div>
+        <div class="registro-page__form">
+            <KpgShiftForm @ref="_shiftForm" OnGuardado="@HandleRegistroGuardado">
+                <Header>
+                    <KpgPageHeader Title="@L["Reg_Title"]" Subtitle="@L["Reg_Subtitle"]">
+                        <Breadcrumbs>
+                            <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+                        </Breadcrumbs>
+                    </KpgPageHeader>
+                </Header>
+            </KpgShiftForm>
+        </div>
+    </div>
+</section>
 
 @code {
     private KpgShiftForm _shiftForm = default!;
 
+    private List<DateOnly> _diasConExcepcionAprobada = [];
+    private DateOnly? _fechaSeleccionada;
+
     private DateOnly _primerDiaMes = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private Dictionary<DateOnly, int> _minutosPorDia = [];
     private int _minutosDiaCompleto = 480;
-    private List<DateOnly> _diasConExcepcionAprobada = [];
-    private DateOnly? _fechaSeleccionada;
-    private int _ventanaDias = 3;
+    private int _windowDays = 3;
     private bool _loadingCalendario = true;
 
     private BreadcrumbItem[] _breadcrumbs => [
@@ -55,12 +54,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CargarVentanaAsync(), CargarCalendarioAsync(), CargarExcepcionesAsync());
-    }
-
-    private async Task CargarVentanaAsync()
-    {
-        try { _ventanaDias = await ParametroSistemaRepo.GetVentanaRetroactividadAsync(); } catch { }
+        try { _windowDays = await ParametroSistemaRepo.GetVentanaRetroactividadAsync(); } catch { }
+        await Task.WhenAll(CargarExcepcionesAsync(), CargarCalendarioAsync());
     }
 
     private async Task CargarExcepcionesAsync()
@@ -102,8 +97,9 @@
     private async Task HandleRegistroGuardado(DateOnly fecha)
     {
         _fechaSeleccionada = fecha;
-        // Se recarga el mes en lugar de marcar el dia localmente: el color depende
-        // del total de minutos del dia, que solo conoce el backend tras guardar.
-        await CargarCalendarioAsync();
+        // Lo recien guardado cambia el total del dia: hay que refrescar el calendario
+        // para que el punto pase de "sin registro"/"incompleto" a su estado real.
+        if (fecha.Year == _primerDiaMes.Year && fecha.Month == _primerDiaMes.Month)
+            await CargarCalendarioAsync();
     }
 }
