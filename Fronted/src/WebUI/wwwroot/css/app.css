@@ -183,17 +183,27 @@ body { font-size: 14px; }
 .kpg-shift-form__modality,
 .kpg-shift-form__place { grid-column: span 6; }
 .kpg-shift-form__description { grid-column: 1 / -1; min-width: 0; }
-.kpg-shift-form__modality { display: flex; flex-direction: column; gap: 2px; }
-.kpg-shift-form__modality-label { color: var(--kpg-text-secondary); font-size: var(--kpg-font-size-xs); line-height: 1; }
+.kpg-shift-form__modality { position: relative; display: flex; min-width: 0; flex-direction: column; }
+.kpg-shift-form__modality-label {
+    position: absolute;
+    top: -5px;
+    left: 12px;
+    z-index: 1;
+    padding-inline: 4px;
+    background: var(--kpg-surface-card);
+    color: var(--kpg-text-secondary);
+    font-size: var(--kpg-font-size-xs);
+    line-height: 1;
+}
 .kpg-shift-form__actions { display: flex; justify-content: flex-end; gap: var(--kpg-space-2); margin-top: var(--kpg-space-4); }
 .kpg-shift-form__actions .mud-button-root { min-height: var(--kpg-control-height); min-width: 120px; }
 .kpg-recent-suggestions { display: grid; gap: var(--kpg-space-2); margin: 0; padding: 0; list-style: none; }
 .kpg-recent-suggestions .kpg-list-row { width: 100%; }
 
 /* Control segmentado (Modalidad) */
-.kpg-segmented { display: inline-flex; overflow: hidden; border: 1px solid var(--kpg-color-primary); border-radius: var(--kpg-radius-sm); }
+.kpg-segmented { display: flex; width: 100%; min-width: 0; overflow: hidden; border: 1px solid var(--kpg-color-primary); border-radius: var(--kpg-radius-sm); }
 .kpg-segmented__option {
-    min-width: 76px; min-height: 38px; padding: 0 var(--kpg-space-3);
+    min-width: 0; min-height: 40px; flex: 1 1 50%; padding: 0 var(--kpg-space-3);
     border: 0; background: var(--kpg-surface-card); color: var(--kpg-color-primary);
     font: inherit; font-size: var(--kpg-font-size-sm); font-weight: 600; cursor: pointer;
 }
