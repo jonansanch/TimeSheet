@@ -11,229 +11,250 @@
 @inject AuthenticationStateProvider AuthState
 @implements IAsyncDisposable
 
-<MudPaper Elevation="1" Class="pa-6">
-    <MudStack Spacing="4">
-        @if (!string.IsNullOrWhiteSpace(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
-        }
+<div class="kpg-shift-form">
+    <div class="kpg-shift-form__top">
+        <div class="kpg-shift-form__header">@Header</div>
+        <div class="kpg-shift-form__date">
+            <KpgDatePicker Label="@L["Label_Date"]"
+                           WindowDays="@_windowDays"
+                           Date="@_fecha"
+                           OnDateSelected="HandleDateSelected" />
+        </div>
+    </div>
 
-        @if (_guardado)
-        {
-            <MudAlert Severity="Severity.Success" role="status" Icon="@Icons.Material.Filled.EventAvailable">
-                <MudText Typo="Typo.body1"><b>@L["Reg_SavedTitle"]</b> — @_fecha?.ToString("dd/MM/yyyy")</MudText>
-                <MudText Typo="Typo.body2">@L["Reg_TotalHours"] @TotalHorasFormateado @L["Reg_TotalHoursSuffix"]</MudText>
-            </MudAlert>
-        }
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+    }
 
-        <KpgDatePicker Label="@L["Label_Date"]"
-                       WindowDays="@_windowDays"
-                       Date="@_fecha"
-                       OnDateSelected="HandleDateSelected" />
+    @if (_guardado)
+    {
+        <MudAlert Severity="Severity.Success" role="status" Dense="true" Icon="@Icons.Material.Filled.EventAvailable">
+            <b>@L["Reg_SavedTitle"]</b> — @_fecha?.ToString("dd/MM/yyyy") · @L["Reg_TotalHours"] @TotalHorasFormateado @L["Reg_TotalHoursSuffix"]
+        </MudAlert>
+    }
 
-        @if (EsFueraDeVentana)
-        {
-            @* El registro ya no se bloquea: se llena completo y viaja con la justificacion. *@
-            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
-                @string.Format(L["Reg_ExceptionWarning"], _windowDays)
-                <MudText Typo="Typo.body2" Class="mt-1">@L["Reg_ExceptionFillForm"]</MudText>
-            </MudAlert>
-        }
+    @if (EsFueraDeVentana)
+    {
+        @* El registro ya no se bloquea: se llena completo y viaja con la justificacion. *@
+        <MudAlert Severity="Severity.Warning" Dense="true">
+            @string.Format(L["Reg_ExceptionWarning"], _windowDays) @L["Reg_ExceptionFillForm"]
+        </MudAlert>
+    }
 
-        @if (_excepcionEnviada)
-        {
-            <MudAlert Severity="Severity.Success" Dense="true" Class="mt-1">
-                @L["Reg_ExceptionSent"] @_excepcionFecha.ToString("dd/MM/yyyy").
-            </MudAlert>
-        }
+    @if (_excepcionEnviada)
+    {
+        <MudAlert Severity="Severity.Success" Dense="true">
+            @L["Reg_ExceptionSent"] @_excepcionFecha.ToString("dd/MM/yyyy").
+        </MudAlert>
+    }
 
-        <KpgRecentSuggestions OnSuggestionSelected="HandleSuggestionSelected" />
+    @if (_voiceCamposNoDetectados.Count > 0)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true"
+                  ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _voiceCamposNoDetectados = [])">
+            Completar manualmente: @string.Join(", ", _voiceCamposNoDetectados)
+        </MudAlert>
+    }
 
-        @* ── Entrada por voz ─────────────────────────────── *@
-        @if (_browserSupportsVoice)
-        {
-            <MudStack Row="true" Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Class="mb-n2">
-                @if (_voiceState == VoiceState.Processing)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
-                    <MudText Typo="Typo.caption" Class="ml-1">Procesando...</MudText>
-                }
-                else
-                {
-                    <MudTooltip Text="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")">
-                        <MudIconButton Icon="@(_voiceState == VoiceState.Listening ? Icons.Material.Filled.MicOff : Icons.Material.Filled.Mic)"
-                                       Color="@(_voiceState == VoiceState.Listening ? Color.Error : Color.Default)"
-                                       Class="@(_voiceState == VoiceState.Listening ? "kpg-voice-pulse" : "")"
-                                       OnClick="ToggleVoiceAsync"
-                                       aria-label="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")" />
-                    </MudTooltip>
-                }
-            </MudStack>
-        }
+    @* Lo ya registrado de ese dia y proyecto: sin esto el usuario reescribia el
+       Horario 1 sin saber que estaba ocupado y solo veia un error generico. *@
+    @if (_registroExistente is not null)
+    {
+        <MudAlert Severity="@(TodosLosHorariosOcupados ? Severity.Warning : Severity.Info)" Dense="true">
+            @(TodosLosHorariosOcupados ? L["Reg_DayFull"] : L["Reg_DayHasRecord"])
+        </MudAlert>
+    }
 
-        @if (_voiceCamposNoDetectados.Count > 0)
-        {
-            <MudAlert Severity="Severity.Warning" Dense="true"
-                      ShowCloseIcon="true"
-                      CloseIconClicked="@(() => _voiceCamposNoDetectados = [])">
-                Completar manualmente: @string.Join(", ", _voiceCamposNoDetectados)
-            </MudAlert>
-        }
-
-        <MudForm @ref="_form" @bind-IsValid="_formIsValid">
-
-            @* Lo ya registrado de ese dia y proyecto: sin esto el usuario reescribia el
-               Horario 1 sin saber que estaba ocupado y solo veia un error generico. *@
-            @if (_registroExistente is not null)
-            {
-                <MudAlert Severity="@(TodosLosHorariosOcupados ? Severity.Warning : Severity.Info)"
-                          Dense="true" Class="mt-2">
-                    @(TodosLosHorariosOcupados ? L["Reg_DayFull"] : L["Reg_DayHasRecord"])
-                </MudAlert>
-            }
-
-            @* ── Horarios 1 / 2 / 3 ────────────────────────── *@
-            @for (var i = 1; i <= TotalHorarios; i++)
-            {
-                var numero = i;
-                var ocupado = BloqueOcupado(numero);
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"
-                          Class="@(numero == 1 ? "mb-1 mt-2" : "mb-1 mt-3")">
-                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">@L[$"Reg_Shift{numero}"]</MudText>
-                    @if (ocupado)
+    <MudForm @ref="_form" @bind-IsValid="_formIsValid" Class="kpg-shift-form__form">
+        <div class="kpg-shift-form__grid">
+            @* ── Tramos de horario ─────────────────────────── *@
+            <KpgCard Class="kpg-shift-form__schedules">
+                <div class="kpg-card__head">
+                    <h2 class="kpg-card__title">@L["Reg_Schedules"]</h2>
+                    @if (_browserSupportsVoice)
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined"
-                                 Icon="@Icons.Material.Filled.Lock">
-                            @L["Reg_ShiftAlreadySaved"]
-                        </MudChip>
+                        @if (_voiceState == VoiceState.Processing)
+                        {
+                            <span class="kpg-shift-form__voice-status">
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                                <MudText Typo="Typo.caption">Procesando...</MudText>
+                            </span>
+                        }
+                        else
+                        {
+                            <MudTooltip Text="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")">
+                                <MudIconButton Icon="@(_voiceState == VoiceState.Listening ? Icons.Material.Filled.MicOff : Icons.Material.Outlined.Mic)"
+                                               Color="@(_voiceState == VoiceState.Listening ? Color.Error : Color.Default)"
+                                               Size="Size.Small"
+                                               Class="@(_voiceState == VoiceState.Listening ? "kpg-voice-pulse" : "")"
+                                               OnClick="ToggleVoiceAsync"
+                                               aria-label="@(_voiceState == VoiceState.Listening ? "Detener dictado" : "Dictar registro")" />
+                            </MudTooltip>
+                        }
                     }
-                </MudStack>
-                <MudGrid Spacing="2">
-                    <MudItem xs="12" md="6">
-                        <MudTextField T="string"
-                                      Label="@L["Label_Entry"]"
-                                      Variant="Variant.Outlined"
-                                      InputType="InputType.Time"
-                                      step="@CuartoHoraStep"
-                                      Disabled="@ocupado"
-                                      Value="@(ocupado ? TsToStr(EntradaGuardada(numero)) : TsToStr(_model.GetEntrada(numero)))"
-                                      ValueChanged="@(v => _model.SetEntrada(numero, ParseTs(v)))"
-                                      Error="@(!ocupado && NoEsCuartoDeHora(_model.GetEntrada(numero)))"
-                                      ErrorText="@L["Reg_QuarterHourOnly"]"
-                                      aria-label="@($"{L["Label_Entry"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField T="string"
-                                      Label="@L["Label_Exit"]"
-                                      Variant="Variant.Outlined"
-                                      InputType="InputType.Time"
-                                      step="@CuartoHoraStep"
-                                      Disabled="@ocupado"
-                                      Value="@(ocupado ? TsToStr(SalidaGuardada(numero)) : TsToStr(_model.GetSalida(numero)))"
-                                      ValueChanged="@(v => _model.SetSalida(numero, ParseTs(v)))"
-                                      Error="@(!ocupado && (IsInvalidBloque(numero) || NoEsCuartoDeHora(_model.GetSalida(numero))))"
-                                      ErrorText="@(IsInvalidBloque(numero) ? L["Reg_ExitAfterEntry"] : L["Reg_QuarterHourOnly"])"
-                                      aria-label="@($"{L["Label_Exit"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
-                    </MudItem>
-                </MudGrid>
-            }
+                </div>
 
-            @if (_sinTurno)
-            {
-                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
-                    @L["Reg_AtLeastOneShift"]
-                </MudAlert>
-            }
+                <section class="shift-table" aria-label="@L["Reg_Schedules"]">
+                    <div class="shift-table__head" aria-hidden="true">
+                        <span>@L["Label_Entry"]</span><span>@L["Label_Exit"]</span><span>@L["Label_Duration"]</span><span></span>
+                    </div>
+                    @for (var i = 1; i <= TramosVisibles; i++)
+                    {
+                        var numero = i;
+                        var ocupado = BloqueOcupado(numero);
+                        <div class="@($"shift-table__row{(ocupado ? " shift-table__row--saved" : "")}")">
+                            <MudTextField T="string"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          InputType="InputType.Time"
+                                          step="@CuartoHoraStep"
+                                          Disabled="@ocupado"
+                                          Value="@(ocupado ? TsToStr(EntradaGuardada(numero)) : TsToStr(_model.GetEntrada(numero)))"
+                                          ValueChanged="@(v => _model.SetEntrada(numero, ParseTs(v)))"
+                                          Error="@(!ocupado && NoEsCuartoDeHora(_model.GetEntrada(numero)))"
+                                          ErrorText="@L["Reg_QuarterHourOnly"]"
+                                          aria-label="@($"{L["Label_Entry"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
+                            <MudTextField T="string"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          InputType="InputType.Time"
+                                          step="@CuartoHoraStep"
+                                          Disabled="@ocupado"
+                                          Value="@(ocupado ? TsToStr(SalidaGuardada(numero)) : TsToStr(_model.GetSalida(numero)))"
+                                          ValueChanged="@(v => _model.SetSalida(numero, ParseTs(v)))"
+                                          Error="@(!ocupado && (IsInvalidBloque(numero) || NoEsCuartoDeHora(_model.GetSalida(numero))))"
+                                          ErrorText="@(IsInvalidBloque(numero) ? L["Reg_ExitAfterEntry"] : L["Reg_QuarterHourOnly"])"
+                                          aria-label="@($"{L["Label_Exit"].Value} {L[$"Reg_Shift{numero}"].Value}")" />
+                            <output class="shift-table__duration">@(ocupado ? DuracionGuardada(numero) : DuracionBloque(numero))</output>
+                            @if (ocupado)
+                            {
+                                <MudTooltip Text="@L["Reg_ShiftAlreadySaved"]">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Lock" Size="Size.Small" Color="Color.Success"
+                                             aria-label="@($"{L[$"Reg_Shift{numero}"].Value}: {L["Reg_ShiftAlreadySaved"].Value}")" />
+                                </MudTooltip>
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                               Color="Color.Error" Size="Size.Small"
+                                               aria-label="@($"{L["Btn_Delete"].Value} {L[$"Reg_Shift{numero}"].Value}")"
+                                               OnClick="@(() => QuitarTramo(numero))" />
+                            }
+                        </div>
+                    }
+                    <div class="shift-table__foot">
+                        @if (TramosVisibles < TotalHorarios)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="AgregarTramo">
+                                @L["Reg_AddShift"]
+                            </MudButton>
+                        }
+                        <span class="shift-table__total">@L["Reg_DayTotal"] <strong>@TotalFormulario</strong></span>
+                    </div>
+                </section>
+                @if (_sinTurno)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                        @L["Reg_AtLeastOneShift"]
+                    </MudAlert>
+                }
+            </KpgCard>
 
-            @* ── Datos del día ──────────────────────────────── *@
-            <MudText Typo="Typo.subtitle2" Class="mb-1 mt-3" Color="Color.Primary">@L["Reg_DayData"]</MudText>
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="6">
-                    <MudSelect T="int?"
-                               Label="@L["Label_Client"]"
-                               Variant="Variant.Outlined"
-                               Value="@_model.ClienteId"
-                               ValueChanged="HandleClienteChanged"
-                               Required="true"
-                               RequiredError="@L["Reg_ClientRequired"]"
-                               aria-label="@L["Label_Client"]">
-                        @foreach (var c in _catalogoClientes)
-                        {
-                            <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    @* Sin cliente elegido no se ofrece ningun proyecto: antes se listaban
-                       los de todos los clientes y se podia armar una pareja invalida. *@
-                    <MudSelect T="int?"
-                               Label="@L["Label_Project"]"
-                               Variant="Variant.Outlined"
-                               Value="@_model.ProyectoId"
-                               ValueChanged="HandleProyectoChanged"
-                               Disabled="@(_model.ClienteId is null)"
-                               Required="true"
-                               RequiredError="@L["Reg_ProjectRequired"]"
-                               HelperText="@(_model.ClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
-                               aria-label="@L["Label_Project"]">
-                        @foreach (var p in ProyectosDelCliente)
-                        {
-                            <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudText id="modalidad-label" Typo="Typo.body2" Class="mb-1">@L["Label_Modality"] *</MudText>
-                    <div role="radiogroup" aria-labelledby="modalidad-label"
-                         style="display:flex;gap:6px;flex-wrap:wrap;">
+            @* ── Usados recientemente ──────────────────────── *@
+            <KpgCard Class="kpg-shift-form__recent">
+                <h2 class="kpg-card__title">@L["Reg_RecentTitle"]</h2>
+                <KpgRecentSuggestions OnSuggestionSelected="HandleSuggestionSelected" />
+            </KpgCard>
+        </div>
+
+        @* ── Información del registro ─────────────────────── *@
+        <KpgCard Class="kpg-shift-form__daydata">
+            <h2 class="kpg-card__title">@L["Reg_DayData"]</h2>
+            <div class="kpg-shift-form__fields">
+                <MudSelect T="int?"
+                           Label="@L["Label_Client"]"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="@_model.ClienteId"
+                           ValueChanged="HandleClienteChanged"
+                           Required="true"
+                           RequiredError="@L["Reg_ClientRequired"]"
+                           aria-label="@L["Label_Client"]">
+                    @foreach (var c in _catalogoClientes)
+                    {
+                        <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+                @* Sin cliente elegido no se ofrece ningun proyecto: antes se listaban
+                   los de todos los clientes y se podia armar una pareja invalida. *@
+                <MudSelect T="int?"
+                           Label="@L["Label_Project"]"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="@_model.ProyectoId"
+                           ValueChanged="HandleProyectoChanged"
+                           Disabled="@(_model.ClienteId is null)"
+                           Required="true"
+                           RequiredError="@L["Reg_ProjectRequired"]"
+                           HelperText="@(_model.ClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
+                           aria-label="@L["Label_Project"]">
+                    @foreach (var p in ProyectosDelCliente)
+                    {
+                        <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string" Label="@L["Label_Resource"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]"
+                           HelperText="@(_puestoDelUsuario is null ? null : L["Reg_ResourceFromPuesto"].Value)">
+                    @foreach (var r in _recursos)
+                    {
+                        <MudSelectItem Value="@r">@r</MudSelectItem>
+                    }
+                </MudSelect>
+                <div class="kpg-shift-form__modality">
+                    <span id="modalidad-label" class="kpg-shift-form__modality-label">@L["Label_Modality"] *</span>
+                    <div role="radiogroup" aria-labelledby="modalidad-label" class="kpg-segmented">
                         @foreach (var m in _modalidades)
                         {
                             var isSelected = _model.Modalidad == m;
                             var isFirst = _modalidades.Count > 0 && m == _modalidades[0];
                             var tabIdx = isSelected || (string.IsNullOrWhiteSpace(_model.Modalidad) && isFirst) ? 0 : -1;
-                            <MudButton Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       role="radio"
-                                       aria-checked="@(isSelected ? "true" : "false")"
-                                       tabindex="@tabIdx"
-                                       @onkeydown="@(e => HandleModalidadKey(e))"
-                                       OnClick="@(() => { _model.Modalidad = m; _touchedModalidad = true; StateHasChanged(); })">
+                            <button type="button"
+                                    class="@($"kpg-segmented__option{(isSelected ? " kpg-segmented__option--selected" : "")}")"
+                                    role="radio"
+                                    aria-checked="@(isSelected ? "true" : "false")"
+                                    tabindex="@tabIdx"
+                                    @onkeydown="@(e => HandleModalidadKey(e))"
+                                    @onclick="@(() => { _model.Modalidad = m; _touchedModalidad = true; })">
                                 @m
-                            </MudButton>
+                            </button>
                         }
                     </div>
                     @if (string.IsNullOrWhiteSpace(_model.Modalidad) && _touchedModalidad)
                     {
                         <MudText Typo="Typo.caption" Color="Color.Error">@L["Reg_ModalityRequired"]</MudText>
                     }
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudSelect T="string" Label="@L["Label_Resource"]" Variant="Variant.Outlined"
-                               @bind-Value="_model.Recurso" Required="true" RequiredError="@L["Reg_ResourceRequired"]"
-                               HelperText="@(_puestoDelUsuario is null ? null : L["Reg_ResourceFromPuesto"].Value)">
-                        @foreach (var r in _recursos)
-                        {
-                            <MudSelectItem Value="@r">@r</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudSelect T="string" Label="@L["Label_Place"]" Variant="Variant.Outlined"
+                </div>
+                <div class="kpg-shift-form__place">
+                    <MudSelect T="string" Label="@L["Label_Place"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                                @bind-Value="_model.Lugar" Required="true" RequiredError="@L["Reg_PlaceRequired"]">
                         @foreach (var l in _lugares)
                         {
                             <MudSelectItem Value="@l">@l</MudSelectItem>
                         }
                     </MudSelect>
-                </MudItem>
-                <MudItem xs="12">
-                    @* Sugiere descripciones que el usuario ya escribio: la mayoria de los
-                       dias repite tareas y volver a teclearlas completas es puro trabajo. *@
+                </div>
+                @* Sugiere descripciones que el usuario ya escribio: la mayoria de los
+                   dias repite tareas y volver a teclearlas completas es puro trabajo. *@
+                <div class="kpg-shift-form__description">
                     <MudAutocomplete T="string"
                                      Label="@L["Label_Description"]"
                                      Variant="Variant.Outlined"
-                                     Lines="3"
+                                     Margin="Margin.Dense"
                                      Value="@_model.Descripcion"
                                      ValueChanged="@(v => _model.Descripcion = v)"
                                      SearchFunc="BuscarDescripcionesAsync"
@@ -249,31 +270,42 @@
                                      ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
                                      HelperText="@(_descripcionesUsadas.Count > 0 ? L["Reg_DescriptionSuggest"].Value : null)"
                                      Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
-                </MudItem>
-            </MudGrid>
+                </div>
+            </div>
 
-            <MudButton Variant="Variant.Filled"
-                       Color="@(EsFueraDeVentana ? Color.Warning : Color.Primary)"
-                       FullWidth="true"
-                       Disabled="@_isSaving"
-                       OnClick="SaveAsync"
-                       Class="mt-4">
-                @if (_isSaving)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>@L["Reg_Saving"]</span>
-                }
-                else
-                {
-                    <span>@TextoBotonGuardar</span>
-                }
-            </MudButton>
-        </MudForm>
-    </MudStack>
-</MudPaper>
+            <div class="kpg-shift-form__actions">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Disabled="@_isSaving"
+                           OnClick="CancelarAsync">
+                    @L["Btn_Cancel"]
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="@(EsFueraDeVentana ? Color.Warning : Color.Primary)"
+                           StartIcon="@(_isSaving ? null : Icons.Material.Outlined.Save)"
+                           Disabled="@_isSaving"
+                           OnClick="SaveAsync">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>@L["Reg_Saving"]</span>
+                    }
+                    else
+                    {
+                        <span>@TextoBotonGuardar</span>
+                    }
+                </MudButton>
+            </div>
+        </KpgCard>
+    </MudForm>
+</div>
+
 
 @code {
     [Parameter] public EventCallback<DateOnly> OnGuardado { get; set; }
+
+    /// <summary>Encabezado de la pagina; comparte fila con el selector de fecha.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
 
     /// <summary>Bloques horarios que admite un registro diario (ver RegistroHoras.TotalBloques).</summary>
     private const int TotalHorarios = 3;
@@ -522,6 +554,66 @@
             ? (int)(salida.Value - entrada.Value).TotalMinutes
             : 0;
 
+    private static int Minutos(TimeSpan? entrada, TimeSpan? salida) =>
+        entrada.HasValue && salida.HasValue
+            ? Math.Max(0, (int)(salida.Value - entrada.Value).TotalMinutes)
+            : 0;
+
+    private string DuracionBloque(int numero)
+    {
+        var minutos = Minutos(_model.GetEntrada(numero), _model.GetSalida(numero));
+        return minutos > 0 ? $"{minutos / 60}h {minutos % 60:00}m" : "—";
+    }
+
+    private string TotalFormulario
+    {
+        get
+        {
+            var minutos = Enumerable.Range(1, TotalHorarios)
+                .Sum(n => Minutos(_model.GetEntrada(n), _model.GetSalida(n)));
+            return $"{minutos / 60}h {minutos % 60:00}m";
+        }
+    }
+
+    private void LimpiarBloque(int numero)
+    {
+        _model.SetEntrada(numero, null);
+        _model.SetSalida(numero, null);
+    }
+
+    /// <summary>Filas que el usuario pidio ver; las que tienen datos o ya estan guardadas se muestran siempre.</summary>
+    private int _tramosSolicitados = 2;
+
+    private bool BloqueConDatos(int numero) =>
+        BloqueOcupado(numero) || _model.GetEntrada(numero).HasValue || _model.GetSalida(numero).HasValue;
+
+    private int TramosVisibles
+    {
+        get
+        {
+            var ultimoConDatos = Enumerable.Range(1, TotalHorarios).LastOrDefault(BloqueConDatos);
+            // Si todas las filas visibles ya estan guardadas, se ofrece la siguiente libre.
+            var ultimoOcupado = Enumerable.Range(1, TotalHorarios).LastOrDefault(BloqueOcupado);
+            var minimo = ultimoOcupado > 0 ? ultimoOcupado + 1 : 1;
+            return Math.Clamp(Math.Max(Math.Max(_tramosSolicitados, ultimoConDatos), minimo), 1, TotalHorarios);
+        }
+    }
+
+    private void AgregarTramo() => _tramosSolicitados = Math.Min(TotalHorarios, TramosVisibles + 1);
+
+    private void QuitarTramo(int numero)
+    {
+        LimpiarBloque(numero);
+        if (numero == TramosVisibles && numero > 1)
+            _tramosSolicitados = numero - 1;
+    }
+
+    private string DuracionGuardada(int numero)
+    {
+        var minutos = Minutos(EntradaGuardada(numero), SalidaGuardada(numero));
+        return minutos > 0 ? $"{minutos / 60}h {minutos % 60:00}m" : "—";
+    }
+
     private static string TsToStr(TimeSpan? t) =>
         t.HasValue ? t.Value.ToString(@"hh\:mm") : string.Empty;
 
@@ -583,6 +675,21 @@
         _sinTurno         = false;
         _errorMessage     = null;
         _excepcionEnviada = false;
+        await CargarRegistroExistenteAsync();
+    }
+
+    /// <summary>Descarta lo que el usuario llevaba tecleado y recarga el estado guardado
+    /// de la fecha actual, igual que si acabara de seleccionarla.</summary>
+    private async Task CancelarAsync()
+    {
+        _model.Reset();
+        _model.Recurso    = _puestoDelUsuario;
+        _touchedModalidad = false;
+        _guardado         = false;
+        _response         = null;
+        _errorMessage     = null;
+        _sinTurno         = false;
+        _form.ResetValidation();
         await CargarRegistroExistenteAsync();
     }
 

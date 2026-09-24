@@ -9,12 +9,12 @@
 
 <PageTitle>@L["Dash_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="4">
+<MudStack Spacing="3" Class="dashboard-page">
 
     <KpgPageHeader Title="@L["Dash_Title"]" Subtitle="@L["Dash_Subtitle"]">
         <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
         <Actions>
-        <MudDatePicker Label="@L["Label_Date"]"
+        <MudDatePicker Label="@L["Dash_DailyStatusDate"]"
                        Date="_fechaDate"
                        DateChanged="OnFechaChangedAsync"
                        MaxDate="DateTime.Today"
@@ -22,7 +22,8 @@
                        PickerVariant="PickerVariant.Dialog"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
-                       Style="max-width:180px;" />
+                       HelperText="@L["Dash_DailyStatusDateHelp"]"
+                       Style="max-width:220px;" />
         </Actions>
     </KpgPageHeader>
 
@@ -44,108 +45,49 @@
     }
     else if (_estado is not null)
     {
-        <MudGrid>
-            <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="@L["Dash_TotalEmployees"]" Value="_estado.TotalEmpleados"
-                             Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="@L["Dash_Complete"]" Value="_estado.TotalCompletos"
-                             Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="@L["Dash_Partial"]" Value="_estado.TotalParciales"
-                             Icon="@Icons.Material.Filled.Pending" Color="Color.Warning" />
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <KpgStatCard Label="@L["Dash_Pending"]" Value="_estado.TotalPendientes"
-                             Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Default" />
-            </MudItem>
-        </MudGrid>
+        <section class="kpg-kpi-row" aria-label="@L["Dash_Subtitle"]">
+            <KpgStatCard Circular="true" Label="@L["Dash_TotalEmployees"]" Value="_estado.TotalEmpleados"
+                         Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
+            <KpgStatCard Circular="true" Label="@L["Dash_Complete"]" Value="_estado.TotalCompletos"
+                         Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+            <KpgStatCard Circular="true" Label="@L["Dash_Partial"]" Value="_estado.TotalParciales"
+                         Icon="@Icons.Material.Filled.Pending" Color="Color.Warning" />
+            <KpgStatCard Circular="true" Label="@L["Dash_Pending"]" Value="_estado.TotalPendientes"
+                         Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Error" />
+        </section>
 
-        @if (_estado.Equipo.Count == 0)
-        {
-            <MudAlert Severity="Severity.Info">@L["Dash_NoTeamMembers"]</MudAlert>
-        }
-        else
-        {
-            <MudGrid>
-                @foreach (var miembro in _estado.Equipo)
+        <section class="dashboard-workspace" aria-label="@L["Dash_WorkspaceAriaLabel"]">
+            <KpgCard Class="dashboard-workspace__team">
+                <div class="kpg-card__head">
+                    <h2 class="kpg-card__title">@L["Dash_TeamStatusTitle"]</h2>
+                    <MudLink Href="/aprobaciones" Typo="Typo.body2">@L["Common_ViewAll"]</MudLink>
+                </div>
+                @if (_estado.Equipo.Count == 0)
                 {
-                    <MudItem xs="12" sm="6" md="4" lg="3">
-                        <KpgTeamStatusCard Nombre="@miembro.Nombre"
-                                           Estado="@miembro.Estado"
-                                           TotalMinutos="@miembro.TotalMinutos"
-                                           HorariosRegistrados="@miembro.HorariosRegistrados" />
-                    </MudItem>
+                    <KpgEmptyState Icon="@Icons.Material.Outlined.GroupOff" Title="@L["Dash_NoTeamMembers"]" />
                 }
-            </MudGrid>
-        }
-    }
-
-    @if (_isLoadingCriticos)
-    {
-        <MudSkeleton Width="100%" Height="60px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
-    }
-    else if (!string.IsNullOrWhiteSpace(_errorCriticos))
-    {
-        <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorCriticos</MudAlert>
-    }
-    else if (_criticos is not null && _criticos.Pendientes.Count > 0)
-    {
-        <MudExpansionPanels Elevation="2" Style="border-radius:12px;">
-            <MudExpansionPanel>
-                <TitleContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
-                        <MudText Style="font-weight:600;">@L["Dash_CriticalPending"]</MudText>
-                        <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">
-                            @_criticos.Pendientes.Count
-                        </MudChip>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
-                            @string.Format(L["Dash_CriticalPendingSubtitle"], _criticos.Umbral)
-                        </MudText>
-                    </MudStack>
-                </TitleContent>
-                <ChildContent>
-                    <MudList T="PendienteCriticoDto" Dense="true">
-                        @foreach (var p in _criticos.Pendientes)
+                else
+                {
+                    <div class="dashboard-team-list" role="list">
+                        @foreach (var miembro in _estado.Equipo)
                         {
-                            <MudListItem T="PendienteCriticoDto">
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
-                                    <MudIcon Icon="@Icons.Material.Filled.PersonOff"
-                                             Color="Color.Error" Size="Size.Small" />
-                                    <MudText Style="font-weight:600;">@p.Nombre</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@p.Email</MudText>
-                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
-                                             Color="@(p.DiasSinRegistro >= 999 ? Color.Error : Color.Warning)">
-                                        @(p.DiasSinRegistro >= 999 ? L["Dash_NoDaysWithout"].Value : string.Format(L["Dash_DaysWithout"], p.DiasSinRegistro))
-                                    </MudChip>
-                                </MudStack>
-                            </MudListItem>
+                            <KpgTeamStatusCard Nombre="@miembro.Nombre" Estado="@miembro.Estado" TotalMinutos="@miembro.TotalMinutos" HorariosRegistrados="@miembro.HorariosRegistrados" />
                         }
-                    </MudList>
-                </ChildContent>
-            </MudExpansionPanel>
-        </MudExpansionPanels>
-    }
-
-    <MudDivider />
-
-    <MudStack Spacing="2">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
-            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Dash_HoursDistTitle"]</MudText>
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
-                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" OverrideStyles="false">
-                    <MudButton Color="@(_periodo == Periodo.Hoy ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Hoy))">@L["Status_Today"]</MudButton>
-                    <MudButton Color="@(_periodo == Periodo.Semana ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Semana))">@L["Status_ThisWeek"]</MudButton>
-                    <MudButton Color="@(_periodo == Periodo.Mes ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Mes))">@L["Status_ThisMonth"]</MudButton>
-                    <MudButton Color="@(_periodo == Periodo.Personalizado ? Color.Primary : Color.Default)"
-                               OnClick="@(() => CambiarPeriodoAsync(Periodo.Personalizado))">@L["Status_Custom"]</MudButton>
-                </MudButtonGroup>
+                    </div>
+                }
+            </KpgCard>
+            <KpgCard Class="dashboard-workspace__chart">
+                <div class="kpg-card__head">
+                    <h2 class="kpg-card__title">@L["Dash_HoursDistTitle"]</h2>
+                    <MudSelect T="Periodo" Value="_periodo" ValueChanged="CambiarPeriodoAsync"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                               Class="dashboard-period-select" aria-label="@L["Label_Period"]">
+                        <MudSelectItem Value="Periodo.Hoy">@L["Status_Today"]</MudSelectItem>
+                        <MudSelectItem Value="Periodo.Semana">@L["Status_ThisWeek"]</MudSelectItem>
+                        <MudSelectItem Value="Periodo.Mes">@L["Status_ThisMonth"]</MudSelectItem>
+                        <MudSelectItem Value="Periodo.Personalizado">@L["Status_Custom"]</MudSelectItem>
+                    </MudSelect>
+                </div>
                 @if (_periodo == Periodo.Personalizado)
                 {
                     <MudDateRangePicker DateRange="_rangoPersonalizado"
@@ -155,51 +97,63 @@
                                         PickerVariant="PickerVariant.Dialog"
                                         Variant="Variant.Outlined"
                                         Margin="Margin.Dense"
+                                        Class="mb-2"
                                         Style="max-width:280px;" />
                 }
-            </MudStack>
-        </MudStack>
-
-        @if (_isLoadingDistribucion)
-        {
-            <MudSkeleton Width="100%" Height="300px" SkeletonType="SkeletonType.Rectangle" Style="border-radius:12px;" />
-        }
-        else if (!string.IsNullOrWhiteSpace(_errorDistribucion))
-        {
-            <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorDistribucion</MudAlert>
-        }
-        else if (_distribucion is not null)
-        {
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Size="Size.Small" />
-                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    @L["Dash_TeamTotal"] <strong>@KpgFormat.Horas(_distribucion.TotalHorasEquipo, 1) h</strong>
-                    (@_distribucion.Desde.ToString("dd/MM") – @_distribucion.Hasta.ToString("dd/MM/yyyy"))
-                </MudText>
-            </MudStack>
-
-            @if (_distribucion.Consultores.Count == 0)
-            {
-                <MudAlert Severity="Severity.Info">@L["Dash_NoHoursInPeriod"]</MudAlert>
-            }
-            else
-            {
-                <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
-                    <ApexChart TItem="DistribucionConsultorDto"
-                               Title=""
-                               Options="_chartOptions"
-                               Height="@Math.Max(200, _distribucion.Consultores.Count * 48)">
-                        <ApexPointSeries TItem="DistribucionConsultorDto"
-                                         Items="_distribucion.Consultores"
-                                         Name="@L["Label_Hours"]"
-                                         XValue="@(e => e.Nombre)"
-                                         YValue="@(e => e.TotalHoras)"
-                                         SeriesType="SeriesType.Bar" />
+                @if (_isLoadingDistribucion) { <MudSkeleton Height="220px" /> }
+                else if (!string.IsNullOrWhiteSpace(_errorDistribucion)) { <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorDistribucion</MudAlert> }
+                else if (_distribucion is null || _distribucion.Consultores.Count == 0) { <KpgEmptyState Icon="@Icons.Material.Outlined.BarChart" Title="@L["Dash_NoHoursInPeriod"]" /> }
+                else
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Size="Size.Small" />
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            @L["Dash_TeamTotal"] <strong>@KpgFormat.Horas(_distribucion.TotalHorasEquipo, 1) h</strong>
+                            (@_distribucion.Desde.ToString("dd/MM") – @_distribucion.Hasta.ToString("dd/MM/yyyy"))
+                        </MudText>
+                    </MudStack>
+                    <ApexChart TItem="DistribucionConsultorDto" Options="_chartOptions" Height="@Math.Max(200, _distribucion.Consultores.Count * 48)">
+                        <ApexPointSeries TItem="DistribucionConsultorDto" Items="_distribucion.Consultores" Name="@L["Label_Hours"]" XValue="@(e => e.Nombre)" YValue="@(e => e.TotalHoras)" SeriesType="SeriesType.Bar" />
                     </ApexChart>
-                </MudPaper>
-            }
-        }
-    </MudStack>
+                }
+            </KpgCard>
+            <KpgCard Class="dashboard-workspace__critical">
+                <div class="kpg-card__head">
+                    <h2 class="kpg-card__title">
+                        @L["Dash_CriticalPending"]
+                        @if (_criticos is { Pendientes.Count: > 0 })
+                        {
+                            <span class="dashboard-count-badge">@_criticos.Pendientes.Count</span>
+                        }
+                    </h2>
+                    @if (_criticos is { Pendientes.Count: > 6 })
+                    {
+                        <MudLink Href="/aprobaciones" Typo="Typo.body2">@string.Format(L["Dash_SeeAllCritical"], _criticos.Pendientes.Count)</MudLink>
+                    }
+                </div>
+                @if (_isLoadingCriticos) { <MudSkeleton Height="180px" /> }
+                else if (_criticos is null || _criticos.Pendientes.Count == 0) { <KpgEmptyState Icon="@Icons.Material.Outlined.DoneAll" Title="@L["Apr_NothingPending"]" /> }
+                else
+                {
+                    <ul class="dashboard-critical-list">
+                        @foreach (var p in _criticos.Pendientes.Take(6))
+                        {
+                            <li class="dashboard-critical-row">
+                                <span class="dashboard-critical-row__avatar" aria-hidden="true">@Iniciales(p.Nombre)</span>
+                                <div class="dashboard-critical-row__body">
+                                    <span class="dashboard-critical-row__name">@p.Nombre</span>
+                                    <span class="dashboard-critical-row__meta">@(p.DiasSinRegistro >= 999 ? L["Dash_NoDaysWithout"].Value : string.Format(L["Dash_DaysWithout"], p.DiasSinRegistro))</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </KpgCard>
+        </section>
+
+    }
+
+    <MudDivider />
 
     <AuthorizeView Roles="@($"{Roles.Gerente},{Roles.Admin}")">
         <Authorized>
@@ -234,31 +188,31 @@
                 {
                     <MudGrid>
                         <MudItem xs="12" sm="6" md="3">
-                            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                            <KpgCard Compact="true">
                                 <MudStack Spacing="1">
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TotalHours"]</MudText>
                                     <MudText Typo="Typo.h4" Style="font-weight:700;">@KpgFormat.Horas(_gerencial.TotalHoras, 1) h</MudText>
                                 </MudStack>
-                            </MudPaper>
+                            </KpgCard>
                         </MudItem>
                         <MudItem xs="12" sm="6" md="3">
-                            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                            <KpgCard Compact="true">
                                 <MudStack Spacing="1">
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_ActiveClients"]</MudText>
                                     <MudText Typo="Typo.h4" Style="font-weight:700;">@_gerencial.TotalClientes</MudText>
                                 </MudStack>
-                            </MudPaper>
+                            </KpgCard>
                         </MudItem>
                         @if (_gerencial.PorCliente.Count > 0)
                         {
                             <MudItem xs="12" sm="12" md="6">
-                                <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                                <KpgCard Compact="true">
                                     <MudStack Spacing="1">
                                         <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Dash_TopClient"]</MudText>
                                         <MudText Typo="Typo.h6" Style="font-weight:600;">@_gerencial.PorCliente[0].Cliente</MudText>
                                         <MudText Typo="Typo.caption" Color="Color.Secondary">@KpgFormat.Horas(_gerencial.PorCliente[0].TotalHoras, 1) h</MudText>
                                     </MudStack>
-                                </MudPaper>
+                                </KpgCard>
                             </MudItem>
                         }
                     </MudGrid>
@@ -271,7 +225,7 @@
                     {
                         <MudGrid>
                             <MudItem xs="12" md="5">
-                                <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                                <KpgCard Compact="true">
                                     <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">@L["Dash_ByClient"]</MudText>
                                     <ApexChart TItem="HorasPorClienteDto"
                                                Options="_donutOptions"
@@ -283,10 +237,10 @@
                                                          YValue="@(e => e.TotalHoras)"
                                                          SeriesType="SeriesType.Donut" />
                                     </ApexChart>
-                                </MudPaper>
+                                </KpgCard>
                             </MudItem>
                             <MudItem xs="12" md="7">
-                                <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                                <KpgCard Compact="true">
                                     <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">@L["Dash_ByProject"]</MudText>
                                     <ApexChart TItem="HorasPorProyectoDto"
                                                Options="_barProyectoOptions"
@@ -298,7 +252,7 @@
                                                          YValue="@(e => e.TotalHoras)"
                                                          SeriesType="SeriesType.Bar" />
                                     </ApexChart>
-                                </MudPaper>
+                                </KpgCard>
                             </MudItem>
                         </MudGrid>
                     }
@@ -342,7 +296,7 @@
                                          Color="Color.Primary" />
                         </MudItem>
                         <MudItem xs="12" sm="6" md="3">
-                            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                            <KpgCard Compact="true">
                                 <MudStack Spacing="1">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                                         <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Success" Size="Size.Medium" />
@@ -350,7 +304,7 @@
                                     </MudStack>
                                     <MudText Typo="Typo.h4" Style="font-weight:700;">@KpgFormat.Horas(_metricas.TotalHoras, 1) h</MudText>
                                 </MudStack>
-                            </MudPaper>
+                            </KpgCard>
                         </MudItem>
                         <MudItem xs="12" sm="6" md="3">
                             <KpgStatCard Label="@L["Dash_ActiveUsers"]"
@@ -368,7 +322,7 @@
 
                     @if (_metricas.Tendencia.Count > 0)
                     {
-                        <MudPaper Elevation="2" Class="pa-3" Style="border-radius:12px;">
+                        <KpgCard Compact="true">
                             <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">
                                 @L["Dash_Tendency"] (@_metricas.Desde.ToString("dd/MM") – @_metricas.Hasta.ToString("dd/MM/yyyy"))
                             </MudText>
@@ -388,7 +342,7 @@
                                                  YValue="@(e => e.TotalHoras)"
                                                  SeriesType="SeriesType.Line" />
                             </ApexChart>
-                        </MudPaper>
+                        </KpgCard>
                     }
                     else
                     {
@@ -406,6 +360,9 @@
         new(L["Nav_Home"].Value, "/"),
         new(L["Nav_Dashboard"].Value, null, disabled: true)
     ];
+
+    private static string Iniciales(string nombre) =>
+        string.Join("", nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
 
     // ── Estado diario ────────────────────────────────────────────────
     private EstadoEquipoResponse? _estado;
@@ -436,8 +393,15 @@
     private Periodo _periodo = Periodo.Semana;
     private DateRange _rangoPersonalizado = new(DateTime.Today.AddDays(-6), DateTime.Today);
 
+    /// <summary>ApexCharts no lee variables CSS: se fija al mismo valor que --kpg-border-default.</summary>
+    private const string ChartGridBorderColor = "#E5EAF0";
+
+    /// <summary>Paleta KPG para series: navy primero, luego secundario y semánticos sobrios.</summary>
+    private static readonly string[] ChartPalette = ["#0B466A", "#087EA4", "#3B82F6", "#15803D", "#F59E0B", "#64748B"];
+
     private ApexChartOptions<DistribucionConsultorDto> _chartOptions = new()
     {
+        Colors = [.. ChartPalette],
         PlotOptions = new PlotOptions
         {
             Bar = new PlotOptionsBar { Horizontal = true, BorderRadius = 4 }
@@ -445,32 +409,35 @@
         Xaxis = new XAxis { Title = new AxisTitle { Text = "Horas" } },
         DataLabels = new DataLabels { Enabled = true },
         Legend = new Legend { Show = false },
-        Grid = new Grid { BorderColor = "#e0e0e0" }
+        Grid = new Grid { BorderColor = ChartGridBorderColor }
     };
 
     private ApexChartOptions<TendenciaDiaDto> _lineOptions = new()
     {
+        Colors = [.. ChartPalette],
         Stroke = new Stroke { Curve = Curve.Smooth, Width = [2, 2] },
         DataLabels = new DataLabels { Enabled = false },
         Legend = new Legend { Position = LegendPosition.Top },
-        Grid = new Grid { BorderColor = "#e0e0e0" }
+        Grid = new Grid { BorderColor = ChartGridBorderColor }
     };
 
     private ApexChartOptions<HorasPorClienteDto> _donutOptions = new()
     {
+        Colors = [.. ChartPalette],
         DataLabels = new DataLabels { Enabled = true },
         Legend = new Legend { Position = LegendPosition.Bottom }
     };
 
     private ApexChartOptions<HorasPorProyectoDto> _barProyectoOptions = new()
     {
+        Colors = [.. ChartPalette],
         PlotOptions = new PlotOptions
         {
             Bar = new PlotOptionsBar { Horizontal = true, BorderRadius = 4 }
         },
         DataLabels = new DataLabels { Enabled = true },
         Legend = new Legend { Show = false },
-        Grid = new Grid { BorderColor = "#e0e0e0" }
+        Grid = new Grid { BorderColor = ChartGridBorderColor }
     };
 
     protected override async Task OnInitializedAsync()

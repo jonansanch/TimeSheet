@@ -31,6 +31,10 @@
                       OnAdornmentClick="TogglePasswordVisibility" Disabled="@_isLoading"
                       autocomplete="current-password" />
 
+        <MudCheckBox T="bool" @bind-Value="_rememberMe" Color="Color.Primary" Disabled="@_isLoading" Class="mb-3">
+            @L["Login_RememberMe"]
+        </MudCheckBox>
+
         <KpgButton FullWidth="true" Size="Size.Large" Disabled="@_isLoading" OnClick="HandleLogin" Class="mb-4">
             @if (_isLoading)
             {
@@ -55,6 +59,7 @@
     private string? _errorMessage;
     private bool _isLoading;
     private bool _formIsValid;
+    private bool _rememberMe;
     private bool _showPassword;
     private InputType _passwordInputType => _showPassword ? InputType.Text : InputType.Password;
     private string _passwordIcon => _showPassword ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
@@ -69,7 +74,7 @@
         _errorMessage = null;
         try
         {
-            await AuthProvider.LoginAsync(_email, _password);
+            await AuthProvider.LoginAsync(_email, _password, _rememberMe);
             Navigation.NavigateTo("/");
         }
         catch (UnauthorizedAccessException) { _errorMessage = L["Login_Error"]; }

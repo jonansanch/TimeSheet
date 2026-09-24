@@ -1,0 +1,155 @@
+/*
+ * Primitivas KPG cuyo elemento raíz es un componente MudBlazor (MudPaper, MudButton...).
+ * El CSS aislado (.razor.css) no alcanza el DOM que renderiza un componente hijo,
+ * por eso estas reglas viven aquí y no en archivos .razor.css.
+ */
+
+/* ===== KpgCard ===== */
+.kpg-card {
+    padding: var(--kpg-space-5);
+    border: 1px solid var(--kpg-border-default);
+    border-radius: var(--kpg-radius-lg);
+    background: var(--kpg-surface-card);
+    box-shadow: var(--kpg-shadow-xs);
+}
+.kpg-card.mud-paper-outlined { border-color: var(--kpg-border-default); }
+.kpg-card--compact { padding: var(--kpg-space-4); }
+.kpg-card__title {
+    margin: 0 0 var(--kpg-space-3);
+    color: var(--kpg-text-primary);
+    font-size: var(--kpg-font-size-md);
+    font-weight: 650;
+    line-height: var(--kpg-line-height-tight);
+}
+.kpg-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--kpg-space-3);
+    margin-bottom: var(--kpg-space-3);
+}
+.kpg-card__head .kpg-card__title { margin: 0; }
+
+/* ===== KpgButton ===== */
+.kpg-button {
+    min-height: var(--kpg-control-height);
+    border-radius: var(--kpg-radius-sm);
+    padding-inline: var(--kpg-space-4);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: none;
+}
+.kpg-button.mud-button-filled:hover { box-shadow: var(--kpg-shadow-xs); }
+
+/* ===== KpgDataTable ===== */
+.kpg-card.kpg-data-table-card { padding: 0; overflow: hidden; }
+.kpg-data-table .mud-table-head { background: var(--kpg-surface-subtle); }
+.kpg-data-table .mud-table-cell {
+    padding: 10px var(--kpg-space-4);
+    border-color: var(--kpg-border-default);
+    font-size: var(--kpg-font-size-sm);
+}
+.kpg-data-table .mud-table-head .mud-table-cell {
+    color: var(--kpg-text-secondary);
+    font-size: var(--kpg-font-size-xs);
+    font-weight: 650;
+    white-space: nowrap;
+}
+.kpg-data-table .mud-table-row:hover { background: var(--kpg-slate-50); }
+
+/* ===== KpgStatCard ===== */
+.kpg-card.kpg-stat-card {
+    display: flex;
+    align-items: center;
+    gap: var(--kpg-space-3);
+    height: 100%;
+    min-height: 76px;
+    padding: var(--kpg-space-3) var(--kpg-space-4);
+}
+.kpg-stat-card__icon {
+    display: grid;
+    flex: 0 0 40px;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--kpg-color-primary);
+    background: var(--kpg-blue-100);
+}
+.kpg-stat-card__icon--success { color: var(--kpg-status-success); background: var(--kpg-status-success-bg); }
+.kpg-stat-card__icon--warning { color: var(--kpg-status-warning); background: var(--kpg-status-warning-bg); }
+.kpg-stat-card__icon--error { color: var(--kpg-status-error); background: var(--kpg-status-error-bg); }
+.kpg-stat-card__icon--info { color: var(--kpg-status-info); background: var(--kpg-status-info-bg); }
+.kpg-stat-card__copy { display: flex; min-width: 0; flex-direction: column; }
+.kpg-stat-card__value {
+    color: var(--kpg-text-primary);
+    font-size: var(--kpg-font-size-xl);
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+.kpg-stat-card__label {
+    overflow: hidden;
+    color: var(--kpg-text-secondary);
+    font-size: var(--kpg-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== Filas de lista compactas (Home, Dashboard, Registro) ===== */
+.kpg-list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--kpg-space-3);
+    min-height: 48px;
+    padding: var(--kpg-space-2) var(--kpg-space-3);
+    border: 1px solid var(--kpg-border-default);
+    border-radius: var(--kpg-radius-md);
+    background: var(--kpg-surface-card);
+    color: var(--kpg-text-primary);
+    text-align: left;
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color var(--kpg-transition-fast), background-color var(--kpg-transition-fast);
+}
+.kpg-list-row:hover { border-color: var(--kpg-border-strong); background: var(--kpg-surface-subtle); color: var(--kpg-text-primary); }
+.kpg-list-row:focus-visible { outline: 2px solid var(--kpg-focus-ring); outline-offset: 2px; }
+.kpg-list-row__icon {
+    display: grid;
+    flex: 0 0 32px;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--kpg-radius-sm);
+    color: var(--kpg-color-primary);
+    background: var(--kpg-blue-100);
+}
+.kpg-list-row__copy { display: flex; min-width: 0; flex: 1; flex-direction: column; line-height: 1.3; }
+.kpg-list-row__title { overflow: hidden; font-size: var(--kpg-font-size-sm); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.kpg-list-row__meta { overflow: hidden; color: var(--kpg-text-secondary); font-size: var(--kpg-font-size-xs); text-overflow: ellipsis; white-space: nowrap; }
+.kpg-list-row__chevron { flex: 0 0 auto; color: var(--kpg-text-muted); }
+
+/* ===== Avatar de iniciales ===== */
+.kpg-avatar {
+    display: inline-grid;
+    flex: 0 0 32px;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--kpg-text-inverse);
+    background: var(--kpg-color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kpg-list-row { transition: none; }
+}
+
+/* ===== Fila de KPIs ===== */
+.kpg-kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--kpg-space-4); }
+@media (max-width: 959.98px) { .kpg-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

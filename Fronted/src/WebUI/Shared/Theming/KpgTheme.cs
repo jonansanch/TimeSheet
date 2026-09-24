@@ -23,29 +23,30 @@ public static class KpgTheme
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#075985",
+            Primary = "#0B466A",
             PrimaryContrastText = "#FFFFFF",
-            Secondary = "#0284C7",
+            Secondary = "#087EA4",
             SecondaryContrastText = "#FFFFFF",
-            Tertiary = "#0EA5E9",
-            Info = "#1D4ED8",
+            Tertiary = "#3B82F6",
+            Info = "#2563EB",
             Success = "#15803D",
-            Warning = "#B45309",
-            Error = "#B91C1C",
-            Background = "#F4F7FA",
+            Warning = "#F59E0B",
+            WarningContrastText = "#172B3A",
+            Error = "#DC2626",
+            Background = "#F6F8FA",
             Surface = "#FFFFFF",
             AppbarBackground = "#FFFFFF",
-            AppbarText = "#16324A",
+            AppbarText = "#172B3A",
             DrawerBackground = "#073B5C",
-            DrawerText = "#E7F2F8",
-            DrawerIcon = "#8ED8F8",
-            TextPrimary = "#16324A",
-            TextSecondary = "#5D7285",
-            Divider = "#DCE5EC",
-            LinesDefault = "#DCE5EC",
-            ActionDefault = "#5D7285",
-            ActionDisabled = "#9AAAB7",
-            ActionDisabledBackground = "#E8EEF3"
+            DrawerText = "#E6EEF4",
+            DrawerIcon = "#B9CCDA",
+            TextPrimary = "#172B3A",
+            TextSecondary = "#64748B",
+            Divider = "#E5EAF0",
+            LinesDefault = "#E5EAF0",
+            ActionDefault = "#64748B",
+            ActionDisabled = "#8492A6",
+            ActionDisabledBackground = "#EEF2F6"
         },
         Typography = new Typography
         {
@@ -66,7 +67,7 @@ public static class KpgTheme
         LayoutProperties = new LayoutProperties
         {
             DefaultBorderRadius = "10px",
-            DrawerWidthLeft = "256px"
+            DrawerWidthLeft = "232px"
         }
     };
 }

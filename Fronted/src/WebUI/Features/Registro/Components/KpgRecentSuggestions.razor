@@ -7,21 +7,26 @@
 }
 else if (_sugerencias.Count > 0)
 {
-    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="1" Class="mb-2">
-        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Reg_RecentlyUsed"]</MudText>
+    <ul class="kpg-recent-suggestions">
         @foreach (var s in _sugerencias)
         {
-            <MudChip T="string"
-                     Value="@($"{s.Cliente} — {s.Proyecto}")"
-                     OnClick="@(() => OnSuggestionSelected.InvokeAsync(s))"
-                     aria-label="@($"{L["Reg_ApplySuggestion"].Value}: {s.Cliente} - {s.Proyecto}")"
-                     Color="Color.Default"
-                     Variant="Variant.Outlined"
-                     Size="Size.Small">
-                @s.Cliente — @s.Proyecto
-            </MudChip>
+            <li>
+                <button type="button" class="kpg-list-row"
+                        @onclick="@(() => OnSuggestionSelected.InvokeAsync(s))"
+                        aria-label="@($"{L["Reg_ApplySuggestion"].Value}: {s.Cliente} - {s.Proyecto}")">
+                    <span class="kpg-list-row__icon"><MudIcon Icon="@Icons.Material.Outlined.Business" Size="Size.Small" /></span>
+                    <span class="kpg-list-row__copy">
+                        <span class="kpg-list-row__title">@s.Cliente</span>
+                        <span class="kpg-list-row__meta">@s.Proyecto</span>
+                    </span>
+                </button>
+            </li>
         }
-    </MudStack>
+    </ul>
+}
+else if (!_isLoading)
+{
+    <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Reg_NoRecent"]</MudText>
 }
 
 @code {

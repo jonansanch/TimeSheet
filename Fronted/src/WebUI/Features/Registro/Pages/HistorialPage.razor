@@ -20,7 +20,7 @@
             <KpgButton Variant="Variant.Filled"
                        StartIcon="@Icons.Material.Outlined.Add"
                        OnClick="@(() => Navigation.NavigateTo("/registro"))">
-                @L["Btn_RegisterHours"]
+                @L["Btn_RegisterDay"]
             </KpgButton>
         </Actions>
     </KpgPageHeader>
@@ -30,8 +30,18 @@
         <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
     }
 
-    <section class="historial-page__filters" aria-label="@L["Common_Filters"]">
-    <KpgCard Compact="true">
+    <section class="historial-kpis" aria-label="@L["Hist_KpiAriaLabel"]" aria-live="polite">
+        <KpgStatCard Label="@L["Kpi_Logged"]" Value="_totalCount" DisplayValue="@HorasKpi(_items)" Icon="@Icons.Material.Outlined.ReceiptLong" Color="Color.Primary" />
+        <KpgStatCard Label="@L["Kpi_Approved"]" Value="0" DisplayValue="@HorasKpi(_items.Where(x => x.Estado == EstadoAprobacion.Aprobado))" Icon="@Icons.Material.Outlined.CheckCircle" Color="Color.Success" />
+        <KpgStatCard Label="@L["Kpi_Pending"]" Value="0" DisplayValue="@HorasKpi(_items.Where(x => !x.EstaCerrado && !x.EsRechazado))" Icon="@Icons.Material.Outlined.PendingActions" Color="Color.Warning" />
+        <KpgStatCard Label="@L["Kpi_Rejected"]" Value="0" DisplayValue="@HorasKpi(_items.Where(x => x.EsRechazado))" Icon="@Icons.Material.Outlined.Cancel" Color="Color.Error" />
+    </section>
+
+    @* El scroll horizontal queda como respaldo para pantallas angostas: en monitores
+       normales el contenedor ya da el ancho suficiente. *@
+    <section class="historial-page__table-card" aria-label="@L["Hist_Title"]">
+    <KpgCard Class="historial-page__card">
+    <div class="historial-page__filters" role="group" aria-label="@L["Common_Filters"]">
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
             <div class="historial-page__month">
             <MudSelect T="int"
@@ -58,22 +68,44 @@
                              Max="2099"
                              aria-label="@L["Label_Year"]" />
             </div>
-            <MudTooltip Text="@(L["Hist_CurrentMonth"].Value)">
-                <MudButton Variant="Variant.Text"
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Today"
-                           OnClick="VolverAlMesActualAsync">
-                    @L["Hist_CurrentMonth"]
-                </MudButton>
-            </MudTooltip>
+            <div class="historial-page__client">
+            <MudSelect T="string"
+                       Label="@L["Label_Client"]"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Value="_clienteFiltro"
+                       ValueChanged="OnClienteChangedAsync"
+                       aria-label="@L["Label_Client"]">
+                <MudSelectItem Value="@((string?)null)">@L["Common_AllFemenine"]</MudSelectItem>
+                @foreach (var cliente in _clientesDisponibles)
+                {
+                    <MudSelectItem Value="@cliente">@cliente</MudSelectItem>
+                }
+            </MudSelect>
+            </div>
+            <div class="historial-page__status">
+            <MudSelect T="string"
+                       Label="@L["Label_Status"]"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Value="_estadoFiltro"
+                       ValueChanged="OnEstadoChangedAsync"
+                       aria-label="@L["Label_Status"]">
+                <MudSelectItem Value="@((string?)null)">@L["Common_AllFemenine"]</MudSelectItem>
+                <MudSelectItem Value="@EstadoFiltroAprobado">@L["Status_Approved"]</MudSelectItem>
+                <MudSelectItem Value="@EstadoFiltroPendiente">@L["Status_Pending"]</MudSelectItem>
+                <MudSelectItem Value="@EstadoFiltroRechazado">@L["Status_Rejected"]</MudSelectItem>
+            </MudSelect>
+            </div>
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       Class="historial-page__clear"
+                       OnClick="LimpiarFiltrosAsync">
+                @L["Common_ClearFilters"]
+            </MudButton>
         </MudStack>
-    </KpgCard>
-    </section>
-
-    @* El scroll horizontal queda como respaldo para pantallas angostas: en monitores
-       normales el contenedor ya da el ancho suficiente. *@
-    <section class="historial-page__table-card" aria-label="@L["Hist_Title"]">
-    <KpgCard Compact="true">
+    </div>
     <div class="historial-page__table-scroll">
     <MudDataGrid @ref="_grid"
                  T="HistorialRegistroResponse"
@@ -90,7 +122,7 @@
                            Color="Color.Primary"
                            Size="Size.Small"
                            OnClick="@(() => Navigation.NavigateTo("/registro"))">
-                    @L["Btn_RegisterHours"]
+                    @L["Btn_RegisterDay"]
                 </MudButton>
             </MudAlert>
         </NoRecordsContent>
@@ -100,76 +132,49 @@
                     @context.Item.FechaRegistro.ToString("dd/MM/yyyy")
                 </CellTemplate>
             </PropertyColumn>
-            <TemplateColumn Title="@L["Reg_Shift1"]" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Label_Schedule"]" Sortable="false" CellStyle="white-space:nowrap;min-width:170px;">
                 <CellTemplate>
-                    @if (context.Item.HoraEntrada1.HasValue && context.Item.HoraSalida1.HasValue)
-                    {
-                        @($"{context.Item.HoraEntrada1.Value:HH\\:mm} – {context.Item.HoraSalida1.Value:HH\\:mm}")
-                    }
-                    else
-                    {
-                        <MudText Color="Color.Secondary">—</MudText>
-                    }
+                    @Horarios(context.Item)
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="@L["Reg_Shift2"]" Sortable="false" CellStyle="white-space:nowrap;">
+            <TemplateColumn Title="@L["Label_Hours"]" Sortable="false" CellStyle="white-space:nowrap;">
                 <CellTemplate>
-                    @if (context.Item.HoraEntrada2.HasValue && context.Item.HoraSalida2.HasValue)
-                    {
-                        @($"{context.Item.HoraEntrada2.Value:HH\\:mm} – {context.Item.HoraSalida2.Value:HH\\:mm}")
-                    }
-                    else
-                    {
-                        <MudText Color="Color.Secondary">—</MudText>
-                    }
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn Title="@L["Reg_Shift3"]" Sortable="false" CellStyle="white-space:nowrap;">
-                <CellTemplate>
-                    @if (context.Item.HoraEntrada3.HasValue && context.Item.HoraSalida3.HasValue)
-                    {
-                        @($"{context.Item.HoraEntrada3.Value:HH\\:mm} – {context.Item.HoraSalida3.Value:HH\\:mm}")
-                    }
-                    else
-                    {
-                        <MudText Color="Color.Secondary">—</MudText>
-                    }
+                    @KpgFormat.HorasMinutos(TotalMinutos(context.Item)) h
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Cliente" Title="@L["Label_Client"]" />
             <PropertyColumn Property="x => x.Proyecto" Title="@L["Label_Project"]" />
-            <PropertyColumn Property="x => x.Recurso" Title="@L["Label_Resource"]" Sortable="false" />
             <PropertyColumn Property="x => x.Modalidad" Title="@L["Label_Modality"]" Sortable="false" />
-            <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false"
-                            HeaderStyle="min-width:220px;" CellStyle="min-width:220px;" />
             <TemplateColumn Title="@L["Label_Status"]" Sortable="false"
                             HeaderStyle="min-width:160px;" CellStyle="min-width:160px;">
                 <CellTemplate>
                     @* Sin esto el empleado recibia el correo de rechazo y su propia
                        pantalla no le decia nada: ni el estado ni el motivo. *@
                     <MudStack Spacing="1">
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
                         <KpgEstadoAprobacionChip Estado="@context.Item.Estado"
                                                  NivelPendiente="@NivelPendiente(context.Item.Estado)" />
 
                         @* Quien firmo cada nivel: "Aprobado" a secas no dice por donde
                            paso el registro ni quien lo reviso. *@
-                        @foreach (var firma in context.Item.Firmas)
+                        @if (context.Item.Firmas.Any())
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                @($"N{firma.Nivel} ✓ {firma.Actor}")
-                            </MudText>
+                            <MudTooltip Text="@string.Join(" · ", context.Item.Firmas.Select(f => $"N{f.Nivel}: {f.Actor}"))">
+                                <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Size="Size.Small" Color="Color.Secondary" aria-label="@L["Hist_ApproversDetail"]" />
+                            </MudTooltip>
                         }
+                        </MudStack>
 
                         @if (context.Item.EsRechazado && !string.IsNullOrWhiteSpace(context.Item.ComentarioRechazo))
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Error" Style="max-width:260px;">
+                            <MudText Typo="Typo.caption" Color="Color.Error" Class="historial-page__rejection-comment">
                                 @context.Item.ComentarioRechazo
                             </MudText>
                         }
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="" Sortable="false">
+            <TemplateColumn Title="@L["Label_Actions"]" Sortable="false" CellStyle="white-space:nowrap;">
                 <CellTemplate>
                     @* Un dia rechazado se corrige y se reenvia: la cadena recomienza desde
                        el primer nivel. Es la unica salida que tiene el empleado. *@
@@ -212,21 +217,12 @@
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="HistorialRegistroResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+            <MudDataGridPager T="HistorialRegistroResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
         </PagerContent>
     </MudDataGrid>
     </div>
     </KpgCard>
     </section>
-
-    @if (_totalCount > 0)
-    {
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
-            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
-                @_totalCount @L["Rep_Records"]
-            </MudChip>
-        </MudStack>
-    }
 
     <MudMessageBox @ref="_msgBox"
                    Title="@L["Hist_DeleteTitle"]"
@@ -248,8 +244,18 @@
         new(L["Nav_MyRecords"].Value, null, disabled: true)
     ];
 
+    private const string EstadoFiltroAprobado = "aprobado";
+    private const string EstadoFiltroPendiente = "pendiente";
+    private const string EstadoFiltroRechazado = "rechazado";
+
     private MudDataGrid<HistorialRegistroResponse>? _grid;
     private int _totalCount;
+    private List<HistorialRegistroResponse> _mesCompleto = [];
+    private List<HistorialRegistroResponse> _items = [];
+    private string? _clienteFiltro;
+    private string? _estadoFiltro;
+    private IEnumerable<string> _clientesDisponibles =>
+        _mesCompleto.Select(x => x.Cliente).Distinct().OrderBy(c => c);
     private string? _errorMessage;
     private bool _isDeleting;
     private bool _isEditing;
@@ -289,10 +295,27 @@
         await RecargarAsync();
     }
 
-    private async Task VolverAlMesActualAsync()
+    private async Task LimpiarFiltrosAsync()
     {
-        _mes  = DateTime.Today.Month;
-        _anio = DateTime.Today.Year;
+        _mes           = DateTime.Today.Month;
+        _anio          = DateTime.Today.Year;
+        _clienteFiltro = null;
+        _estadoFiltro  = null;
+        await RecargarAsync();
+    }
+
+    private static string HorasKpi(IEnumerable<HistorialRegistroResponse> registros) =>
+        $"{(registros.Sum(TotalMinutos) / 60m).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)} h";
+
+    private async Task OnClienteChangedAsync(string? cliente)
+    {
+        _clienteFiltro = cliente;
+        await RecargarAsync();
+    }
+
+    private async Task OnEstadoChangedAsync(string? estado)
+    {
+        _estadoFiltro = estado;
         await RecargarAsync();
     }
 
@@ -302,6 +325,8 @@
             await _grid.ReloadServerData();
     }
 
+    /// <summary>Trae el mes completo una sola vez por cambio de filtro: alimenta KPIs,
+    /// el combo de clientes y la paginación, en vez de pedir el server dos veces por reload.</summary>
     private async Task<GridData<HistorialRegistroResponse>> CargarDatosAsync(GridState<HistorialRegistroResponse> state)
     {
         _errorMessage = null;
@@ -310,19 +335,55 @@
             var desde = new DateOnly(_anio, _mes, 1);
             var hasta = desde.AddMonths(1).AddDays(-1);
 
-            var resp = await RegistroHorasRepository.GetHistorialAsync(
-                page: state.Page + 1,
-                pageSize: state.PageSize,
-                desde: desde,
-                hasta: hasta);
-            _totalCount = resp.TotalCount;
-            return new GridData<HistorialRegistroResponse> { Items = resp.Items, TotalItems = resp.TotalCount };
+            // Un mes de un solo usuario nunca se acerca a este tope: una sola llamada
+            // alcanza para traer el periodo completo sin depender de un segundo round-trip.
+            const int TopeMesCompleto = 5000;
+            var resp = await RegistroHorasRepository.GetHistorialAsync(1, TopeMesCompleto, desde, hasta);
+            _mesCompleto = [.. resp.Items];
+
+            _items = _mesCompleto
+                .Where(x => _clienteFiltro is null || x.Cliente == _clienteFiltro)
+                .Where(x => _estadoFiltro switch
+                {
+                    EstadoFiltroAprobado => x.Estado == EstadoAprobacion.Aprobado,
+                    EstadoFiltroPendiente => !x.EstaCerrado && !x.EsRechazado,
+                    EstadoFiltroRechazado => x.EsRechazado,
+                    _ => true
+                })
+                .ToList();
+            _totalCount = _items.Count;
+
+            var pagina = _items.Skip(state.Page * state.PageSize).Take(state.PageSize).ToList();
+            // ServerData lo invoca el grid: la pagina no se vuelve a pintar sola y los KPI
+            // quedarian con los valores anteriores.
+            _ = InvokeAsync(StateHasChanged);
+            return new GridData<HistorialRegistroResponse> { Items = pagina, TotalItems = _totalCount };
         }
         catch
         {
             _errorMessage = L["Hist_ErrorLoad"];
+            _mesCompleto = [];
+            _items = [];
             return new GridData<HistorialRegistroResponse> { Items = [], TotalItems = 0 };
         }
+    }
+
+    private static int TotalMinutos(HistorialRegistroResponse item)
+    {
+        static int Tramo(TimeOnly? entrada, TimeOnly? salida) =>
+            entrada.HasValue && salida.HasValue ? Math.Max(0, (int)(salida.Value - entrada.Value).TotalMinutes) : 0;
+        return Tramo(item.HoraEntrada1, item.HoraSalida1)
+             + Tramo(item.HoraEntrada2, item.HoraSalida2)
+             + Tramo(item.HoraEntrada3, item.HoraSalida3);
+    }
+
+    private static string Horarios(HistorialRegistroResponse item)
+    {
+        var rangos = new List<string>(3);
+        if (item.HoraEntrada1.HasValue && item.HoraSalida1.HasValue) rangos.Add($"{item.HoraEntrada1:HH\\:mm}–{item.HoraSalida1:HH\\:mm}");
+        if (item.HoraEntrada2.HasValue && item.HoraSalida2.HasValue) rangos.Add($"{item.HoraEntrada2:HH\\:mm}–{item.HoraSalida2:HH\\:mm}");
+        if (item.HoraEntrada3.HasValue && item.HoraSalida3.HasValue) rangos.Add($"{item.HoraEntrada3:HH\\:mm}–{item.HoraSalida3:HH\\:mm}");
+        return rangos.Count == 0 ? "—" : string.Join(" · ", rangos);
     }
 
     /// <summary>Nivel que corresponde revisar, para que el chip diga a quien le toca.</summary>

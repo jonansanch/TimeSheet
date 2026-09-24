@@ -10,7 +10,7 @@
 
 <PageTitle>@L["SupPuesto_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
+<MudStack Spacing="3" Class="admin-page">
     <KpgPageHeader Title="@L["SupPuesto_Title"]" Subtitle="@L["SupPuesto_Subtitle"]">
         <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
         <Actions><KpgButton StartIcon="@Icons.Material.Filled.Add" Disabled="_isProcesando" OnClick="@(() => AbrirDialogoAsync(null))">@L["SupPuesto_New"]</KpgButton></Actions>
@@ -33,8 +33,12 @@
     }
     else
     {
+        <KpgCard Compact="true" Class="admin-table-card">
         <MudDataGrid T="SupervisorPuestoResponse" Items="_reglas" Dense="true"
-                     Filterable="false" SortMode="SortMode.None" RowsPerPage="50">
+                     Filterable="false" SortMode="SortMode.None" RowsPerPage="50" QuickFilter="_quickFilter">
+            <ToolBarContent>
+                <MudTextField @bind-Value="_searchText" Placeholder="@($"{L["Common_Search"].Value}...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-toolbar__search" />
+            </ToolBarContent>
             <Columns>
                 <PropertyColumn Property="x => x.PuestoNombre" Title="@L["Org_Position"]" />
                 <TemplateColumn Title="@L["Label_Client"]" Sortable="false">
@@ -85,9 +89,10 @@
             </Columns>
             <PagerContent>
                 <MudDataGridPager T="SupervisorPuestoResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }"
-                                  RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                                  RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
             </PagerContent>
         </MudDataGrid>
+        </KpgCard>
     }
 </MudStack>
 
@@ -105,6 +110,12 @@
     private bool _isLoading = true;
     private bool _isProcesando;
     private string? _errorMessage;
+    private string _searchText = string.Empty;
+    private Func<SupervisorPuestoResponse, bool> _quickFilter => r =>
+        string.IsNullOrWhiteSpace(_searchText)
+        || r.PuestoNombre.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+        || (r.ClienteNombre?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        || NombreUsuario(r.SupervisorUserId).Contains(_searchText, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync() => await CargarAsync();
 

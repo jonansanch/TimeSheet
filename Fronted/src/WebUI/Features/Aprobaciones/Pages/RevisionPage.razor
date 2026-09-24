@@ -11,205 +11,221 @@
 
 <PageTitle>@L["Apr_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
+<section class="approval-page">
     <KpgPageHeader Title="@L["Apr_Title"]" Subtitle="@L["Apr_Subtitle"]">
         <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
+        <Actions>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Close"
+                       Disabled="@(_seleccionados.Count == 0 || _isProcesando)"
+                       OnClick="RechazarSeleccionadosAsync">
+                @L["Apr_BulkReject"] (@_seleccionados.Count)
+            </MudButton>
+            <KpgButton StartIcon="@Icons.Material.Filled.DoneAll" Disabled="@(_seleccionados.Count == 0 || _isProcesando)" OnClick="AprobarSeleccionadosAsync">@L["Apr_ApproveSelected"] (@_seleccionados.Count)</KpgButton>
+        </Actions>
     </KpgPageHeader>
 
-    @* ── Navegación de periodo + filtros ──────────────────────────── *@
-    <KpgCard Compact="true">
-        <MudStack Spacing="3">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
-                <MudTooltip Text="@(L["Apr_PreviousPeriod"].Value)">
-                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+    <div class="approval-tabs" role="tablist" aria-label="@L["Apr_StatusTabs"]">
+        <button type="button" role="tab" class="@TabClass(TabPendiente)"
+                aria-selected="@(_tab == TabPendiente ? "true" : "false")"
+                @onclick="@(() => CambiarTabAsync(TabPendiente))">@L["Apr_TabPending"] (@_countPendientes)</button>
+        <button type="button" role="tab" class="@TabClass(TabAprobado)"
+                aria-selected="@(_tab == TabAprobado ? "true" : "false")"
+                @onclick="@(() => CambiarTabAsync(TabAprobado))">@L["Apr_TabApproved"]</button>
+        <button type="button" role="tab" class="@TabClass(TabRechazado)"
+                aria-selected="@(_tab == TabRechazado ? "true" : "false")"
+                @onclick="@(() => CambiarTabAsync(TabRechazado))">@L["Apr_TabRejected"]</button>
+    </div>
+
+    <KpgCard Class="approval-card">
+        @* ── Periodo + filtros ──────────────────────────────── *@
+        <div class="approval-filters" role="group" aria-label="@L["Common_Filters"]">
+            <div class="approval-period">
+                <span class="approval-period__label">@L["Label_Period"]</span>
+                <div class="approval-period__nav">
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small"
                                    Disabled="_isLoading"
                                    aria-label="@L["Apr_PreviousPeriod"]"
+                                   title="@L["Apr_PreviousPeriod"]"
                                    OnClick="@(() => DesplazarPeriodoAsync(-1))" />
-                </MudTooltip>
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;min-width:210px;text-align:center;">
-                    @_desde.ToString("dd/MM/yyyy") – @_hasta.ToString("dd/MM/yyyy")
-                </MudText>
-                <MudTooltip Text="@(L["Apr_NextPeriod"].Value)">
-                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                    <span class="approval-period__range">@_desde.ToString("dd/MM/yyyy") – @_hasta.ToString("dd/MM/yyyy")</span>
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"
                                    Disabled="_isLoading"
                                    aria-label="@L["Apr_NextPeriod"]"
+                                   title="@L["Apr_NextPeriod"]"
                                    OnClick="@(() => DesplazarPeriodoAsync(1))" />
-                </MudTooltip>
-
-                <MudButton Variant="Variant.Text" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Today"
-                           Disabled="_isLoading"
-                           OnClick="VolverAlPeriodoActualAsync">
-                    @L["Apr_CurrentPeriod"]
-                </MudButton>
-
-                <MudSpacer />
-
-                <MudSwitch T="bool" Value="_incluirRevisados" ValueChanged="OnIncluirRevisadosAsync"
-                           Color="Color.Primary" Label="@L["Apr_ShowReviewed"]" />
-            </MudStack>
-
-            <MudGrid Spacing="2">
-                <MudItem xs="12" sm="6" md="3">
-                    <MudSelect T="string" Label="@L["Label_Employee"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" Clearable="true"
-                               Value="_filtroUserId" ValueChanged="OnFiltroUsuarioAsync"
-                               aria-label="@L["Label_Employee"]">
-                        @foreach (var u in _empleados)
-                        {
-                            <MudSelectItem Value="@u.UserId">@u.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudSelect T="int?" Label="@L["Label_Client"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" Clearable="true"
-                               Value="_filtroClienteId" ValueChanged="OnFiltroClienteAsync"
-                               aria-label="@L["Label_Client"]">
-                        @foreach (var c in _clientes)
-                        {
-                            <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudSelect T="int?" Label="@L["Label_Project"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" Clearable="true"
-                               Value="_filtroProyectoId" ValueChanged="OnFiltroProyectoAsync"
-                               Disabled="@(_filtroClienteId is null)"
-                               HelperText="@(_filtroClienteId is null ? L["Reg_SelectClientFirst"].Value : null)"
-                               aria-label="@L["Label_Project"]">
-                        @foreach (var p in ProyectosDelCliente)
-                        {
-                            <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3" Class="d-flex align-center">
-                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
-                        @_respuesta.TotalRegistros @L["Rep_Records"]
-                    </MudChip>
-                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">
-                        @KpgFormat.Horas(_respuesta.TotalHoras, 1) h
-                    </MudChip>
-                </MudItem>
-            </MudGrid>
-        </MudStack>
-    </KpgCard>
-
-    @if (_isLoading)
-    {
-        <KpgTableSkeleton Rows="6" />
-    }
-    else if (_respuesta.Dias.Count == 0)
-    {
-        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.DoneAll">
-            <MudText Typo="Typo.body1">@L["Apr_NothingPending"]</MudText>
-            <MudText Typo="Typo.body2">@L["Apr_NothingPendingHint"]</MudText>
-        </MudAlert>
-    }
-    else
-    {
-        @foreach (var dia in _respuesta.Dias)
-        {
-            <MudPaper Elevation="1" Class="pa-3">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" Size="Size.Small" />
-                            <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@dia.NombreEmpleado</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                @dia.Fecha.ToString("dddd dd/MM/yyyy")
-                            </MudText>
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
-                                @KpgFormat.HorasMinutos(dia.TotalMinutos) h
-                            </MudChip>
-                        </MudStack>
-
-                        @{
-                            var accionables = dia.Registros.Where(EsAccionable).ToList();
-                        }
-                        @if (accionables.Count > 0)
-                        {
-                            <MudStack Row="true" Spacing="1">
-                                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
-                                           StartIcon="@Icons.Material.Filled.Check"
-                                           Disabled="_isProcesando"
-                                           OnClick="@(() => AprobarDiaAsync(dia, accionables))">
-                                    @(accionables.Count == dia.Registros.Count
-                                        ? L["Apr_ApproveDay"].Value
-                                        : string.Format(L["Apr_ApproveMine"], accionables.Count))
-                                </MudButton>
-                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
-                                           StartIcon="@Icons.Material.Filled.Close"
-                                           Disabled="_isProcesando"
-                                           OnClick="@(() => RechazarDiaAsync(dia, accionables))">
-                                    @L["Apr_Reject"]
-                                </MudButton>
-                            </MudStack>
-                        }
-                    </MudStack>
-
-                    <MudDivider />
-
-                    @foreach (var r in dia.Registros)
+                </div>
+            </div>
+            <div class="approval-filters__field">
+                <MudSelect T="string" Label="@L["Label_Employee"]" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Clearable="true"
+                           Value="_filtroUserId" ValueChanged="OnFiltroUsuarioAsync"
+                           aria-label="@L["Label_Employee"]">
+                    @foreach (var u in _empleados)
                     {
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap" Class="pl-2">
-                            <KpgEstadoAprobacionChip Estado="@r.Estado" NivelPendiente="@r.NivelPendiente" />
-                            <MudText Typo="Typo.body2" Style="min-width:200px;">
-                                <b>@r.Cliente</b> — @r.Proyecto
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@r.Recurso · @r.Modalidad</MudText>
-                            <MudText Typo="Typo.caption">@KpgFormat.HorasMinutos(r.TotalMinutos) h</MudText>
-                            <MudSpacer />
-                            @* Tercera salida del revisor: si la descripcion es floja pero el
-                               dia esta bien, la corrige aqui en vez de devolver el registro
-                               y esperar a que el empleado lo reenvie. *@
-                            @if (EsAccionable(r))
-                            {
-                                <MudTooltip Text="@L["Apr_EditDescription"]">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Size="Size.Small"
-                                                   Color="Color.Primary"
-                                                   Disabled="_isProcesando"
-                                                   aria-label="@L["Apr_EditDescription"]"
-                                                   OnClick="@(() => EditarDescripcionAsync(r))" />
-                                </MudTooltip>
-                            }
-                            @if (!EsAccionable(r) && PuedeRevertir(r))
-                            {
-                                <MudTooltip Text="@(r.Estado == EstadoAprobacion.Rechazado
-                                                    ? L["Apr_UndoReject"].Value
-                                                    : L["Apr_UndoApprove"].Value)">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Undo"
-                                                   Size="Size.Small"
-                                                   Color="Color.Warning"
-                                                   Disabled="_isProcesando"
-                                                   aria-label="@L["Apr_UndoApprove"]"
-                                                   OnClick="@(() => RevertirAsync(r))" />
-                                </MudTooltip>
-                            }
-                        </MudStack>
-
-                        @if (!string.IsNullOrWhiteSpace(r.Descripcion))
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="pl-2 mb-1">
-                                @r.Descripcion
-                            </MudText>
-                        }
-
-                        @if (!string.IsNullOrWhiteSpace(r.ComentarioRechazo))
-                        {
-                            <MudAlert Severity="Severity.Warning" Dense="true" Class="ml-2 mb-1">
-                                <b>@L["Apr_RejectReason"]:</b> @r.ComentarioRechazo
-                            </MudAlert>
-                        }
+                        <MudSelectItem Value="@u.UserId">@u.Nombre</MudSelectItem>
                     }
-                </MudStack>
-            </MudPaper>
+                </MudSelect>
+            </div>
+            <div class="approval-filters__field">
+                <MudSelect T="int?" Label="@L["Label_Client"]" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Clearable="true"
+                           Value="_filtroClienteId" ValueChanged="OnFiltroClienteAsync"
+                           aria-label="@L["Label_Client"]">
+                    @foreach (var c in _clientes)
+                    {
+                        <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div class="approval-filters__field">
+                <MudSelect T="int?" Label="@L["Label_Project"]" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Clearable="true"
+                           Value="_filtroProyectoId" ValueChanged="OnFiltroProyectoAsync"
+                           Disabled="@(_filtroClienteId is null)"
+                           aria-label="@L["Label_Project"]"
+                           title="@(_filtroClienteId is null ? L["Reg_SelectClientFirst"].Value : null)">
+                    @foreach (var p in ProyectosDelCliente)
+                    {
+                        <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                       Class="approval-filters__clear"
+                       Disabled="_isLoading"
+                       OnClick="LimpiarFiltrosAsync">
+                @L["Common_ClearFilters"]
+            </MudButton>
+        </div>
+
+        @* ── Bandeja ───────────────────────────────────────── *@
+        @if (_isLoading)
+        {
+            <div class="approval-card__state"><KpgTableSkeleton Rows="6" /></div>
         }
-    }
-</MudStack>
+        else if (_respuesta.Dias.Count == 0)
+        {
+            <KpgEmptyState Icon="@Icons.Material.Outlined.DoneAll"
+                           Title="@EmptyTitle"
+                           Description="@L["Apr_NothingPendingHint"]" />
+        }
+        else
+        {
+            <div class="approval-table-scroll">
+                <table class="approval-table">
+                    <thead>
+                        <tr>
+                            <th class="approval-table__check" scope="col">
+                                @if (RegistrosAccionables.Count > 0)
+                                {
+                                    <MudCheckBox T="bool" Dense="true" Size="Size.Small"
+                                                 Value="@TodosSeleccionados"
+                                                 ValueChanged="SeleccionarTodos"
+                                                 aria-label="@L["Apr_SelectAll"]" />
+                                }
+                            </th>
+                            <th scope="col">@L["Label_Employee"]</th>
+                            <th scope="col">@L["Label_Date"]</th>
+                            <th scope="col" class="approval-table__num">@L["Label_Hours"]</th>
+                            <th scope="col">@L["Label_Project"]</th>
+                            <th scope="col">@L["Label_Description"]</th>
+                            <th scope="col">@L["Label_Status"]</th>
+                            <th scope="col" class="approval-table__actions">@L["Label_Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dia in _respuesta.Dias)
+                        {
+                            @foreach (var r in dia.Registros)
+                            {
+                                var accionable = EsAccionable(r);
+                                <tr class="@(_seleccionados.Contains(r.Id) ? "approval-table__row--selected" : null)">
+                                    <td class="approval-table__check">
+                                        @if (accionable)
+                                        {
+                                            <MudCheckBox T="bool" Dense="true" Size="Size.Small"
+                                                         Value="@_seleccionados.Contains(r.Id)"
+                                                         ValueChanged="@(v => Seleccionar(r.Id, v))"
+                                                         aria-label="@string.Format(L["Apr_SelectRecord"], dia.NombreEmpleado, r.Cliente, r.Proyecto)" />
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="approval-table__person">
+                                            <span class="kpg-avatar" aria-hidden="true">@Iniciales(dia.NombreEmpleado)</span>
+                                            <span class="approval-table__name">@dia.NombreEmpleado</span>
+                                        </span>
+                                    </td>
+                                    <td class="approval-table__nowrap">@dia.Fecha.ToString("ddd dd/MM/yyyy")</td>
+                                    <td class="approval-table__num">@KpgFormat.HorasMinutos(r.TotalMinutos) h</td>
+                                    <td>
+                                        <span class="approval-table__primary">@r.Proyecto</span>
+                                        <span class="approval-table__secondary">@r.Cliente · @r.Recurso · @r.Modalidad</span>
+                                    </td>
+                                    <td class="approval-table__description">
+                                        <span class="approval-table__clamp" title="@r.Descripcion">@r.Descripcion</span>
+                                        @if (!string.IsNullOrWhiteSpace(r.ComentarioRechazo))
+                                        {
+                                            <span class="approval-table__reject-reason"><b>@L["Apr_RejectReason"]:</b> @r.ComentarioRechazo</span>
+                                        }
+                                    </td>
+                                    <td><KpgEstadoAprobacionChip Estado="@r.Estado" NivelPendiente="@r.NivelPendiente" /></td>
+                                    <td class="approval-table__actions">
+                                        @if (accionable)
+                                        {
+                                            <MudTooltip Text="@L["Apr_ApproveRecord"]">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Check" Size="Size.Small"
+                                                               Variant="Variant.Filled" Color="Color.Success"
+                                                               Class="approval-table__btn"
+                                                               Disabled="_isProcesando"
+                                                               aria-label="@($"{L["Apr_ApproveRecord"].Value}: {dia.NombreEmpleado} {dia.Fecha:dd/MM}")"
+                                                               OnClick="@(() => AprobarDiaAsync(dia, [r]))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="@L["Apr_Reject"]">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                                               Variant="Variant.Filled" Color="Color.Error"
+                                                               Class="approval-table__btn"
+                                                               Disabled="_isProcesando"
+                                                               aria-label="@($"{L["Apr_Reject"].Value}: {dia.NombreEmpleado} {dia.Fecha:dd/MM}")"
+                                                               OnClick="@(() => RechazarDiaAsync(dia, [r]))" />
+                                            </MudTooltip>
+                                            @* Tercera salida del revisor: si la descripcion es floja pero el
+                                               dia esta bien, la corrige aqui en vez de devolver el registro
+                                               y esperar a que el empleado lo reenvie. *@
+                                            <MudTooltip Text="@L["Apr_EditDescription"]">
+                                                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="Size.Small"
+                                                               Color="Color.Primary"
+                                                               Disabled="_isProcesando"
+                                                               aria-label="@L["Apr_EditDescription"]"
+                                                               OnClick="@(() => EditarDescripcionAsync(r))" />
+                                            </MudTooltip>
+                                        }
+                                        else if (PuedeRevertir(r))
+                                        {
+                                            <MudTooltip Text="@(r.Estado == EstadoAprobacion.Rechazado
+                                                                ? L["Apr_UndoReject"].Value
+                                                                : L["Apr_UndoApprove"].Value)">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                                                               Size="Size.Small"
+                                                               Color="Color.Warning"
+                                                               Disabled="_isProcesando"
+                                                               aria-label="@(r.Estado == EstadoAprobacion.Rechazado ? L["Apr_UndoReject"] : L["Apr_UndoApprove"])"
+                                                               OnClick="@(() => RevertirAsync(r))" />
+                                            </MudTooltip>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="approval-card__footer">
+                <span>@string.Format(L["Apr_Summary"], _respuesta.TotalRegistros, KpgFormat.Horas(_respuesta.TotalHoras, 1))</span>
+            </div>
+        }
+    </KpgCard>
+</section>
 
 @code {
     private BreadcrumbItem[] _breadcrumbs => [
@@ -231,9 +247,109 @@
     private string? _filtroUserId;
     private int? _filtroClienteId;
     private int? _filtroProyectoId;
-    private bool _incluirRevisados;
+    private const string TabPendiente = "pendiente";
+    private const string TabAprobado = "aprobado";
+    private const string TabRechazado = "rechazado";
+    private string _tab = TabPendiente;
     private bool _isLoading = true;
     private bool _isProcesando;
+    private HashSet<int> _seleccionados = [];
+    /// <summary>Conteo del tab "Pendientes", independiente de cuál tab está activo: se
+    /// calcula sobre la respuesta sin filtrar, antes de recortarla al tab visible.</summary>
+    private int _countPendientes;
+
+    private List<RegistroPendienteResponse> RegistrosAccionables =>
+        _respuesta.Dias.SelectMany(d => d.Registros).Where(EsAccionable).ToList();
+
+    private void Seleccionar(int id, bool seleccionado)
+    {
+        if (seleccionado) _seleccionados.Add(id); else _seleccionados.Remove(id);
+    }
+
+    private bool TodosSeleccionados =>
+        RegistrosAccionables.Count > 0 && RegistrosAccionables.All(r => _seleccionados.Contains(r.Id));
+
+    private void SeleccionarTodos(bool seleccionar)
+    {
+        if (seleccionar) _seleccionados.UnionWith(RegistrosAccionables.Select(r => r.Id));
+        else _seleccionados.Clear();
+    }
+
+    private string EmptyTitle => _tab switch
+    {
+        TabAprobado  => L["Apr_EmptyApproved"].Value,
+        TabRechazado => L["Apr_EmptyRejected"].Value,
+        _            => L["Apr_NothingPending"].Value
+    };
+
+    private string TabClass(string tab) =>
+        _tab == tab ? "approval-tabs__tab approval-tabs__tab--active" : "approval-tabs__tab";
+
+    private static string Iniciales(string nombre) =>
+        string.Join("", nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    private async Task AprobarSeleccionadosAsync()
+    {
+        var registros = RegistrosAccionables.Where(r => _seleccionados.Contains(r.Id)).ToList();
+        if (registros.Count == 0) return;
+        _isProcesando = true;
+        try
+        {
+            var errores = new List<string>();
+            foreach (var registro in registros)
+            {
+                var (ok, _, error) = await Repo.AprobarAsync(registro.Id);
+                if (!ok) errores.Add(error ?? L["Apr_ErrorAction"].Value);
+            }
+            _seleccionados.Clear();
+            await CargarAsync();
+
+            if (errores.Count == 0)
+                Snackbar.Add(string.Format(L["Apr_ApprovedCount"], registros.Count), Severity.Success);
+            else
+                Snackbar.Add(string.Format(L["Apr_PartialResult"], registros.Count - errores.Count, registros.Count, errores[0]), Severity.Warning);
+        }
+        finally { _isProcesando = false; }
+    }
+
+    /// <summary>Rechazo masivo: un único comentario cubre toda la selección, así que se
+    /// advierte al revisor antes de aplicarlo si abarca más de un cliente/proyecto.</summary>
+    private async Task RechazarSeleccionadosAsync()
+    {
+        var registros = RegistrosAccionables.Where(r => _seleccionados.Contains(r.Id)).ToList();
+        if (registros.Count == 0) return;
+
+        var primerDia = _respuesta!.Dias.First(d => d.Registros.Any(r => registros.Contains(r)));
+        var parameters = new DialogParameters<KpgRechazoDialog>
+        {
+            { x => x.NombreEmpleado, string.Format(L["Apr_SelectedCount"], registros.Count) },
+            { x => x.Fecha, primerDia.Fecha }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgRechazoDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not string comentario)
+            return;
+
+        _isProcesando = true;
+        try
+        {
+            var errores = new List<string>();
+            foreach (var registro in registros)
+            {
+                var (ok, _, error) = await Repo.RechazarAsync(registro.Id, comentario);
+                if (!ok) errores.Add(error ?? L["Apr_ErrorAction"].Value);
+            }
+            _seleccionados.Clear();
+            await CargarAsync();
+
+            if (errores.Count == 0)
+                Snackbar.Add(L["Apr_RejectedOk"].Value, Severity.Success);
+            else
+                Snackbar.Add(string.Format(L["Apr_PartialResult"], registros.Count - errores.Count, registros.Count, errores[0]), Severity.Warning);
+        }
+        finally { _isProcesando = false; }
+    }
 
     /// <summary>7 o 14 según <c>PeriodoAprobacion</c>; se lee al iniciar.</summary>
     private int _diasPorPeriodo = 7;
@@ -285,11 +401,41 @@
         _isLoading = true;
         try
         {
-            _respuesta = await Repo.GetPendientesAsync(
-                _desde, _hasta, _filtroUserId, _filtroClienteId, _filtroProyectoId, _incluirRevisados);
+            var respuesta = await Repo.GetPendientesAsync(
+                _desde, _hasta, _filtroUserId, _filtroClienteId, _filtroProyectoId,
+                incluirRevisados: _tab != TabPendiente);
+
+            _countPendientes = respuesta.Dias.SelectMany(d => d.Registros).Count(EsAccionable);
+
+            _respuesta = _tab switch
+            {
+                TabAprobado  => FiltrarPorEstado(respuesta, EstadoAprobacion.Aprobado),
+                TabRechazado => FiltrarPorEstado(respuesta, EstadoAprobacion.Rechazado),
+                _            => respuesta
+            };
         }
         catch { Snackbar.Add(L["Apr_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
+    }
+
+    /// <summary>El backend no separa aprobados/rechazados en la carga; se filtra acá y se
+    /// descartan los días que se quedan sin registros tras el filtro.</summary>
+    private static PendientesAprobacionResponse FiltrarPorEstado(PendientesAprobacionResponse respuesta, EstadoAprobacion estado)
+    {
+        var dias = respuesta.Dias
+            .Select(d =>
+            {
+                var registros = d.Registros.Where(r => r.Estado == estado).ToList();
+                return d with { Registros = registros, TotalMinutos = registros.Sum(r => r.TotalMinutos) };
+            })
+            .Where(d => d.Registros.Count > 0)
+            .ToList();
+        return respuesta with
+        {
+            Dias = dias,
+            TotalRegistros = dias.Sum(d => d.Registros.Count),
+            TotalHoras = dias.Sum(d => d.Registros.Sum(r => r.TotalMinutos)) / 60m
+        };
     }
 
     private async Task DesplazarPeriodoAsync(int direccion)
@@ -300,6 +446,14 @@
         await CargarAsync();
     }
 
+    private async Task LimpiarFiltrosAsync()
+    {
+        _filtroUserId     = null;
+        _filtroClienteId  = null;
+        _filtroProyectoId = null;
+        await VolverAlPeriodoActualAsync();
+    }
+
     private async Task VolverAlPeriodoActualAsync()
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
@@ -308,9 +462,11 @@
         await CargarAsync();
     }
 
-    private async Task OnIncluirRevisadosAsync(bool valor)
+    private async Task CambiarTabAsync(string tab)
     {
-        _incluirRevisados = valor;
+        if (_tab == tab) return;
+        _tab = tab;
+        _seleccionados.Clear();
         await CargarAsync();
     }
 
@@ -352,7 +508,7 @@
             if (errores.Count == 0)
                 Snackbar.Add(string.Format(L["Apr_ApprovedOk"], dia.NombreEmpleado), Severity.Success);
             else
-                Snackbar.Add(errores[0], Severity.Error);
+                Snackbar.Add(string.Format(L["Apr_PartialResult"], accionables.Count - errores.Count, accionables.Count, errores[0]), Severity.Warning);
 
             await CargarAsync();
         }
@@ -386,7 +542,7 @@
             if (errores.Count == 0)
                 Snackbar.Add(L["Apr_RejectedOk"].Value, Severity.Success);
             else
-                Snackbar.Add(errores[0], Severity.Error);
+                Snackbar.Add(string.Format(L["Apr_PartialResult"], accionables.Count - errores.Count, accionables.Count, errores[0]), Severity.Warning);
 
             await CargarAsync();
         }

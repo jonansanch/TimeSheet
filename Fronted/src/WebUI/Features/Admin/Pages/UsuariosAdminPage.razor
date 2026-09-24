@@ -8,7 +8,7 @@
 
 <PageTitle>@L["Users_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
+<MudStack Spacing="3" Class="admin-page">
     <KpgPageHeader Title="@L["Users_Title"]" Subtitle="@L["Users_Subtitle"]">
         <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
         <Actions><KpgButton StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="AbrirCrearAsync">@L["Users_NewUser"]</KpgButton></Actions>
@@ -32,6 +32,7 @@
         }
         else
         {
+            <KpgCard Compact="true" Class="admin-table-card">
             <MudDataGrid T="UserAdminResponse"
                          Items="_usuarios"
                          Dense="true"
@@ -40,14 +41,38 @@
                          QuickFilter="_quickFilter"
                          RowsPerPage="50">
                 <ToolBarContent>
-                    <MudSpacer />
-                    <MudTextField @bind-Value="_searchText"
-                                  Placeholder="@($"{L["Label_Email"].Value}...")"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Filled.Search"
-                                  IconSize="Size.Small"
-                                  Immediate="true"
-                                  Style="max-width:280px;" />
+                    <div class="admin-toolbar" role="group" aria-label="@L["Common_Filters"]">
+                        <MudTextField @bind-Value="_searchText"
+                                      Placeholder="@L["Users_SearchPlaceholder"]"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      IconSize="Size.Small"
+                                      Immediate="true"
+                                      Class="admin-toolbar__search"
+                                      aria-label="@L["Users_SearchPlaceholder"]" />
+                        <div class="admin-toolbar__select">
+                            <MudSelect T="string" @bind-Value="_filtroRol" Label="@L["Users_ColRole"]"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelectItem Value="@((string?)null)">@L["Common_All"]</MudSelectItem>
+                                @foreach (var rol in _usuarios.Select(u => u.Role).Distinct().OrderBy(r => r))
+                                {
+                                    <MudSelectItem Value="@rol">@rol</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                        <div class="admin-toolbar__select">
+                            <MudSelect T="bool?" @bind-Value="_filtroActivo" Label="@L["Users_ColStatus"]"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelectItem Value="@((bool?)null)">@L["Common_All"]</MudSelectItem>
+                                <MudSelectItem Value="@((bool?)true)">@L["Label_Active"]</MudSelectItem>
+                                <MudSelectItem Value="@((bool?)false)">@L["Label_Inactive"]</MudSelectItem>
+                            </MudSelect>
+                        </div>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="LimpiarFiltros">@L["Common_ClearFilters"]</MudButton>
+                    </div>
                 </ToolBarContent>
                 <Columns>
                     <PropertyColumn Property="x => x.Email" Title="@L["Users_ColEmail"]" />
@@ -66,14 +91,13 @@
                     <TemplateColumn Title="@L["Users_ColStatus"]" Sortable="true">
                         <CellTemplate>
                             <KpgEstadoChip Activo="@context.Item.IsActive" />
+                            @if (!context.Item.IsActive && context.Item.DeactivatedAt is { } desactivado)
+                            {
+                                <span class="admin-cell-meta">@L["Users_ColDeactivated"]: @desactivado.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                            }
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="@L["Users_ColDeactivated"]" Sortable="true">
-                        <CellTemplate>
-                            @(context.Item.DeactivatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false" CellClass="admin-actions" HeaderClass="admin-actions">
                         <CellTemplate>
                             <MudTooltip Text="@(L["Users_ChangeRole"].Value)">
                                 <MudIconButton Icon="@Icons.Material.Filled.ManageAccounts"
@@ -133,9 +157,10 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="UserAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                    <MudDataGridPager T="UserAdminResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
                 </PagerContent>
             </MudDataGrid>
+            </KpgCard>
         }
     }
 
@@ -163,9 +188,22 @@
     private Color _msgBoxColor = Color.Primary;
     private string _searchText = string.Empty;
 
+    private string? _filtroRol;
+    private bool? _filtroActivo;
+
     private Func<UserAdminResponse, bool> _quickFilter =>
-        u => string.IsNullOrWhiteSpace(_searchText)
-            || u.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+        u => (string.IsNullOrWhiteSpace(_searchText)
+                || u.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+                || (u.NombreCompleto?.Contains(_searchText, StringComparison.CurrentCultureIgnoreCase) ?? false))
+            && (_filtroRol is null || u.Role == _filtroRol)
+            && (_filtroActivo is null || u.IsActive == _filtroActivo);
+
+    private void LimpiarFiltros()
+    {
+        _searchText   = string.Empty;
+        _filtroRol    = null;
+        _filtroActivo = null;
+    }
 
     protected override async Task OnInitializedAsync()
     {

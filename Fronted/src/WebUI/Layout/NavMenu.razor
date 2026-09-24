@@ -1,6 +1,7 @@
 @inject KpgAuthStateProvider AuthProvider
 @inject NavigationManager Navigation
 @inject IStringLocalizer<SharedResource> L
+@implements IDisposable
 
 <MudNavMenu Class="kpg-nav">
 
@@ -10,7 +11,7 @@
             <MudNavLink Href="/"
                         Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Home"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Home"]
             </MudNavLink>
         </Authorized>
@@ -20,22 +21,22 @@
         <Authorized>
             <MudNavLink Href="/registro"
                         Icon="@Icons.Material.Filled.EditCalendar"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Register"]
             </MudNavLink>
             <MudNavLink Href="/mis-registros"
                         Icon="@Icons.Material.Filled.History"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_MyRecords"]
             </MudNavLink>
             <MudNavLink Href="/mis-solicitudes"
                         Icon="@Icons.Material.Filled.AssignmentLate"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_MisSolicitudes"]
             </MudNavLink>
             <MudNavLink Href="/reportar"
                         Icon="@Icons.Material.Filled.Feedback"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Reportar"]
             </MudNavLink>
         </Authorized>
@@ -46,25 +47,27 @@
             <div class="kpg-nav-section-label">@L["Nav_SectionTeam"]</div>
             <MudNavLink Href="/dashboard"
                         Icon="@Icons.Material.Filled.Dashboard"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Dashboard"]
             </MudNavLink>
 
             <MudNavLink Href="/aprobaciones"
                         Icon="@Icons.Material.Filled.FactCheck"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Aprobaciones"]
             </MudNavLink>
 
             <MudNavLink Href="/organigrama"
                         Icon="@Icons.Material.Filled.AccountTree"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Organigrama"]
             </MudNavLink>
 
             <MudNavGroup Title="@L["Nav_Reports"]"
                          Icon="@Icons.Material.Filled.BarChart"
-                         @bind-Expanded="_reportesExpanded">
+                         Class="@GroupClass(_reportesExpanded, IsReportRoute())"
+                         Expanded="_reportesExpanded"
+                         ExpandedChanged="SetReportesExpanded">
                 <MudNavLink Href="/reportes/horas" Class="kpg-nav-child">
                     @L["Nav_ReporteHoras"]
                 </MudNavLink>
@@ -75,7 +78,7 @@
 
             <MudNavLink Href="/notificaciones"
                         Icon="@Icons.Material.Filled.Notifications"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Notifications"]
             </MudNavLink>
         </Authorized>
@@ -85,7 +88,7 @@
         <Authorized>
             <MudNavLink Href="/bitacora"
                         Icon="@Icons.Material.Filled.ManageSearch"
-                        IconColor="Color.Secondary">
+                        >
                 @L["Nav_Bitacora"]
             </MudNavLink>
         </Authorized>
@@ -96,7 +99,9 @@
             <div class="kpg-nav-section-label">@L["Nav_SectionAdmin"]</div>
             <MudNavGroup Title="@L["Nav_Admin"]"
                          Icon="@Icons.Material.Filled.AdminPanelSettings"
-                         @bind-Expanded="_adminExpanded">
+                         Class="@GroupClass(_adminExpanded, IsAdminRoute())"
+                         Expanded="_adminExpanded"
+                         ExpandedChanged="SetAdminExpanded">
                 <MudNavLink Href="/admin/usuarios" Class="kpg-nav-child">
                     @L["Nav_Users"]
                 </MudNavLink>
@@ -125,7 +130,9 @@
 
             <MudNavGroup Title="@L["Nav_Params"]"
                          Icon="@Icons.Material.Filled.Settings"
-                         @bind-Expanded="_parametrosExpanded">
+                         Class="@GroupClass(_parametrosExpanded, IsParametersRoute())"
+                         Expanded="_parametrosExpanded"
+                         ExpandedChanged="SetParametersExpanded">
                 <MudNavLink Href="/admin/parametros/configuracion" Class="kpg-nav-child">
                     @L["Nav_GeneralConfig"]
                 </MudNavLink>
@@ -142,7 +149,58 @@
 </MudNavMenu>
 
 @code {
-    private bool _reportesExpanded   = false;
-    private bool _adminExpanded      = false;
-    private bool _parametrosExpanded = false;
+    private bool _reportesExpanded;
+    private bool _adminExpanded;
+    private bool _parametrosExpanded;
+
+    protected override void OnInitialized()
+    {
+        SynchronizeGroupsWithRoute();
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)
+    {
+        SynchronizeGroupsWithRoute();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void SynchronizeGroupsWithRoute()
+    {
+        _reportesExpanded = IsReportRoute();
+        _parametrosExpanded = IsParametersRoute();
+        _adminExpanded = IsAdminRoute();
+    }
+
+    private bool IsReportRoute() => IsCurrentRoute("reportes");
+
+    private bool IsParametersRoute() => IsCurrentRoute("admin/parametros");
+
+    private bool IsAdminRoute()
+        => (IsCurrentRoute("admin") && !IsParametersRoute())
+           || IsCurrentRoute("solicitudes-excepcion");
+
+    private bool IsCurrentRoute(string routePrefix)
+    {
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri)
+            .Split('?', '#')[0]
+            .Trim('/');
+
+        return relativePath.Equals(routePrefix, StringComparison.OrdinalIgnoreCase)
+               || relativePath.StartsWith($"{routePrefix}/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GroupClass(bool expanded, bool active)
+        => active ? "kpg-nav-group kpg-nav-group-active" : expanded ? "kpg-nav-group kpg-nav-group-expanded" : "kpg-nav-group";
+
+    private void SetReportesExpanded(bool expanded)
+        => _reportesExpanded = expanded || IsReportRoute();
+
+    private void SetAdminExpanded(bool expanded)
+        => _adminExpanded = expanded || IsAdminRoute();
+
+    private void SetParametersExpanded(bool expanded)
+        => _parametrosExpanded = expanded || IsParametersRoute();
+
+    public void Dispose() => Navigation.LocationChanged -= HandleLocationChanged;
 }

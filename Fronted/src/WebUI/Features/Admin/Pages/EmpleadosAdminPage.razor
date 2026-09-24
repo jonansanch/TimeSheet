@@ -7,7 +7,7 @@
 
 <PageTitle>@L["Resources_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="3">
+<MudStack Spacing="3" Class="admin-page">
     <KpgPageHeader Title="@L["Resources_Title"]" Subtitle="@L["Resources_Subtitle"]">
         <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
         <Actions><KpgButton StartIcon="@Icons.Material.Filled.PersonAdd" Disabled="_isProcesando" OnClick="AbrirCrearAsync">@L["Resources_NewResource"]</KpgButton></Actions>
@@ -31,6 +31,7 @@
         }
         else
         {
+            <KpgCard Compact="true" Class="admin-table-card">
             <MudDataGrid T="EmpleadoResponse"
                          Items="_empleados"
                          Dense="true"
@@ -39,14 +40,13 @@
                          QuickFilter="_quickFilter"
                          RowsPerPage="50">
                 <ToolBarContent>
-                    <MudSpacer />
                     <MudTextField @bind-Value="_searchText"
                                   Placeholder="@($"{L["Label_Name"].Value}...")"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
                                   IconSize="Size.Small"
                                   Immediate="true"
-                                  Style="max-width:280px;" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="admin-toolbar__search" />
                 </ToolBarContent>
                 <Columns>
                     <PropertyColumn Property="x => x.Nombre" Title="@L["Resources_ColName"]" />
@@ -91,9 +91,10 @@
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="EmpleadoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                    <MudDataGridPager T="EmpleadoResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
                 </PagerContent>
             </MudDataGrid>
+            </KpgCard>
         }
     }
 

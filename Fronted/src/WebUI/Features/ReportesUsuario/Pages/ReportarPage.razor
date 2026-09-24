@@ -6,12 +6,12 @@
 
 <PageTitle>@L["RepUser_Title"] - KPG Timesheet</PageTitle>
 
-<MudStack Spacing="4">
+<MudStack Spacing="3" Class="report-user-page">
     <KpgPageHeader Title="@L["RepUser_Title"]" Subtitle="@L["RepUser_Subtitle"]">
         <Breadcrumbs><MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" /></Breadcrumbs>
     </KpgPageHeader>
 
-    <KpgCard>
+    <KpgCard Class="report-user-form">
         <MudForm @ref="_form" @bind-IsValid="_formIsValid">
             <MudStack Spacing="3">
                 <MudRadioGroup T="TipoReporte" @bind-Value="_tipo">
@@ -105,7 +105,7 @@
                 </TemplateColumn>
             </Columns>
             <PagerContent>
-                <MudDataGridPager T="ReporteUsuarioResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" />
+                <MudDataGridPager T="ReporteUsuarioResponse" PageSizeOptions="new[] { 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
             </PagerContent>
         </MudDataGrid>
     }

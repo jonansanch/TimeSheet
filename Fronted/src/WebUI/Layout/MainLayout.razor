@@ -42,7 +42,8 @@
                         <MudButton Color="Color.Default"
                                    EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
                                    Class="kpg-user-menu-button"
-                                   aria-label="@($"{L["Nav_Profile"]}: {NombreParaMostrar(context.User)}")">
+                                   aria-label="@($"{L["Nav_Profile"]}: {ResumenUsuario(context.User)}")"
+                                   title="@ResumenUsuario(context.User)">
                             <span class="kpg-user-avatar" aria-hidden="true">@InicialUsuario(context.User)</span>
                             <span class="kpg-user-copy">
                                 <span class="kpg-user-name">@NombreParaMostrar(context.User)</span>
@@ -81,18 +82,19 @@
         <MudDrawerHeader Class="kpg-sidebar-brand">
             <img src="images/kpg-logo.jpg" alt="" class="kpg-sidebar-logo" />
             <span class="kpg-sidebar-brand-copy">
-                <span class="kpg-sidebar-brand-name">KPG</span>
-                <span class="kpg-sidebar-brand-product">Timesheet</span>
+                <span class="kpg-sidebar-brand-name">KPG <span>Timesheet</span></span>
             </span>
         </MudDrawerHeader>
-        <NavMenu />
+        <nav class="kpg-sidebar-navigation" aria-label="@L["Nav_Menu"]">
+            <NavMenu />
+        </nav>
     </MudDrawer>
 
-    <MudMainContent Class="kpg-main-content" id="kpg-main-content">
+    <MudMainContent Class="kpg-main-content" id="kpg-main-content" tabindex="-1">
         @* Las pantallas de tablas necesitan todo el ancho: con el tope de lectura de
            1200px el renglon se corta y hay que hacer scroll horizontal. El resto lo
            conserva, porque un formulario o un texto a 2000px se lee mal. *@
-        <MudContainer MaxWidth="MaxWidth.False" Class="kpg-content-container" Style="@EstiloContenedor">
+        <MudContainer MaxWidth="MaxWidth.False" Class="@ClaseContenedor">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -120,15 +122,14 @@
         "/mis-solicitudes"
     ];
 
-    private string EstiloContenedor
+    private string ClaseContenedor
     {
         get
         {
-            var ruta = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/');
-            return RutasAnchas.Any(r => ruta.Equals(r, StringComparison.OrdinalIgnoreCase)
-                                        || ruta.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase))
-                ? "max-width:100%;"
-                : "max-width:1200px;";
+            var ruta = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+            var esAncha = RutasAnchas.Any(r => ruta.Equals(r, StringComparison.OrdinalIgnoreCase)
+                                                || ruta.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase));
+            return esAncha ? "kpg-content-container kpg-content-container--wide" : "kpg-content-container";
         }
     }
 
@@ -163,6 +164,13 @@
            ?? user.FindFirst("role")?.Value
            ?? string.Empty;
 
+    private static string ResumenUsuario(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var nombre = NombreParaMostrar(user) ?? string.Empty;
+        var rol = RolParaMostrar(user);
+        return string.IsNullOrWhiteSpace(rol) ? nombre : $"{nombre} — {rol}";
+    }
+
     protected override void OnInitialized()
     {
         SessionTimeout.OnWarning += HandleWarningAsync;
@@ -173,7 +181,8 @@
         Navigation.LocationChanged += HandleRutaCambiada;
     }
 
-    private void HandleRutaCambiada(object? _, LocationChangedEventArgs __) => StateHasChanged();
+    private void HandleRutaCambiada(object? _, LocationChangedEventArgs __)
+        => _ = InvokeAsync(StateHasChanged);
 
     private async Task HandleWarningAsync()
     {
