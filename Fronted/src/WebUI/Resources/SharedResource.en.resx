@@ -327,7 +327,6 @@
   <data name="Reg_DayFull"><value>This day already has all three shifts recorded on this project. To change one, delete the entry from My Records.</value></data>
   <data name="Reg_ShiftAlreadySaved"><value>Already recorded</value></data>
   <data name="Reg_ResourceFromPuesto"><value>Preloaded from your position. You can change it if you worked in another role that day.</value></data>
-  <data name="Reg_DescriptionSuggest"><value>Type or pick a description you have used before.</value></data>
   <data name="Reg_Saving"><value>Saving...</value></data>
   <data name="Reg_SavedTitle"><value>Work day saved</value></data>
   <data name="Reg_TotalHours"><value>Total:</value></data>

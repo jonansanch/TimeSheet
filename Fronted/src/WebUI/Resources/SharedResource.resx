@@ -327,7 +327,6 @@
   <data name="Reg_DayFull"><value>Este día ya tiene los tres horarios registrados en este proyecto. Para cambiar uno, elimina el registro desde Mis Registros.</value></data>
   <data name="Reg_ShiftAlreadySaved"><value>Ya registrado</value></data>
   <data name="Reg_ResourceFromPuesto"><value>Precargado desde tu puesto. Puedes cambiarlo si este día trabajaste en otro rol.</value></data>
-  <data name="Reg_DescriptionSuggest"><value>Escribe o elige una descripción que ya hayas usado.</value></data>
   <data name="Reg_Saving"><value>Guardando...</value></data>
   <data name="Reg_SavedTitle"><value>Jornada guardada</value></data>
   <data name="Reg_TotalHours"><value>Total:</value></data>

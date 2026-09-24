@@ -250,29 +250,20 @@
                         }
                     </MudSelect>
                 </div>
-                @* Sugiere descripciones que el usuario ya escribio: la mayoria de los
-                   dias repite tareas y volver a teclearlas completas es puro trabajo. *@
                 <div class="kpg-shift-form__description">
-                    <MudAutocomplete T="string"
-                                     Label="@L["Label_Description"]"
-                                     Variant="Variant.Outlined"
-                                     Margin="Margin.Dense"
-                                     Lines="3"
-                                     Value="@_model.Descripcion"
-                                     ValueChanged="@(v => _model.Descripcion = v)"
-                                     SearchFunc="BuscarDescripcionesAsync"
-                                     CoerceValue="true"
-                                     ResetValueOnEmptyText="false"
-                                     MaxItems="8"
-                                     MinCharacters="0"
-                                     Immediate="true"
-                                     MaxLength="@MaxDescripcion"
-                                     Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
-                                     Counter="@MaxDescripcion"
-                                     Error="@DescripcionExcedida"
-                                     ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
-                                     HelperText="@(_descripcionesUsadas.Count > 0 ? L["Reg_DescriptionSuggest"].Value : null)"
-                                     Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
+                    <MudTextField T="string"
+                                  Label="@L["Label_Description"]"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Lines="3"
+                                  @bind-Value="_model.Descripcion"
+                                  Immediate="true"
+                                  MaxLength="@MaxDescripcion"
+                                  Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
+                                  Counter="@MaxDescripcion"
+                                  Error="@DescripcionExcedida"
+                                  ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
+                                  Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
                 </div>
             </div>
 
@@ -357,7 +348,6 @@
     protected override async Task OnInitializedAsync()
     {
         try { _sugerenciasRecientes = await RegistroHorasRepository.GetRecientesAsync(5); } catch { }
-        await CargarDescripcionesUsadasAsync();
         try { _windowDays = await ParametroSistemaRepository.GetVentanaRetroactividadAsync(); } catch { _windowDays = 3; }
 
         try
@@ -400,31 +390,6 @@
     /// a mano de quien depende su primera aprobacion. <b>Precarga, no bloquea</b>: quien no
     /// tenga puesto asignado —hoy la mayoria— sigue eligiendolo del selector.
     /// </summary>
-    /// <summary>
-    /// Toma las descripciones distintas de los ultimos registros del usuario, las mas
-    /// recientes primero. Un mes alcanza para cubrir lo que repite habitualmente.
-    /// </summary>
-    private async Task CargarDescripcionesUsadasAsync()
-    {
-        try
-        {
-            var hasta = DateOnly.FromDateTime(DateTime.Today);
-            var historial = await RegistroHorasRepository.GetHistorialAsync(
-                1, 50, hasta.AddDays(-DiasDeSugerencias), hasta);
-
-            _descripcionesUsadas = historial.Items
-                .OrderByDescending(r => r.FechaRegistro)
-                .Select(r => r.Descripcion?.Trim() ?? string.Empty)
-                .Where(d => d.Length > 0)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-        catch { _descripcionesUsadas = []; }
-    }
-
-    /// <summary>Ventana de historial de la que salen las sugerencias de descripcion.</summary>
-    private const int DiasDeSugerencias = 60;
-
     private async Task PrecargarRecursoDelPuestoAsync()
     {
         try
@@ -454,25 +419,6 @@
         _model.Lugar      = s.Lugar;
         _model.Descripcion = s.Descripcion;
         await CargarRegistroExistenteAsync();
-    }
-
-    /// <summary>
-    /// Descripciones que el usuario ya uso, para ofrecerlas como sugerencia. Se cargan del
-    /// historial reciente: no hace falta un catalogo aparte que alguien deba mantener.
-    /// </summary>
-    private List<string> _descripcionesUsadas = [];
-
-    /// <summary>
-    /// Con el campo vacio muestra las mas recientes; al teclear filtra por coincidencia en
-    /// cualquier parte del texto, no solo al inicio.
-    /// </summary>
-    private Task<IEnumerable<string>> BuscarDescripcionesAsync(string? valor, CancellationToken _)
-    {
-        if (string.IsNullOrWhiteSpace(valor))
-            return Task.FromResult<IEnumerable<string>>(_descripcionesUsadas);
-
-        return Task.FromResult(_descripcionesUsadas
-            .Where(d => d.Contains(valor, StringComparison.OrdinalIgnoreCase)));
     }
 
     private IEnumerable<ProyectoActivoResponse> ProyectosDelCliente =>
