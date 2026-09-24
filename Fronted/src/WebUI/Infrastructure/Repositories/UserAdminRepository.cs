@@ -87,6 +87,24 @@ public class UserAdminRepository : IUserAdminRepository
         return await response.Content.ReadFromJsonAsync<List<OrganigramaNodoResponse>>(cancellationToken: ct) ?? [];
     }
 
+    public async Task<(byte[] Contenido, string ContentType, string FileName)?> ExportarOrganigramaPdfAsync(
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken)) return null;
+
+        using var message = CreateMessage(HttpMethod.Get, "api/users/organigrama/pdf");
+        using var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var contenido = await response.Content.ReadAsByteArrayAsync(ct);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? $"organigrama-kpg-{DateTime.Today:yyyyMMdd}.pdf";
+
+        return (contenido, contentType, fileName);
+    }
+
     public async Task<(bool Ok, UserAdminResponse? User)> ActivateAsync(string id, CancellationToken ct = default) =>
         await SendUserActionAsync(HttpMethod.Post, $"api/users/{id}/activate", ct);
 

@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using NSubstitute;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.Endpoints;
 
@@ -67,9 +66,10 @@ public class KpgWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
-            // Stub IDbConnection (Dapper no se usa en los endpoints testeados)
+            // La misma conexion SQLite permite probar tambien endpoints Dapper, como
+            // organigrama y su exportacion PDF, sobre los datos del host de pruebas.
             services.RemoveAll<IDbConnection>();
-            services.AddScoped<IDbConnection>(_ => Substitute.For<IDbConnection>());
+            services.AddSingleton<IDbConnection>(_connection);
 
             // Deshabilitar rate limiting en tests: eliminar toda la configuración previa
             // y registrar una nueva sin límites para la política "login"

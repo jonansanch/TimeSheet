@@ -148,7 +148,11 @@ body { font-size: 14px; }
 .org-tree--searching .org-card { opacity: .45; }
 .org-tree--searching .org-card--match { opacity: 1; border-color: var(--kpg-color-primary); box-shadow: 0 0 0 2px var(--kpg-blue-100); }
 @media (prefers-reduced-motion: reduce) { .org-card { transition: none; } }
-@media (max-width: 599.98px) { .org-search { width: 100%; } }
+.org-page__actions { flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 599.98px) {
+    .org-search, .org-page__actions { width: 100%; }
+    .org-page__actions .mud-button-root { width: 100%; }
+}
 
 .admin-page > .mud-data-grid, .admin-page > .mud-table-container { box-shadow: var(--kpg-shadow-xs); }
 .admin-page .mud-toolbar { min-height: 0; height: auto; padding: var(--kpg-space-4); border-bottom: 1px solid var(--kpg-border-default); }

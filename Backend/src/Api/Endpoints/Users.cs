@@ -6,6 +6,7 @@ using KPG.Timesheet.Application.Features.Users.Commands.CreateUser;
 using KPG.Timesheet.Application.Features.Users.Commands.DeactivateUser;
 using KPG.Timesheet.Application.Features.Users.Commands.DeleteUser;
 using KPG.Timesheet.Application.Features.Users.Queries.GetOrganigrama;
+using KPG.Timesheet.Application.Features.Users.Queries.ExportarOrganigramaPdf;
 using KPG.Timesheet.Application.Features.Users.Queries.GetUsers;
 using KPG.Timesheet.Domain.Constants;
 using MediatR;
@@ -31,6 +32,7 @@ public class Users : IEndpointGroup
         groupBuilder.MapPut(AdminResetPassword, "{id}/reset-password").RequireAuthorization(adminOnly);
         groupBuilder.MapPut(AsignarEstructura, "{id}/estructura").RequireAuthorization(adminOnly);
         groupBuilder.MapGet("organigrama", GetOrganigrama).RequireAuthorization(readAllowed);
+        groupBuilder.MapGet("organigrama/pdf", ExportarOrganigramaPdf).RequireAuthorization(readAllowed);
         groupBuilder.MapDelete(DeleteUser, "{id}").RequireAuthorization(adminOnly);
     }
 
@@ -57,6 +59,18 @@ public class Users : IEndpointGroup
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public static async Task<IResult> GetOrganigrama(ISender sender, CancellationToken cancellationToken)
         => Results.Ok(await sender.Send(new GetOrganigramaQuery(), cancellationToken));
+
+    [EndpointSummary("Exportar organigrama a PDF")]
+    [EndpointDescription("Genera un PDF paginado con la jerarquia de usuarios activos.")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<IResult> ExportarOrganigramaPdf(
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new ExportarOrganigramaPdfQuery(), cancellationToken);
+        return Results.File(result.Contenido, result.ContentType, result.FileName);
+    }
 
     [EndpointSummary("Listar usuarios")]
     [EndpointDescription("Retorna usuarios de Identity para administracion, paginados y sin datos sensibles.")]
