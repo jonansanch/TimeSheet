@@ -1,0 +1,401 @@
+@page "/admin/parametros/descripciones"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject ITerminoDescripcionRepository TerminoRepo
+@inject IClienteRepository ClienteRepo
+@inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L["Desc_Title"] - KPG Timesheet</PageTitle>
+
+<MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" Separator=">" Class="pa-0" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family:Poppins,sans-serif;font-weight:600;">@L["Desc_Title"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Desc_Subtitle"]</MudText>
+    </div>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Desc_Title"]</MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Disabled="_isProcesando"
+                       OnClick="AbrirCrearAsync">
+                @L["Desc_NewTerm"]
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <KpgTableSkeleton />
+        }
+        else if (_terminos.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.FactCheck">
+                @L["Desc_ErrorLoad"]
+            </MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="TerminoDescripcionResponse" Items="_terminos" Dense="true" Filterable="false" SortMode="SortMode.None" RowsPerPage="50">
+                <Columns>
+                    <PropertyColumn Property="x => x.Termino" Title="@L["Desc_Term"]" />
+                    <TemplateColumn Title="@L["Desc_Rule"]" Sortable="false">
+                        <CellTemplate>@EtiquetaRegla(context.Item.Regla)</CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@L["Desc_Severity"]" Sortable="false">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(context.Item.Severidad == SeveridadTermino.Bloquear ? Color.Error : Color.Warning)">
+                                @EtiquetaSeveridad(context.Item.Severidad)
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@L["Label_Status"]" Sortable="false">
+                        <CellTemplate>
+                            <KpgEstadoChip Activo="@context.Item.Activo" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="@L["Label_Actions"]" Sortable="false">
+                        <CellTemplate>
+                            <MudTooltip Text="@(L["Btn_Edit"].Value)">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Primary" Size="Size.Small"
+                                               aria-label="@L["Btn_Edit"]"
+                                               Disabled="_isProcesando"
+                                               OnClick="@(() => AbrirEditarAsync(context.Item))" />
+                            </MudTooltip>
+                            @if (context.Item.Activo)
+                            {
+                                <MudTooltip Text="@(L["Btn_Deactivate"].Value)">
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOn"
+                                                   Color="Color.Success" Size="Size.Small"
+                                                   aria-label="@L["Btn_Deactivate"]"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                                </MudTooltip>
+                            }
+                            else
+                            {
+                                <MudTooltip Text="@(L["Btn_Activate"].Value)">
+                                    <MudIconButton Icon="@Icons.Material.Filled.ToggleOff"
+                                                   Color="Color.Default" Size="Size.Small"
+                                                   aria-label="@L["Btn_Activate"]"
+                                                   Disabled="_isProcesando"
+                                                   OnClick="@(() => ConfirmarToggleAsync(context.Item))" />
+                                </MudTooltip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="TerminoDescripcionResponse" PageSizeOptions="new[] { 5, 10, 20, 50, 100 }" RowsPerPageString="@L["Pager_RowsPerPage"]" InfoFormat="@L["Pager_InfoFormat"]" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    </MudPaper>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudText Typo="Typo.h6" Style="font-weight:600;" Class="mb-3">@L["Desc_ParamsTitle"]</MudText>
+
+        @if (_isLoadingParametros)
+        {
+            <KpgTableSkeleton />
+        }
+        else
+        {
+            <MudGrid Spacing="3">
+                <MudItem xs="12" sm="6">
+                    <MudSwitch @bind-Value="_validacionActiva" Color="Color.Primary" Label="@L["Desc_ValidationActive"]" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Desc_ValidationActiveHint"]</MudText>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudNumericField T="int" Label="@L["Desc_MinWords"]" Variant="Variant.Outlined" @bind-Value="_minPalabras" Min="0" Max="50" />
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudNumericField T="int" Label="@L["Desc_MinContextWords"]" Variant="Variant.Outlined" @bind-Value="_minPalabrasContexto" Min="0" Max="50" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="SeveridadTermino" Label="@L["Desc_BaseRulesSeverity"]" Variant="Variant.Outlined" @bind-Value="_severidadReglasBase">
+                        <MudSelectItem Value="SeveridadTermino.Advertir">@L["Desc_Severity_Advertir"]</MudSelectItem>
+                        <MudSelectItem Value="SeveridadTermino.Bloquear">@L["Desc_Severity_Bloquear"]</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" Class="d-flex justify-end">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isProcesando" OnClick="GuardarParametrosAsync">
+                        @L["Btn_Save"]
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        }
+    </MudPaper>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Desc_TesterTitle"]</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">@L["Desc_TesterHint"]</MudText>
+
+        <MudGrid Spacing="2" Class="mb-2">
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?"
+                           Label="@L["Label_Client"]"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Value="_testerClienteId"
+                           ValueChanged="HandleTesterClienteChanged"
+                           aria-label="@L["Desc_TesterProjectHint"]">
+                    @foreach (var c in _catalogoClientes)
+                    {
+                        <MudSelectItem T="int?" Value="@c.Id">@c.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?"
+                           Label="@L["Label_Project"]"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Disabled="@(_testerClienteId is null)"
+                           Value="_testerProyectoId"
+                           ValueChanged="HandleTesterProyectoChanged"
+                           HelperText="@L["Desc_TesterProjectHint"]"
+                           aria-label="@L["Label_Project"]">
+                    @foreach (var p in ProyectosDelClienteDePrueba)
+                    {
+                        <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        <MudTextField T="string"
+                      Variant="Variant.Outlined"
+                      Lines="2"
+                      Placeholder="@L["Desc_TesterPlaceholder"]"
+                      @bind-Value="_textoPrueba"
+                      Immediate="true"
+                      DebounceInterval="500"
+                      OnDebounceIntervalElapsed="ProbarAsync"
+                      aria-label="@L["Desc_TesterTitle"]" />
+
+        @if (_evaluacionPrueba is not null)
+        {
+            <MudStack Spacing="2" Class="mt-3">
+                @if (_evaluacionPrueba.Hallazgos.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Success" Dense="true">@L["Desc_TesterNoIssues"]</MudAlert>
+                }
+                else
+                {
+                    @if (_evaluacionPrueba.Bloquea)
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true">@L["Desc_TesterBlocks"]</MudAlert>
+                    }
+                    @foreach (var hallazgo in _evaluacionPrueba.Hallazgos)
+                    {
+                        <MudAlert Severity="@(hallazgo.Severidad == nameof(SeveridadTermino.Bloquear) ? Severity.Error : Severity.Warning)" Dense="true">
+                            @hallazgo.Mensaje
+                            @if (!string.IsNullOrWhiteSpace(hallazgo.Sugerencia))
+                            {
+                                <MudText Typo="Typo.caption" Class="d-block mt-1"><b>@L["Desc_Suggestion"]:</b> @hallazgo.Sugerencia</MudText>
+                            }
+                        </MudAlert>
+                    }
+                }
+            </MudStack>
+        }
+    </MudPaper>
+
+    <MudMessageBox @ref="_msgBox" CancelText="@L["Btn_Cancel"]">
+        <MessageContent>@_msgBoxContent</MessageContent>
+        <YesButton>
+            <MudButton Color="@_msgBoxColor" Variant="Variant.Filled">@L["Btn_Confirm"]</MudButton>
+        </YesButton>
+    </MudMessageBox>
+</MudStack>
+
+@code {
+    private BreadcrumbItem[] _breadcrumbs => [
+        new(L["Nav_Home"].Value, "/"),
+        new(L["Nav_Admin"].Value, null, disabled: true),
+        new(L["Nav_Params"].Value, null, disabled: true),
+        new(L["Nav_DescriptionQuality"].Value, null, disabled: true)
+    ];
+
+    private bool _isLoading = true;
+    private bool _isLoadingParametros = true;
+    private bool _isProcesando;
+    private List<TerminoDescripcionResponse> _terminos = [];
+    private MudMessageBox? _msgBox;
+    private string _msgBoxContent = string.Empty;
+    private Color  _msgBoxColor   = Color.Primary;
+
+    private bool _validacionActiva = true;
+    private int  _minPalabras = 4;
+    private int  _minPalabrasContexto = 3;
+    private SeveridadTermino _severidadReglasBase = SeveridadTermino.Advertir;
+
+    private string _textoPrueba = string.Empty;
+    private EvaluacionDescripcionResponse? _evaluacionPrueba;
+
+    private List<ClienteConProyectosResponse> _catalogoClientes = [];
+    private int? _testerClienteId;
+    private int? _testerProyectoId;
+
+    private IEnumerable<ProyectoActivoResponse> ProyectosDelClienteDePrueba =>
+        _catalogoClientes.FirstOrDefault(c => c.Id == _testerClienteId)?.ProyectosActivos
+        ?? Enumerable.Empty<ProyectoActivoResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _terminos = await TerminoRepo.GetAllAsync(); }
+        catch { Snackbar.Add(L["Desc_ErrorLoad"].Value, Severity.Error); }
+        finally { _isLoading = false; }
+
+        try
+        {
+            var parametros = await TerminoRepo.GetParametrosAsync();
+            if (parametros is not null)
+            {
+                _validacionActiva = parametros.ValidacionActiva;
+                _minPalabras = parametros.MinPalabras;
+                _minPalabrasContexto = parametros.MinPalabrasContexto;
+                _severidadReglasBase = parametros.SeveridadReglasBase;
+            }
+        }
+        catch { Snackbar.Add(L["Desc_ParamsError"].Value, Severity.Error); }
+        finally { _isLoadingParametros = false; }
+
+        // Solo para que el probador pueda ejercer el prefijo "[Proyecto] - " y el
+        // descuento de su nombre como contexto; no afecta el catalogo ni los parametros.
+        try { _catalogoClientes = await ClienteRepo.GetCatalogoAsync(); }
+        catch { /* el probador sigue funcionando sin proyecto */ }
+    }
+
+    /// <summary>Al cambiar de cliente se limpia el proyecto elegido: ya no le pertenece.</summary>
+    private void HandleTesterClienteChanged(int? clienteId)
+    {
+        _testerClienteId = clienteId;
+        _testerProyectoId = null;
+    }
+
+    private async Task HandleTesterProyectoChanged(int? proyectoId)
+    {
+        _testerProyectoId = proyectoId;
+        await ProbarAsync();
+    }
+
+    private async Task AbrirCrearAsync()
+    {
+        var opts   = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<KpgTerminoDescripcionDialog>(L["Desc_NewTermTitle"].Value, opts);
+        var result = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not CreateTerminoDescripcionRequest req) return;
+
+        _isProcesando = true;
+        try
+        {
+            var (ok, t, err) = await TerminoRepo.CreateAsync(req);
+            if (ok && t is not null)
+            {
+                _terminos.Add(t);
+                _terminos = [.. _terminos.OrderBy(x => x.Termino)];
+                Snackbar.Add(L["Desc_SavedOk"].Value, Severity.Success);
+            }
+            else Snackbar.Add(err ?? L["Desc_ErrorSave"].Value, Severity.Error);
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task AbrirEditarAsync(TerminoDescripcionResponse item)
+    {
+        var params_ = new DialogParameters<KpgTerminoDescripcionDialog> { { x => x.Termino, item } };
+        var opts    = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+        var dialog  = await DialogService.ShowAsync<KpgTerminoDescripcionDialog>(L["Desc_EditTermTitle"].Value, params_, opts);
+        var result  = await dialog.Result;
+        if (result?.Canceled != false || result.Data is not UpdateTerminoDescripcionRequest req) return;
+
+        _isProcesando = true;
+        try
+        {
+            var (ok, t, err) = await TerminoRepo.UpdateAsync(item.Id, req);
+            if (ok && t is not null)
+            {
+                Reemplazar(item, t);
+                _terminos = [.. _terminos.OrderBy(x => x.Termino)];
+                Snackbar.Add(L["Desc_SavedOk"].Value, Severity.Success);
+            }
+            else Snackbar.Add(err ?? L["Desc_ErrorSave"].Value, Severity.Error);
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task ConfirmarToggleAsync(TerminoDescripcionResponse item)
+    {
+        _msgBoxContent = item.Activo
+            ? string.Format(L["Desc_DeactivateConfirm"], item.Termino)
+            : string.Format(L["Users_ActivateConfirm"], item.Termino);
+        _msgBoxColor = item.Activo ? Color.Warning : Color.Success;
+        StateHasChanged();
+        if (await _msgBox!.ShowAsync() != true) return;
+
+        _isProcesando = true;
+        try
+        {
+            var (ok, t, err) = await TerminoRepo.ToggleActivoAsync(item.Id);
+            if (ok && t is not null)
+            {
+                Reemplazar(item, t);
+                Snackbar.Add(L["Desc_SavedOk"].Value, Severity.Success);
+            }
+            else Snackbar.Add(err ?? L["Desc_ErrorSave"].Value, Severity.Error);
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task GuardarParametrosAsync()
+    {
+        _isProcesando = true;
+        try
+        {
+            var (ok, err) = await TerminoRepo.UpdateParametrosAsync(new UpdateParametrosDescripcionRequest(
+                _validacionActiva, _minPalabras, _minPalabrasContexto, _severidadReglasBase));
+            Snackbar.Add(ok ? L["Desc_ParamsSaved"].Value : err ?? L["Desc_ParamsError"].Value, ok ? Severity.Success : Severity.Error);
+        }
+        finally { _isProcesando = false; }
+    }
+
+    private async Task ProbarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_textoPrueba))
+        {
+            _evaluacionPrueba = null;
+            return;
+        }
+
+        _evaluacionPrueba = await TerminoRepo.EvaluarAsync(_textoPrueba, _testerProyectoId);
+    }
+
+    private void Reemplazar(TerminoDescripcionResponse viejo, TerminoDescripcionResponse nuevo)
+    {
+        var idx = _terminos.IndexOf(viejo);
+        if (idx >= 0) _terminos[idx] = nuevo;
+    }
+
+    private string EtiquetaRegla(ReglaTermino regla) => regla switch
+    {
+        ReglaTermino.ProhibidoSiempre => L["Desc_Rule_ProhibidoSiempre"].Value,
+        ReglaTermino.GenericoSiVaSolo => L["Desc_Rule_GenericoSiVaSolo"].Value,
+        _ => regla.ToString()
+    };
+
+    private string EtiquetaSeveridad(SeveridadTermino severidad) => severidad switch
+    {
+        SeveridadTermino.Advertir => L["Desc_Severity_Advertir"].Value,
+        SeveridadTermino.Bloquear => L["Desc_Severity_Bloquear"].Value,
+        _ => severidad.ToString()
+    };
+}

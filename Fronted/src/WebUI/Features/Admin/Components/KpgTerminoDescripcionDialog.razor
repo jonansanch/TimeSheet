@@ -1,0 +1,127 @@
+@inject IStringLocalizer<SharedResource> L
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.FactCheck" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Style="font-weight:600;">@(_termino is null ? L["Desc_NewTermTitle"].Value : L["Desc_EditTermTitle"].Value)</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @ref="_terminoField"
+                          T="string"
+                          Label="@L["Desc_Term"]"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_termino_"
+                          MaxLength="100"
+                          Required="true"
+                          RequiredError="@L["Val_NameRequired"]"
+                          aria-label="@L["Desc_Term"]" />
+
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudSelect T="TipoTermino" Label="@L["Desc_Type"]" Variant="Variant.Outlined" @bind-Value="_tipo">
+                        <MudSelectItem Value="TipoTermino.Palabra">@L["Desc_Type_Palabra"]</MudSelectItem>
+                        <MudSelectItem Value="TipoTermino.Frase">@L["Desc_Type_Frase"]</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="ReglaTermino" Label="@L["Desc_Rule"]" Variant="Variant.Outlined" @bind-Value="_regla">
+                        <MudSelectItem Value="ReglaTermino.ProhibidoSiempre">@L["Desc_Rule_ProhibidoSiempre"]</MudSelectItem>
+                        <MudSelectItem Value="ReglaTermino.GenericoSiVaSolo">@L["Desc_Rule_GenericoSiVaSolo"]</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudSelect T="SeveridadTermino" Label="@L["Desc_Severity"]" Variant="Variant.Outlined" @bind-Value="_severidad">
+                <MudSelectItem Value="SeveridadTermino.Advertir">@L["Desc_Severity_Advertir"]</MudSelectItem>
+                <MudSelectItem Value="SeveridadTermino.Bloquear">@L["Desc_Severity_Bloquear"]</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="@L["Desc_Reason"]"
+                          Variant="Variant.Outlined"
+                          Lines="2"
+                          @bind-Value="_motivo"
+                          MaxLength="200"
+                          Required="true"
+                          RequiredError="@L["Val_NameRequired"]"
+                          aria-label="@L["Desc_Reason"]" />
+
+            <MudTextField T="string"
+                          Label="@L["Desc_Suggestion"]"
+                          Variant="Variant.Outlined"
+                          Lines="2"
+                          @bind-Value="_sugerencia"
+                          MaxLength="300"
+                          aria-label="@L["Desc_Suggestion"]" />
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" aria-live="polite">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Btn_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!EsValido)"
+                   OnClick="Submit">
+            @L["Btn_Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public TerminoDescripcionResponse? Termino { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    private MudTextField<string> _terminoField = default!;
+    private TerminoDescripcionResponse? _termino;
+
+    private string _termino_ = string.Empty;
+    private TipoTermino _tipo = TipoTermino.Palabra;
+    private ReglaTermino _regla = ReglaTermino.GenericoSiVaSolo;
+    private SeveridadTermino _severidad = SeveridadTermino.Advertir;
+    private string _motivo = string.Empty;
+    private string _sugerencia = string.Empty;
+    private string? _errorMessage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await _terminoField.FocusAsync();
+    }
+
+    protected override void OnInitialized()
+    {
+        _termino = Termino;
+        _termino_ = Termino?.Termino ?? string.Empty;
+        _tipo = Termino?.Tipo ?? TipoTermino.Palabra;
+        _regla = Termino?.Regla ?? ReglaTermino.GenericoSiVaSolo;
+        _severidad = Termino?.Severidad ?? SeveridadTermino.Advertir;
+        _motivo = Termino?.Motivo ?? string.Empty;
+        _sugerencia = Termino?.Sugerencia ?? string.Empty;
+        _errorMessage = ErrorMessage;
+    }
+
+    private bool EsValido =>
+        !string.IsNullOrWhiteSpace(_termino_) && !string.IsNullOrWhiteSpace(_motivo);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        var sugerencia = string.IsNullOrWhiteSpace(_sugerencia) ? null : _sugerencia.Trim();
+
+        if (_termino is null)
+            MudDialog.Close(DialogResult.Ok(new CreateTerminoDescripcionRequest(
+                _termino_.Trim(), _tipo, _regla, _severidad, _motivo.Trim(), sugerencia)));
+        else
+            MudDialog.Close(DialogResult.Ok(new UpdateTerminoDescripcionRequest(
+                _termino_.Trim(), _tipo, _regla, _severidad, _motivo.Trim(), sugerencia)));
+    }
+}

@@ -29,4 +29,11 @@ public static class TipoEventoBitacora
     public const string ResetContrasena = "ResetContrasena";
     public const string ReporteUsuarioCreado = "ReporteUsuarioCreado";
     public const string ReporteUsuarioCambioEstado = "ReporteUsuarioCambioEstado";
+
+    // ── Calidad de descripciones (ver Docs/plan-calidad-descripciones.md) ──
+    public const string TerminoDescripcionCreado = "TerminoDescripcionCreado";
+    public const string TerminoDescripcionActualizado = "TerminoDescripcionActualizado";
+    public const string TerminoDescripcionActivado = "TerminoDescripcionActivado";
+    public const string CambioParametrosDescripcion = "CambioParametrosDescripcion";
+    public const string MejoraDescripcionSolicitada = "MejoraDescripcionSolicitada";
 }

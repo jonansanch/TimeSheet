@@ -39,6 +39,7 @@ builder.Services.AddScoped<IReporteUsuarioRepository, ReporteUsuarioRepository>(
 builder.Services.AddScoped<IAprobacionRepository, AprobacionRepository>();
 builder.Services.AddScoped<IModalidadRepository, ModalidadRepository>();
 builder.Services.AddScoped<ILugarTrabajoRepository, LugarTrabajoRepository>();
+builder.Services.AddScoped<ITerminoDescripcionRepository, TerminoDescripcionRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IReportesRepository, ReportesRepository>();
 builder.Services.AddScoped<INotificacionesRepository, NotificacionesRepository>();
