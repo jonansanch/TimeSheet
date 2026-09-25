@@ -143,7 +143,7 @@
                         <span class="org-card__name">@nodo.Nombre</span>
                         @if (DatosPais(nodo.CodigoPais) is { } pais)
                         {
-                            <span class="org-card__flag" role="img" aria-label="@string.Format(L["Org_NationalityAria"], pais.Nombre)" title="@pais.Nombre">@pais.Bandera</span>
+                            <span class="org-card__flag fi fi-@(pais.Codigo.ToLowerInvariant())" role="img" aria-label="@string.Format(L["Org_NationalityAria"], pais.Nombre)" title="@pais.Nombre"></span>
                         }
                     </span>
                     @if (!string.IsNullOrWhiteSpace(nodo.PuestoNombre))

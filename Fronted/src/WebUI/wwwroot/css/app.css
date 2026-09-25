@@ -140,7 +140,7 @@ body { font-size: 14px; }
 .org-card__copy { display: flex; min-width: 0; flex: 1; flex-direction: column; line-height: 1.3; text-align: left; }
 .org-card__name-line { display: flex; min-width: 0; align-items: center; gap: var(--kpg-space-1); }
 .org-card__name { overflow: hidden; min-width: 0; font-size: var(--kpg-font-size-sm); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.org-card__flag { flex: 0 0 auto; font-size: 1rem; line-height: 1; }
+.org-card__flag { flex: 0 0 auto; width: 1.1rem !important; height: .8rem; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .1); }
 .org-card__role { overflow: hidden; color: var(--kpg-text-secondary); font-size: var(--kpg-font-size-xs); text-overflow: ellipsis; white-space: nowrap; }
 .org-card__meta { color: var(--kpg-text-secondary); font-size: var(--kpg-font-size-xs); white-space: nowrap; }
 .org-card__reports { color: var(--kpg-blue-600); font-weight: 600; }
