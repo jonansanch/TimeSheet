@@ -118,6 +118,12 @@ public static class DependencyInjection
             builder.Configuration.GetSection("Anthropic"));
         builder.Services.AddScoped<IInterpreteVoz, KPG.Timesheet.Infrastructure.Voz.ClaudeInterpreteVoz>();
 
+        // "Mejorar redaccion" con IA (ver Docs/plan-calidad-descripciones.md). Reusa la
+        // misma API key de arriba; el modelo y el limite diario van aparte.
+        builder.Services.Configure<KPG.Timesheet.Infrastructure.Descripciones.RedactorDescripcionSettings>(
+            builder.Configuration.GetSection("AnthropicRedactorDescripcion"));
+        builder.Services.AddScoped<IRedactorDescripcion, KPG.Timesheet.Infrastructure.Descripciones.ClaudeRedactorDescripcion>();
+
         // Registrar handlers de MediatR que viven en Infrastructure (export handlers: Excel/PDF)
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(SmtpEmailService).Assembly));
