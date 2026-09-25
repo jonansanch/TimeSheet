@@ -21,6 +21,7 @@ public interface IApplicationDbContext
     DbSet<ParametroRestriccionDia> ParametrosRestriccionDia { get; }
     DbSet<AprobacionRegistro> AprobacionesRegistro { get; }
     DbSet<ReporteUsuario> ReportesUsuario { get; }
+    DbSet<TerminoDescripcion> TerminosDescripcion { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

@@ -27,6 +27,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<ParametroRestriccionDia> ParametrosRestriccionDia => Set<ParametroRestriccionDia>();
     public DbSet<AprobacionRegistro> AprobacionesRegistro => Set<AprobacionRegistro>();
     public DbSet<ReporteUsuario> ReportesUsuario => Set<ReporteUsuario>();
+    public DbSet<TerminoDescripcion> TerminosDescripcion => Set<TerminoDescripcion>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

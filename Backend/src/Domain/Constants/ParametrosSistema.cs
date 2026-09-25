@@ -16,4 +16,24 @@ public static class ParametrosSistema
     /// completo ("data:image/png;base64,..."). Vacio o ausente significa sin logo.
     /// </summary>
     public const string LogoReportes = "LogoReportes";
+
+    // ── Calidad de descripciones (ver Docs/plan-calidad-descripciones.md) ──
+
+    /// <summary>"true"/"false". Interruptor general: en false, IValidadorDescripcion nunca bloquea.</summary>
+    public const string DescripcionValidacionActiva = "Descripcion.ValidacionActiva";
+
+    /// <summary>
+    /// Minimo de palabras (sin contar el prefijo "[Proyecto] - ") para no marcar la
+    /// descripcion como MUY_CORTA.
+    /// </summary>
+    public const string DescripcionMinPalabras = "Descripcion.MinPalabras";
+
+    /// <summary>
+    /// Palabras "con contenido" (sin stopwords ni el nombre del proyecto) que deben quedar
+    /// fuera de un termino GenericoSiVaSolo para no marcarlo.
+    /// </summary>
+    public const string DescripcionMinPalabrasContexto = "Descripcion.MinPalabrasContexto";
+
+    /// <summary>"Advertir"/"Bloquear". Severidad de las reglas base (MUY_CORTA, MAYUSCULAS, etc.).</summary>
+    public const string DescripcionSeveridadReglasBase = "Descripcion.SeveridadReglasBase";
 }

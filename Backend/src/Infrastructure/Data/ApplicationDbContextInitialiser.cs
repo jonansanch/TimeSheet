@@ -1,6 +1,7 @@
 using System.Text;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
+using KPG.Timesheet.Domain.Enums;
 using KPG.Timesheet.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -100,8 +101,17 @@ public class ApplicationDbContextInitialiser
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.HorasDiaCompleto, "8");
         await EnsureParametroAsync(Domain.Constants.ParametrosSistema.PeriodoAprobacion, "Semanal");
 
+        // Calidad de descripciones (ver Docs/fase0-linea-base-descripciones.md): arranca
+        // todo en modo Advertir. MinPalabras=4 y MinPalabrasContexto=3 salen de la
+        // distribucion real de palabras medida en esa linea base, no son un numero arbitrario.
+        await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DescripcionValidacionActiva, "true");
+        await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DescripcionMinPalabras, "4");
+        await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DescripcionMinPalabrasContexto, "3");
+        await EnsureParametroAsync(Domain.Constants.ParametrosSistema.DescripcionSeveridadReglasBase, "Advertir");
+
         // ── Catálogos ────────────────────────────────────────────────────────
         await SeedCatalogosAsync();
+        await SeedTerminosDescripcionAsync();
 
         // ── Estructura organizacional ────────────────────────────────────────
         // Sin esto la cadena de aprobacion resuelve vacia y ningun registro se puede
@@ -213,6 +223,81 @@ public class ApplicationDbContextInitialiser
                 _context.LugaresTrabajo.Add(new LugarTrabajo(nombre));
             await _context.SaveChangesAsync(CancellationToken.None);
         }
+    }
+
+    /// <summary>
+    /// Catalogo semilla de terminos genericos para la calidad de descripciones. Sale de
+    /// Docs/fase0-linea-base-descripciones.md (linea base contra datos reales, mayormente
+    /// de seed/QA por el bajo volumen actual). Todo arranca en Advertir: se revisa a
+    /// Bloquear por termino, desde la administracion, con datos de uso real.
+    /// </summary>
+    private async Task SeedTerminosDescripcionAsync()
+    {
+        if (_context.TerminosDescripcion.Any())
+            return;
+
+        (string Termino, TipoTermino Tipo, ReglaTermino Regla, string Motivo, string? Sugerencia)[] seedData =
+        [
+            ("prueba", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "No dice que se probo ni el resultado.",
+                "[App/Modulo] - [Que se probo] - [Resultado de la prueba]"),
+            ("pruebas", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "Igual que 'prueba'.",
+                "[App/Modulo] - Pruebas de [funcionalidad] - [resultado]"),
+            ("test", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "Anglicismo generico, mismo caso que 'prueba'.",
+                "[App/Modulo] - Pruebas de [funcionalidad] - [resultado]"),
+            ("soporte", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "No dice a quien ni sobre que.",
+                "[App/Modulo] - Soporte a [usuario/area] sobre [incidencia] - [resolucion]"),
+            ("reunion", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "No dice el tema ni el resultado.",
+                "[App/Modulo] - Reunion de [tema] con [area/cliente] - [acuerdo o resultado]"),
+            ("sistema", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "Nombre generico en vez del sistema real.",
+                "Reemplazar 'sistema' por el nombre real de la app o modulo"),
+            ("varios", TipoTermino.Palabra, ReglaTermino.ProhibidoSiempre,
+                "No es trazable, agrupa tareas distintas.",
+                "Detallar cada tarea por separado o la principal del dia"),
+            ("ajustes", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "No dice que se ajusto.",
+                "[App/Modulo] - Ajuste en [modulo/elemento] - [resultado]"),
+            ("pendientes", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "No dice que tarea ni por que.",
+                "[App/Modulo] - [Tarea] pendiente de [motivo]"),
+            ("trabajo", TipoTermino.Palabra, ReglaTermino.GenericoSiVaSolo,
+                "No dice que se hizo.",
+                "Reemplazar por la accion tecnica concreta"),
+            ("lo mismo", TipoTermino.Frase, ReglaTermino.ProhibidoSiempre,
+                "No es trazable sin ver el registro anterior.",
+                "Repetir la descripcion completa de la tarea, aunque sea igual al dia anterior"),
+            ("lo mismo de ayer", TipoTermino.Frase, ReglaTermino.ProhibidoSiempre,
+                "Igual que 'lo mismo'.",
+                "Repetir la descripcion completa de la tarea, aunque sea igual al dia anterior"),
+            ("igual que ayer", TipoTermino.Frase, ReglaTermino.ProhibidoSiempre,
+                "Igual que 'lo mismo'.",
+                "Repetir la descripcion completa de la tarea, aunque sea igual al dia anterior"),
+            ("n/a", TipoTermino.Palabra, ReglaTermino.ProhibidoSiempre,
+                "Vacio de contenido.",
+                "Completar con la tarea real del dia"),
+            ("ninguna", TipoTermino.Palabra, ReglaTermino.ProhibidoSiempre,
+                "Vacio de contenido.",
+                "Completar con la tarea real del dia"),
+            ("ok", TipoTermino.Palabra, ReglaTermino.ProhibidoSiempre,
+                "No describe ninguna tarea.",
+                "Completar con la tarea real del dia"),
+            ("listo", TipoTermino.Palabra, ReglaTermino.ProhibidoSiempre,
+                "No dice que se completo.",
+                "[App/Modulo] - [Que se completo]")
+        ];
+
+        foreach (var (termino, tipo, regla, motivo, sugerencia) in seedData)
+        {
+            _context.TerminosDescripcion.Add(new TerminoDescripcion(
+                termino, tipo, regla, SeveridadTermino.Advertir, motivo, sugerencia));
+        }
+
+        await _context.SaveChangesAsync(CancellationToken.None);
     }
 
     /// <summary>
@@ -1466,6 +1551,34 @@ public class ApplicationDbContextInitialiser
                 CREATE INDEX [IX_BitacoraAuditoria_ActorId]   ON [dbo].[BitacoraAuditoria] ([ActorId]);
                 CREATE INDEX [IX_BitacoraAuditoria_Timestamp]  ON [dbo].[BitacoraAuditoria] ([Timestamp]);
                 CREATE INDEX [IX_BitacoraAuditoria_TipoEvento] ON [dbo].[BitacoraAuditoria] ([TipoEvento]);
+            END
+            """);
+
+        // Catalogo de calidad de descripciones (Docs/plan-calidad-descripciones.md).
+        await _context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[dbo].[TerminosDescripcion]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [dbo].[TerminosDescripcion] (
+                    [Id] int NOT NULL IDENTITY,
+                    [Termino] nvarchar(100) NOT NULL,
+                    [TerminoNormalizado] nvarchar(100) NOT NULL,
+                    [Tipo] nvarchar(20) NOT NULL,
+                    [Regla] nvarchar(20) NOT NULL,
+                    [Severidad] nvarchar(20) NOT NULL,
+                    [Sugerencia] nvarchar(300) NULL,
+                    [Motivo] nvarchar(200) NOT NULL,
+                    [Activo] bit NOT NULL,
+                    [Created] datetimeoffset NOT NULL,
+                    [CreatedBy] nvarchar(max) NULL,
+                    [LastModified] datetimeoffset NOT NULL,
+                    [LastModifiedBy] nvarchar(max) NULL,
+                    CONSTRAINT [PK_TerminosDescripcion] PRIMARY KEY ([Id])
+                );
+
+                CREATE UNIQUE INDEX [IX_TerminosDescripcion_TerminoNormalizado]
+                    ON [dbo].[TerminosDescripcion] ([TerminoNormalizado]);
+                CREATE INDEX [IX_TerminosDescripcion_Activo]
+                    ON [dbo].[TerminosDescripcion] ([Activo]);
             END
             """);
     }
