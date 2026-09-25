@@ -18,7 +18,8 @@ public class AsignarEstructuraUsuarioCommandHandler(
         CancellationToken cancellationToken)
     {
         var (result, user) = await identityService.AsignarEstructuraAsync(
-            request.UserId, request.SupervisorUserId, request.PuestoId, cancellationToken);
+            request.UserId, request.SupervisorUserId, request.PuestoId,
+            request.CodigoPais, request.ActualizarCodigoPais, cancellationToken);
 
         if (!result.Succeeded || user is null)
             throw new ValidationException(
@@ -28,7 +29,7 @@ public class AsignarEstructuraUsuarioCommandHandler(
             TipoEventoBitacora.CambioEstructuraUsuario,
             actor.Id ?? "system", null,
             "AspNetUsers", request.UserId,
-            new { request.SupervisorUserId, request.PuestoId },
+            new { request.SupervisorUserId, request.PuestoId, request.CodigoPais, request.ActualizarCodigoPais },
             cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 

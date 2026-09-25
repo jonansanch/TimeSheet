@@ -939,6 +939,10 @@ namespace KPG.Timesheet.Infrastructure.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CodigoPais")
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
+
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetimeoffset");
 

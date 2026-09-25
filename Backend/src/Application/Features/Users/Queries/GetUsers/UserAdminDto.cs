@@ -12,4 +12,5 @@ public record UserAdminDto(
     string? SupervisorUserId,
     string? SupervisorNombre,
     int? PuestoId,
-    string? PuestoNombre);
+    string? PuestoNombre,
+    string? CodigoPais);

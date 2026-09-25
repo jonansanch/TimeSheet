@@ -43,6 +43,17 @@
                     <MudSelectItem T="int?" Value="@p.Id">@p.Nombre</MudSelectItem>
                 }
             </MudSelect>
+
+            <MudAutocomplete T="string"
+                             Label="@L["Users_Nationality"]"
+                             Variant="Variant.Outlined"
+                             @bind-Value="_codigoPais"
+                             SearchFunc="BuscarPaisesAsync"
+                             ToStringFunc="NombrePais"
+                             Clearable="true"
+                             ResetValueOnEmptyText="true"
+                             HelperText="@L["Users_NationalityHint"]"
+                             aria-label="@L["Users_Nationality"]" />
         </MudStack>
     </DialogContent>
     <DialogActions>
@@ -58,12 +69,15 @@
     [Parameter] public string NombreUsuario { get; set; } = string.Empty;
     [Parameter] public string? SupervisorUserId { get; set; }
     [Parameter] public int? PuestoId { get; set; }
+    [Parameter] public string? CodigoPais { get; set; }
     [Parameter] public List<UserAdminResponse> Usuarios { get; set; } = [];
     [Parameter] public List<EmpleadoResponse> Puestos { get; set; } = [];
     [Parameter] public string? ErrorMessage { get; set; }
 
     private string? _supervisorUserId;
     private int? _puestoId;
+    private string? _codigoPais;
+    private readonly IReadOnlyList<PaisIso> _paises = PaisesIso.Obtener();
 
     /// <summary>
     /// El propio usuario no puede ser su jefe. Los ciclos indirectos los rechaza el
@@ -76,10 +90,29 @@
     {
         _supervisorUserId = SupervisorUserId;
         _puestoId = PuestoId;
+        _codigoPais = CodigoPais;
     }
 
     private void Cancel() => MudDialog.Cancel();
 
     private void Submit() =>
-        MudDialog.Close(DialogResult.Ok(new AsignarEstructuraRequest(_supervisorUserId, _puestoId)));
+        MudDialog.Close(DialogResult.Ok(new AsignarEstructuraRequest(
+            _supervisorUserId, _puestoId, _codigoPais, ActualizarCodigoPais: true)));
+
+    private Task<IEnumerable<string>> BuscarPaisesAsync(string texto, CancellationToken cancellationToken)
+    {
+        var filtro = texto?.Trim() ?? string.Empty;
+        var codigos = _paises
+            .Where(p => filtro.Length == 0
+                || p.Nombre.Contains(filtro, StringComparison.CurrentCultureIgnoreCase)
+                || p.Codigo.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+            .Select(p => p.Codigo);
+        return Task.FromResult(codigos);
+    }
+
+    private string NombrePais(string? codigo)
+    {
+        var pais = _paises.FirstOrDefault(p => p.Codigo == codigo);
+        return pais is null ? string.Empty : $"{pais.Bandera} {pais.Nombre}";
+    }
 }

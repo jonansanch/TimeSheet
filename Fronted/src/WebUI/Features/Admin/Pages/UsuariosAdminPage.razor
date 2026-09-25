@@ -78,6 +78,11 @@
                     <PropertyColumn Property="x => x.Email" Title="@L["Users_ColEmail"]" />
                     <PropertyColumn Property="x => x.NombreCompleto" Title="@L["Users_ColName"]" />
                     <PropertyColumn Property="x => x.Role" Title="@L["Users_ColRole"]" />
+                    <TemplateColumn Title="@L["Users_Nationality"]" Sortable="false">
+                        <CellTemplate>
+                            @(PaisesIso.Nombre(context.Item.CodigoPais) ?? "-")
+                        </CellTemplate>
+                    </TemplateColumn>
                     <TemplateColumn Title="@L["Org_Position"]" Sortable="false">
                         <CellTemplate>
                             @(context.Item.PuestoNombre ?? "-")
@@ -277,6 +282,7 @@
             { x => x.NombreUsuario, item.NombreCompleto ?? item.Email },
             { x => x.SupervisorUserId, item.SupervisorUserId },
             { x => x.PuestoId, item.PuestoId },
+            { x => x.CodigoPais, item.CodigoPais },
             { x => x.Usuarios, _usuarios },
             { x => x.Puestos, puestos }
         };

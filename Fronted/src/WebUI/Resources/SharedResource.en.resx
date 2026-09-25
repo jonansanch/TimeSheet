@@ -286,6 +286,13 @@
   <data name="Params_LogoRemove"><value>Remove logo</value></data>
   <data name="Params_LogoErrorType"><value>The image must be PNG or JPG.</value></data>
   <data name="Params_LogoErrorSize"><value>The image cannot exceed 1 MB.</value></data>
+  <data name="Params_GeminiTitle"><value>Gemini API key (voice and improve wording)</value></data>
+  <data name="Params_GeminiSubtitle"><value>Used by voice dictation and AI-assisted "improve wording". Update it here when it expires, no deployment needed.</value></data>
+  <data name="Params_GeminiConfigured"><value>An API key is configured</value></data>
+  <data name="Params_GeminiEmpty"><value>No API key configured. Voice dictation and "improve wording" are unavailable.</value></data>
+  <data name="Params_GeminiNewKey"><value>New API key</value></data>
+  <data name="Params_GeminiNewKeyDesc"><value>Paste the Gemini key and save to replace the current one.</value></data>
+  <data name="Params_GeminiRemove"><value>Remove API key</value></data>
   <data name="Org_LedBy"><value>Manager:</value></data>
   <data name="Org_Title"><value>Org chart</value></data>
   <data name="Org_Subtitle"><value>Company hierarchy based on each person's direct manager.</value></data>
@@ -812,4 +819,7 @@
   <data name="Org_SearchResults"><value>{0} matches highlighted</value></data>
   <data name="Common_All"><value>All</value></data>
   <data name="Users_SearchPlaceholder"><value>Search by name or email...</value></data>
+  <data name="Users_Nationality"><value>Nationality</value></data>
+  <data name="Users_NationalityHint"><value>Search and select a country. You may leave it unassigned.</value></data>
+  <data name="Org_NationalityAria"><value>Nationality: {0}</value></data>
 </root>

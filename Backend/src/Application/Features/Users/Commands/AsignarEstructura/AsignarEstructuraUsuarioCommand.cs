@@ -12,4 +12,6 @@ namespace KPG.Timesheet.Application.Features.Users.Commands.AsignarEstructura;
 public record AsignarEstructuraUsuarioCommand(
     string UserId,
     string? SupervisorUserId,
-    int? PuestoId) : IRequest<UserAdminDto>;
+    int? PuestoId,
+    string? CodigoPais = null,
+    bool ActualizarCodigoPais = false) : IRequest<UserAdminDto>;

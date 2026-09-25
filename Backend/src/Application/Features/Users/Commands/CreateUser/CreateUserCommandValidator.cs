@@ -1,4 +1,5 @@
 using KPG.Timesheet.Domain.Constants;
+using KPG.Timesheet.Application.Common.Models;
 
 namespace KPG.Timesheet.Application.Features.Users.Commands.CreateUser;
 
@@ -25,5 +26,9 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
         RuleFor(x => x.NombreCompleto)
             .NotEmpty().WithMessage("El nombre completo es requerido.")
             .MaximumLength(200).WithMessage("El nombre completo no puede superar 200 caracteres.");
+
+        RuleFor(x => x.CodigoPais)
+            .Must(CodigoPaisIso.EsValido)
+            .WithMessage("El codigo de pais debe ser un codigo ISO 3166-1 alfa-2 valido.");
     }
 }

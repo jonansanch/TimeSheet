@@ -72,7 +72,7 @@ public class IdentityService : IIdentityService
             SELECT COUNT(*) FROM AspNetUsers;
 
             SELECT Id, Email, NombreCompleto, IsActive, Role, Created, DeactivatedAt,
-                   SupervisorUserId, SupervisorNombre, PuestoId, PuestoNombre
+                   SupervisorUserId, SupervisorNombre, PuestoId, PuestoNombre, CodigoPais
             FROM (
                 SELECT ROW_NUMBER() OVER (ORDER BY {orderBy}) AS RowNum,
                        u.Id,
@@ -85,6 +85,7 @@ public class IdentityService : IIdentityService
                        u.SupervisorUserId,
                        COALESCE(sup.NombreCompleto, sup.Email) AS SupervisorNombre,
                        u.PuestoId,
+                       u.CodigoPais,
                        pue.Nombre             AS PuestoNombre
                 FROM   AspNetUsers      u
                 LEFT   JOIN AspNetUserRoles ur ON u.Id      = ur.UserId
@@ -106,18 +107,23 @@ public class IdentityService : IIdentityService
         var rows  = await multi.ReadAsync<UserAdminRow>();
         var items = rows.Select(r => new UserAdminDto(
             r.Id, r.Email, r.NombreCompleto, r.IsActive, r.Role, r.Created, r.DeactivatedAt,
-            r.SupervisorUserId, r.SupervisorNombre, r.PuestoId, r.PuestoNombre)).ToList();
+            r.SupervisorUserId, r.SupervisorNombre, r.PuestoId, r.PuestoNombre, r.CodigoPais)).ToList();
 
         return new UsersPageDto(items, total, pageNumber, pageSize);
     }
 
-    public async Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role, string? nombreCompleto = null)
+    public async Task<(Result Result, UserAdminDto? User)> CreateUserAsync(
+        string email, string password, string role, string? nombreCompleto = null, string? codigoPais = null)
     {
+        if (!CodigoPaisIso.EsValido(codigoPais))
+            return (Result.Failure(["El codigo de pais no es valido."]), null);
+
         var user = new ApplicationUser
         {
             UserName = email,
             Email = email,
             NombreCompleto = string.IsNullOrWhiteSpace(nombreCompleto) ? null : nombreCompleto.Trim(),
+            CodigoPais = CodigoPaisIso.Normalizar(codigoPais),
             IsActive = true,
             Created = DateTimeOffset.UtcNow
         };
@@ -140,8 +146,13 @@ public class IdentityService : IIdentityService
         string userId,
         string? supervisorUserId,
         int? puestoId,
+        string? codigoPais = null,
+        bool actualizarCodigoPais = false,
         CancellationToken cancellationToken = default)
     {
+        if (actualizarCodigoPais && !CodigoPaisIso.EsValido(codigoPais))
+            return (Result.Failure(["El codigo de pais no es valido."]), null);
+
         var user = await _userManager.FindByIdAsync(userId);
         if (user is null)
             return (Result.Failure(["Usuario no encontrado."]), null);
@@ -176,6 +187,8 @@ public class IdentityService : IIdentityService
 
         user.SupervisorUserId = supervisorUserId;
         user.PuestoId         = puestoId;
+        if (actualizarCodigoPais)
+            user.CodigoPais = CodigoPaisIso.Normalizar(codigoPais);
 
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
@@ -227,7 +240,8 @@ public class IdentityService : IIdentityService
                    COALESCE(u.Email, '')                   AS Email,
                    COALESCE(r.Name, '')                    AS Rol,
                    pue.Nombre                              AS PuestoNombre,
-                   u.SupervisorUserId
+                   u.SupervisorUserId,
+                   u.CodigoPais
             FROM   AspNetUsers      u
             LEFT   JOIN AspNetUserRoles ur ON u.Id      = ur.UserId
             LEFT   JOIN AspNetRoles     r  ON ur.RoleId = r.Id
@@ -396,6 +410,7 @@ public class IdentityService : IIdentityService
         public string? SupervisorNombre { get; set; }
         public int? PuestoId { get; set; }
         public string? PuestoNombre { get; set; }
+        public string? CodigoPais { get; set; }
     }
 
     /// <summary>Nombre del jefe directo, para saludar al usuario indicando quien lo lidera.</summary>
@@ -431,7 +446,7 @@ public class IdentityService : IIdentityService
     private static UserAdminDto ToUserAdminDto(ApplicationUser user, string role) =>
         new(user.Id, user.Email ?? string.Empty, user.NombreCompleto, user.IsActive, role,
             user.Created, user.DeactivatedAt,
-            user.SupervisorUserId, null, user.PuestoId, null);
+            user.SupervisorUserId, null, user.PuestoId, null, user.CodigoPais);
 
     private async Task<bool> HasAnotherActiveAdminAsync(string userId, CancellationToken cancellationToken)
     {

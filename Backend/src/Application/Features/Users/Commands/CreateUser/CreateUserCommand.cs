@@ -5,4 +5,9 @@ using KPG.Timesheet.Domain.Constants;
 namespace KPG.Timesheet.Application.Features.Users.Commands.CreateUser;
 
 [Authorize(Roles = Roles.Admin)]
-public record CreateUserCommand(string Email, string Password, string Role, string? NombreCompleto) : IRequest<UserAdminDto>;
+public record CreateUserCommand(
+    string Email,
+    string Password,
+    string Role,
+    string? NombreCompleto,
+    string? CodigoPais = null) : IRequest<UserAdminDto>;

@@ -37,6 +37,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
             .HasIndex(u => u.IsActive)
             .HasDatabaseName("IX_AspNetUsers_IsActive");
 
+        builder.Entity<ApplicationUser>()
+            .Property(u => u.CodigoPais)
+            .HasMaxLength(2);
+
         // Auto-referencia: el organigrama es una jerarquia de usuarios. Restrict evita
         // que borrar a un jefe arrastre a su equipo.
         builder.Entity<ApplicationUser>()

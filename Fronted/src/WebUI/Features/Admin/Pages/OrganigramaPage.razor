@@ -139,7 +139,13 @@
             <div class="@($"org-card{(Buscando && Coincide(nodo) ? " org-card--match" : "")}")">
                 <span class="org-card__avatar" style="@($"background:{ColorAvatar(nodo.Nombre)}")" aria-hidden="true">@Iniciales(nodo.Nombre)</span>
                 <span class="org-card__copy">
-                    <span class="org-card__name">@nodo.Nombre</span>
+                    <span class="org-card__name-line">
+                        <span class="org-card__name">@nodo.Nombre</span>
+                        @if (DatosPais(nodo.CodigoPais) is { } pais)
+                        {
+                            <span class="org-card__flag" role="img" aria-label="@string.Format(L["Org_NationalityAria"], pais.Nombre)" title="@pais.Nombre">@pais.Bandera</span>
+                        }
+                    </span>
                     @if (!string.IsNullOrWhiteSpace(nodo.PuestoNombre))
                     {
                         <span class="org-card__role">@nodo.PuestoNombre</span>
@@ -190,6 +196,9 @@
 
     private static string ColorAvatar(string nombre) =>
         PaletaAvatar[(int)((uint)nombre.Aggregate(17, (h, c) => h * 31 + c) % PaletaAvatar.Length)];
+
+    private static PaisIso? DatosPais(string? codigo) =>
+        codigo is null ? null : PaisesIso.Obtener().FirstOrDefault(p => p.Codigo == codigo.ToUpperInvariant());
 
     private void AlternarNodo(string id)
     {

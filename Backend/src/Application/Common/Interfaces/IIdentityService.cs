@@ -20,7 +20,8 @@ public interface IIdentityService
         bool sortDescending,
         CancellationToken cancellationToken = default);
 
-    Task<(Result Result, UserAdminDto? User)> CreateUserAsync(string email, string password, string role, string? nombreCompleto = null);
+    Task<(Result Result, UserAdminDto? User)> CreateUserAsync(
+        string email, string password, string role, string? nombreCompleto = null, string? codigoPais = null);
 
     Task<Result> ActivateUserAsync(string userId);
 
@@ -32,6 +33,8 @@ public interface IIdentityService
         string userId,
         string? supervisorUserId,
         int? puestoId,
+        string? codigoPais = null,
+        bool actualizarCodigoPais = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>Usuarios activos en forma de arbol para el organigrama.</summary>

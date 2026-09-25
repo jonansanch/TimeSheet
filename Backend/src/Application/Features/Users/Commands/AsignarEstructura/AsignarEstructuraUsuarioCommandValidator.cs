@@ -1,5 +1,7 @@
 namespace KPG.Timesheet.Application.Features.Users.Commands.AsignarEstructura;
 
+using KPG.Timesheet.Application.Common.Models;
+
 public class AsignarEstructuraUsuarioCommandValidator : AbstractValidator<AsignarEstructuraUsuarioCommand>
 {
     public AsignarEstructuraUsuarioCommandValidator()
@@ -16,5 +18,10 @@ public class AsignarEstructuraUsuarioCommandValidator : AbstractValidator<Asigna
         RuleFor(x => x.PuestoId)
             .GreaterThan(0).When(x => x.PuestoId.HasValue)
             .WithMessage("El puesto indicado no es valido.");
+
+        RuleFor(x => x.CodigoPais)
+            .Must(CodigoPaisIso.EsValido)
+            .When(x => x.ActualizarCodigoPais)
+            .WithMessage("El codigo de pais debe ser un codigo ISO 3166-1 alfa-2 valido.");
     }
 }

@@ -48,7 +48,9 @@ public class Users : IEndpointGroup
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(
-            new AsignarEstructuraUsuarioCommand(id, request.SupervisorUserId, request.PuestoId),
+            new AsignarEstructuraUsuarioCommand(
+                id, request.SupervisorUserId, request.PuestoId,
+                request.CodigoPais, request.ActualizarCodigoPais),
             cancellationToken);
         return Results.Ok(result);
     }
@@ -187,4 +189,8 @@ public class Users : IEndpointGroup
 
 public record ChangeUserRoleRequest(string Role);
 public record AdminResetPasswordRequest(string NewPassword);
-public record AsignarEstructuraRequest(string? SupervisorUserId, int? PuestoId);
+public record AsignarEstructuraRequest(
+    string? SupervisorUserId,
+    int? PuestoId,
+    string? CodigoPais = null,
+    bool ActualizarCodigoPais = false);

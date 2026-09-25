@@ -26,6 +26,48 @@ public class IdentityServiceUserAdminTests
     }
 
     [Fact]
+    public async Task CreateUserAsync_WithCountryCode_NormalizesAndReturnsIt()
+    {
+        var services = CreateServices();
+        var identity = services.GetRequiredService<IdentityService>();
+
+        var (result, user) = await identity.CreateUserAsync(
+            "colombia@kpg.com", "Empleado1234!", Roles.Empleado, "Usuario Colombia", " co ");
+
+        result.Succeeded.Should().BeTrue();
+        user!.CodigoPais.Should().Be("CO");
+        var page = await identity.GetUsersAsync(1, 10, "email", false);
+        page.Items.Single().CodigoPais.Should().Be("CO");
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_WithoutCountryCode_RemainsCompatible()
+    {
+        var services = CreateServices();
+        var identity = services.GetRequiredService<IdentityService>();
+
+        var (result, user) = await identity.CreateUserAsync(
+            "historico@kpg.com", "Empleado1234!", Roles.Empleado, "Usuario Historico");
+
+        result.Succeeded.Should().BeTrue();
+        user!.CodigoPais.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_WithInvalidCountryCode_DoesNotCreateUser()
+    {
+        var services = CreateServices();
+        var identity = services.GetRequiredService<IdentityService>();
+
+        var (result, user) = await identity.CreateUserAsync(
+            "invalido@kpg.com", "Empleado1234!", Roles.Empleado, "Usuario Invalido", "ZZ");
+
+        result.Succeeded.Should().BeFalse();
+        user.Should().BeNull();
+        (await identity.GetUsersAsync(1, 10, "email", false)).TotalCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task ValidateCredentialsAsync_WhenUserInactive_ReturnsNull()
     {
         var services = CreateServices();

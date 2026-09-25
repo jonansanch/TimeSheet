@@ -34,6 +34,17 @@
                           autocomplete="off"
                           aria-label="@L["Label_FullName"]" />
 
+            <MudAutocomplete T="string"
+                             Label="@L["Users_Nationality"]"
+                             Variant="Variant.Outlined"
+                             @bind-Value="_codigoPais"
+                             SearchFunc="BuscarPaisesAsync"
+                             ToStringFunc="NombrePais"
+                             Clearable="true"
+                             ResetValueOnEmptyText="true"
+                             HelperText="@L["Users_NationalityHint"]"
+                             aria-label="@L["Users_Nationality"]" />
+
             <MudTextField T="string"
                           Label="@L["Label_TempPassword"]"
                           Variant="Variant.Outlined"
@@ -79,6 +90,8 @@
     private string _password = string.Empty;
     private string _role = Roles.Empleado;
     private string _nombreCompleto = string.Empty;
+    private string? _codigoPais;
+    private readonly IReadOnlyList<PaisIso> _paises = PaisesIso.Obtener();
 
     private static readonly string[] RolesDisponibles = [Roles.Empleado, Roles.Supervisor, Roles.Gerente, Roles.Admin];
 
@@ -102,7 +115,25 @@
             _email.Trim(),
             _password,
             _role,
-            _nombreCompleto.Trim())));
+            _nombreCompleto.Trim(),
+            _codigoPais)));
+
+    private Task<IEnumerable<string>> BuscarPaisesAsync(string texto, CancellationToken cancellationToken)
+    {
+        var filtro = texto?.Trim() ?? string.Empty;
+        var codigos = _paises
+            .Where(p => filtro.Length == 0
+                || p.Nombre.Contains(filtro, StringComparison.CurrentCultureIgnoreCase)
+                || p.Codigo.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+            .Select(p => p.Codigo);
+        return Task.FromResult(codigos);
+    }
+
+    private string NombrePais(string? codigo)
+    {
+        var pais = _paises.FirstOrDefault(p => p.Codigo == codigo);
+        return pais is null ? string.Empty : $"{pais.Bandera} {pais.Nombre}";
+    }
 
     private static bool PasswordCumplePolitica(string password) =>
         password.Length >= 6

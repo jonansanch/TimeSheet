@@ -13,7 +13,8 @@ public record OrganigramaNodoDto(
     string Email,
     string Rol,
     string? PuestoNombre,
-    string? SupervisorUserId);
+    string? SupervisorUserId,
+    string? CodigoPais);
 
 [Authorize(Roles = $"{Roles.Admin},{Roles.Gerente},{Roles.Supervisor}")]
 public record GetOrganigramaQuery : IRequest<IReadOnlyList<OrganigramaNodoDto>>;

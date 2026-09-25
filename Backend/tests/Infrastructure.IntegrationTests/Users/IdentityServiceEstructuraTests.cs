@@ -174,6 +174,79 @@ public class IdentityServiceEstructuraTests
         nodos.Should().ContainSingle().Which.Email.Should().Be("activo@kpg.com");
     }
 
+    [Fact]
+    public async Task AsignarEstructura_WithCountryCode_UpdatesUserAndOrganigrama()
+    {
+        var (identity, _) = CreateServices();
+        var empleado = await CrearUsuarioAsync(identity, "nacionalidad@kpg.com");
+
+        var (result, user) = await identity.AsignarEstructuraAsync(
+            empleado, null, null, " co ", actualizarCodigoPais: true);
+        var nodo = (await identity.GetOrganigramaAsync()).Single(n => n.UserId == empleado);
+
+        result.Succeeded.Should().BeTrue();
+        user!.CodigoPais.Should().Be("CO");
+        nodo.CodigoPais.Should().Be("CO");
+    }
+
+    [Fact]
+    public async Task AsignarEstructura_WithInvalidCountryCode_DoesNotModifyUser()
+    {
+        var (identity, _) = CreateServices();
+        var empleado = await CrearUsuarioAsync(identity, "sin-cambios@kpg.com");
+        await identity.AsignarEstructuraAsync(empleado, null, null, "CO", actualizarCodigoPais: true);
+
+        var (result, user) = await identity.AsignarEstructuraAsync(
+            empleado, null, null, "ZZ", actualizarCodigoPais: true);
+        var nodo = (await identity.GetOrganigramaAsync()).Single(n => n.UserId == empleado);
+
+        result.Succeeded.Should().BeFalse();
+        user.Should().BeNull();
+        nodo.CodigoPais.Should().Be("CO");
+    }
+
+    [Fact]
+    public async Task AsignarEstructura_WhenCountryFieldIsOmitted_PreservesCurrentCountry()
+    {
+        var (identity, _) = CreateServices();
+        var empleado = await CrearUsuarioAsync(identity, "cliente-antiguo@kpg.com");
+        await identity.AsignarEstructuraAsync(
+            empleado, null, null, "CO", actualizarCodigoPais: true);
+
+        var (result, user) = await identity.AsignarEstructuraAsync(empleado, null, null);
+
+        result.Succeeded.Should().BeTrue();
+        user!.CodigoPais.Should().Be("CO");
+    }
+
+    [Fact]
+    public async Task AsignarEstructura_WhenCountryClearIsExplicit_ClearsCurrentCountry()
+    {
+        var (identity, _) = CreateServices();
+        var empleado = await CrearUsuarioAsync(identity, "limpiar-pais@kpg.com");
+        await identity.AsignarEstructuraAsync(
+            empleado, null, null, "CO", actualizarCodigoPais: true);
+
+        var (result, user) = await identity.AsignarEstructuraAsync(
+            empleado, null, null, codigoPais: null, actualizarCodigoPais: true);
+
+        result.Succeeded.Should().BeTrue();
+        user!.CodigoPais.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AsignarEstructura_WithAntarcticaCode_AcceptsIsoCountryWithoutCulture()
+    {
+        var (identity, _) = CreateServices();
+        var empleado = await CrearUsuarioAsync(identity, "antartida@kpg.com");
+
+        var (result, user) = await identity.AsignarEstructuraAsync(
+            empleado, null, null, "AQ", actualizarCodigoPais: true);
+
+        result.Succeeded.Should().BeTrue();
+        user!.CodigoPais.Should().Be("AQ");
+    }
+
     private static async Task<string> CrearUsuarioAsync(IdentityService identity, string email)
     {
         var (result, user) = await identity.CreateUserAsync(email, "Empleado1234!", Roles.Empleado, email);

@@ -21,4 +21,7 @@ public class ApplicationUser : IdentityUser
     /// registro y resuelve quien da la primera aprobacion.
     /// </summary>
     public int? PuestoId { get; set; }
+
+    /// <summary>Codigo ISO 3166-1 alfa-2 de la nacionalidad de la persona.</summary>
+    public string? CodigoPais { get; set; }
 }
