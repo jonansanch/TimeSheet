@@ -1,5 +1,6 @@
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Security;
+using KPG.Timesheet.Application.Common.Validation;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
 using RegistroHorasEntity = KPG.Timesheet.Domain.Entities.RegistroHoras;
@@ -62,6 +63,19 @@ public class CreateRegistrosRangoCommandValidator : AbstractValidator<CreateRegi
         RuleFor(x => x.Recurso).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Lugar).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Descripcion).NotEmpty().MaximumLength(1000);
+    }
+}
+
+/// <summary>
+/// Calidad de la descripcion contra el catalogo de terminos, aparte del validador de forma
+/// de arriba por la misma razon que en <c>CreateRegistroHoras</c>: necesita base de datos.
+/// </summary>
+public class CreateRegistrosRangoDescripcionValidator : AbstractValidator<CreateRegistrosRangoCommand>
+{
+    public CreateRegistrosRangoDescripcionValidator(IValidadorDescripcion validador)
+    {
+        RuleFor(x => x.Descripcion)
+            .DescripcionValida(validador, (cmd, _) => Task.FromResult<int?>(cmd.ProyectoId));
     }
 }
 

@@ -15,6 +15,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IParametrosSistemaService, ParametrosSistemaService>();
         builder.Services.AddScoped<IVentanaRetroactividadService, VentanaRetroactividadService>();
         builder.Services.AddScoped<IRestriccionDiaService, RestriccionDiaService>();
+        builder.Services.AddScoped<IValidadorDescripcion, ValidadorDescripcionService>();
 
         builder.Services.AddMediatR(cfg => {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());

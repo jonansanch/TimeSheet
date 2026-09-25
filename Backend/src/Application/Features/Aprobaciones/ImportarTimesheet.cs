@@ -27,13 +27,21 @@ public record ImportacionResultadoDto(
     int FilasLeidas,
     int Importadas,
     IReadOnlyList<FilaOmitidaDto> Omitidas,
-    IReadOnlyList<FilaOmitidaDto> Errores)
+    IReadOnlyList<FilaOmitidaDto> Errores,
+    IReadOnlyList<FilaAdvertenciaDto> Advertencias)
 {
     /// <summary>True si no se creo ningun registro: la pantalla lo destaca.</summary>
     public bool SinCambios => Importadas == 0;
 }
 
 public record FilaOmitidaDto(int NumeroFila, DateOnly? Fecha, string Detalle, string Motivo);
+
+/// <summary>
+/// Fila que si se importo, pero cuya descripcion tiene observaciones de calidad (ver
+/// Docs/plan-calidad-descripciones.md). Es carga historica hecha por un Admin: no se
+/// rechaza la fila, solo se informa para que se revise si hace falta.
+/// </summary>
+public record FilaAdvertenciaDto(int NumeroFila, DateOnly Fecha, string Detalle, IReadOnlyList<string> Avisos);
 
 public class ImportarTimesheetCommandValidator : AbstractValidator<ImportarTimesheetCommand>
 {
@@ -51,6 +59,7 @@ public class ImportarTimesheetCommandHandler(
     IApplicationDbContext context,
     ITimesheetImportParser parser,
     IBitacoraService bitacora,
+    IValidadorDescripcion validadorDescripcion,
     IUser actor)
     : IRequestHandler<ImportarTimesheetCommand, ImportacionResultadoDto>
 {
@@ -86,7 +95,8 @@ public class ImportarTimesheetCommandHandler(
             .Select(r => (r.FechaRegistro, r.ProyectoId))
             .ToHashSet();
 
-        var omitidas = new List<FilaOmitidaDto>();
+        var omitidas    = new List<FilaOmitidaDto>();
+        var advertencias = new List<FilaAdvertenciaDto>();
         var errores  = archivo.Errores
             .Select(e => new FilaOmitidaDto(e.NumeroFila, null, string.Empty, e.Motivo))
             .ToList();
@@ -133,6 +143,16 @@ public class ImportarTimesheetCommandHandler(
                     registro.Aprobar(1);
                     registro.Aprobar(2);
                     registro.Aprobar(3);
+                }
+
+                // Es carga historica de un Admin: nunca se rechaza la fila, solo se avisa.
+                var evaluacion = await validadorDescripcion.EvaluarAsync(
+                    fila.Descripcion, proyecto.Id, cancellationToken);
+                if (evaluacion.Hallazgos.Count > 0)
+                {
+                    advertencias.Add(new FilaAdvertenciaDto(
+                        fila.NumeroFila, fila.Fecha, detalle,
+                        evaluacion.Hallazgos.Select(h => h.Mensaje).ToList()));
                 }
 
                 nuevos.Add(registro);
@@ -182,7 +202,8 @@ public class ImportarTimesheetCommandHandler(
             archivo.Filas.Count,
             nuevos.Count,
             omitidas,
-            errores);
+            errores,
+            advertencias);
     }
 
     /// <summary>Clave insensible a mayusculas y espacios sobrantes, como escriben los consultores.</summary>
