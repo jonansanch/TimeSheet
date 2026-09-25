@@ -106,6 +106,12 @@
                             @r.Errores.Count @L["Imp_Failed"]
                         </MudChip>
                     }
+                    @if (r.Advertencias.Count > 0)
+                    {
+                        <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.WarningAmber">
+                            @r.Advertencias.Count @L["Imp_DescriptionObservations"]
+                        </MudChip>
+                    }
                 </MudStack>
 
                 @if (r.SinCambios && r.Errores.Count == 0)
@@ -135,6 +141,28 @@
                             <MudAlert Severity="Severity.Error" Dense="true" Class="mb-1">
                                 @string.Format(L["Imp_RowPrefix"], f.NumeroFila)
                                 @(string.IsNullOrWhiteSpace(f.Detalle) ? "" : f.Detalle + " — ")@f.Motivo
+                            </MudAlert>
+                        }
+                    </div>
+                }
+
+                @* Estas filas si se importaron: es solo un aviso de calidad, no un error
+                   (ver Docs/plan-calidad-descripciones.md). Es carga historica de un Admin,
+                   no se rechaza nada por esto. *@
+                @if (r.Advertencias.Count > 0)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Imp_DescriptionObservationsTitle"]</MudText>
+                        @foreach (var f in r.Advertencias)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1" Icon="@Icons.Material.Filled.WarningAmber">
+                                @string.Format(L["Imp_RowPrefix"], f.NumeroFila) @f.Detalle
+                                <ul class="kpg-imp-advertencias-list">
+                                    @foreach (var aviso in f.Avisos)
+                                    {
+                                        <li>@aviso</li>
+                                    }
+                                </ul>
                             </MudAlert>
                         }
                     </div>

@@ -56,6 +56,7 @@
   <data name="Nav_GeneralConfig"><value>Configuración General</value></data>
   <data name="Nav_Modalities"><value>Modalidades</value></data>
   <data name="Nav_WorkPlaces"><value>Lugares de Trabajo</value></data>
+  <data name="Nav_DescriptionQuality"><value>Calidad de Descripciones</value></data>
   <data name="Nav_Menu"><value>Menú</value></data>
   <data name="Nav_Logout"><value>Cerrar sesión</value></data>
   <data name="Nav_ReporteHoras"><value>Reporte de Horas</value></data>
@@ -196,6 +197,8 @@
   <data name="Imp_Failed"><value>con error</value></data>
   <data name="Imp_SkippedTitle"><value>Omitidas porque ya existían</value></data>
   <data name="Imp_FailedTitle"><value>No se pudieron importar</value></data>
+  <data name="Imp_DescriptionObservations"><value>con observaciones de descripción</value></data>
+  <data name="Imp_DescriptionObservationsTitle"><value>Importadas, pero revisar la descripción</value></data>
   <data name="Imp_RowPrefix"><value>Fila {0}:</value></data>
   <data name="Imp_NothingNew"><value>No se creó ningún registro: todo lo del archivo ya estaba cargado.</value></data>
   <data name="Imp_Done"><value>{0} registro(s) importado(s).</value></data>
@@ -235,6 +238,8 @@
   <data name="Apr_UndoApprove"><value>Deshacer mi aprobación</value></data>
   <data name="Apr_EditDescription"><value>Corregir descripción</value></data>
   <data name="Apr_EditOnlyDescription"><value>Solo se corrige la descripción. Las horas, el proyecto y la modalidad los declara quien trabajó el día.</value></data>
+  <data name="Apr_ReviewDescription"><value>Revisar descripción</value></data>
+  <data name="Apr_ReviewDescriptionHint"><value>Esta descripción no cumple los lineamientos de calidad. Puede corregirla con el botón de editar.</value></data>
   <data name="Apr_DescriptionUpdated"><value>Descripción corregida.</value></data>
   <data name="Apr_EditError"><value>No fue posible corregir la descripción.</value></data>
   <data name="Apr_UndoReject"><value>Deshacer mi rechazo</value></data>
@@ -556,6 +561,55 @@
   <data name="Mod_ErrorSave"><value>No fue posible guardar la modalidad. Intente nuevamente.</value></data>
   <data name="Mod_ErrorLoad"><value>No fue posible cargar las modalidades.</value></data>
 
+  <!-- === ADMIN: CALIDAD DE DESCRIPCIONES === -->
+  <data name="Desc_Title"><value>Calidad de Descripciones</value></data>
+  <data name="Desc_Subtitle"><value>Términos que se avisan o bloquean en la descripción del registro de horas, con la sugerencia de reemplazo.</value></data>
+  <data name="Desc_NewTerm"><value>Nuevo Término</value></data>
+  <data name="Desc_NewTermTitle"><value>Nuevo Término</value></data>
+  <data name="Desc_EditTermTitle"><value>Editar Término</value></data>
+  <data name="Desc_DeactivateConfirm"><value>¿Desactivar "{0}"? Dejará de avisarse o bloquearse en las descripciones.</value></data>
+  <data name="Desc_SavedOk"><value>Término guardado correctamente.</value></data>
+  <data name="Desc_ErrorSave"><value>No fue posible guardar el término. Intente nuevamente.</value></data>
+  <data name="Desc_ErrorLoad"><value>No fue posible cargar el catálogo de términos.</value></data>
+  <data name="Desc_Term"><value>Término o frase</value></data>
+  <data name="Desc_Type"><value>Tipo</value></data>
+  <data name="Desc_Rule"><value>Regla</value></data>
+  <data name="Desc_Severity"><value>Severidad</value></data>
+  <data name="Desc_Suggestion"><value>Sugerencia de reemplazo</value></data>
+  <data name="Desc_Reason"><value>Motivo</value></data>
+  <data name="Desc_Type_Palabra"><value>Palabra</value></data>
+  <data name="Desc_Type_Frase"><value>Frase</value></data>
+  <data name="Desc_Rule_ProhibidoSiempre"><value>Prohibido siempre</value></data>
+  <data name="Desc_Rule_GenericoSiVaSolo"><value>Genérico si va solo</value></data>
+  <data name="Desc_Severity_Advertir"><value>Advertir</value></data>
+  <data name="Desc_Severity_Bloquear"><value>Bloquear</value></data>
+  <data name="Desc_ParamsTitle"><value>Parámetros generales</value></data>
+  <data name="Desc_ParamsSaved"><value>Parámetros guardados correctamente.</value></data>
+  <data name="Desc_ParamsError"><value>No fue posible guardar los parámetros.</value></data>
+  <data name="Desc_ValidationActive"><value>Validación activa</value></data>
+  <data name="Desc_ValidationActiveHint"><value>Con esto apagado, el catálogo no avisa ni bloquea nada.</value></data>
+  <data name="Desc_MinWords"><value>Mínimo de palabras</value></data>
+  <data name="Desc_MinContextWords"><value>Palabras de contexto mínimas</value></data>
+  <data name="Desc_BaseRulesSeverity"><value>Severidad de las reglas base</value></data>
+  <data name="Desc_TesterTitle"><value>Probador</value></data>
+  <data name="Desc_TesterHint"><value>Escriba una descripción de ejemplo para ver qué avisos generaría.</value></data>
+  <data name="Desc_TesterProjectHint"><value>Opcional: para probar el prefijo del proyecto y el descuento de su nombre como contexto.</value></data>
+  <data name="Desc_TesterPlaceholder"><value>Ej: CIMA WebClient - Ajuste en módulo de evidencias para solicitudes de cancelación.</value></data>
+  <data name="Desc_TesterNoIssues"><value>Sin observaciones: la descripción cumple los lineamientos.</value></data>
+  <data name="Desc_TesterBlocks"><value>Esta descripción quedaría bloqueada al guardar.</value></data>
+  <data name="Desc_FieldHint"><value>Formato sugerido: [App/Módulo] – [Acción técnica] – [Elemento afectado] – [Resultado esperado]</value></data>
+  <data name="Desc_ShowExamples"><value>Ver ejemplos</value></data>
+  <data name="Desc_VerbsLabel"><value>Verbos de acción técnica</value></data>
+  <data name="Desc_ImproveWithAi"><value>Mejorar con IA</value></data>
+  <data name="Desc_ProposalTitle"><value>Propuesta de la IA</value></data>
+  <data name="Desc_ProposalStillHasIssues"><value>Esta propuesta todavía no cumple los lineamientos de calidad.</value></data>
+  <data name="Desc_AcceptProposal"><value>Usar esta versión</value></data>
+  <data name="Desc_DiscardProposal"><value>Descartar</value></data>
+  <data name="Desc_ImproveError"><value>No fue posible mejorar la descripción. Intenta de nuevo.</value></data>
+  <data name="Desc_ImproveNoChange"><value>La IA no encontró cambios para proponer: el texto ya cumple la guía.</value></data>
+  <data name="Desc_FormatLabel"><value>Formato recomendado</value></data>
+  <data name="Desc_ApplySuggestion"><value>Aplicar sugerencia</value></data>
+
   <!-- === ADMIN: LUGARES DE TRABAJO === -->
   <data name="WP_Title"><value>Lugares de Trabajo</value></data>
   <data name="WP_Subtitle"><value>Lugares disponibles para seleccionar en el registro de horas.</value></data>
@@ -597,6 +651,8 @@
   <data name="Rep_ColSal3"><value>Sal. 3</value></data>
   <data name="Rep_ColModality"><value>Modalidad</value></data>
   <data name="Rep_ColPlace"><value>Lugar</value></data>
+  <data name="Rep_ColObservations"><value>Observaciones</value></data>
+  <data name="Rep_FilterOnlyObservations"><value>Solo con observaciones de calidad</value></data>
   <data name="Rep_NoResults2"><value>No hay registros que coincidan con los filtros seleccionados. Intenta ampliar el período o ajustar los criterios.</value></data>
   <data name="Rep_TimesheetSubtitle"><value>Genera el timesheet mensual en Excel o PDF, con el formato oficial KPG.</value></data>
   <data name="Rep_PrintFilters"><value>Filtros de impresión (opcionales)</value></data>

@@ -40,7 +40,8 @@ public record RegistroPendienteResponse(
     EstadoAprobacion Estado,
     int? NivelPendiente,
     string? ComentarioRechazo,
-    int NivelDelRevisor);
+    int NivelDelRevisor,
+    bool TieneObservacionesDescripcion);
 
 public record EstadoRegistroResponse(
     int Id,
@@ -58,12 +59,20 @@ public record ImportacionResultadoResponse(
     int FilasLeidas,
     int Importadas,
     List<FilaOmitidaResponse> Omitidas,
-    List<FilaOmitidaResponse> Errores)
+    List<FilaOmitidaResponse> Errores,
+    List<FilaAdvertenciaResponse> Advertencias)
 {
     public bool SinCambios => Importadas == 0;
 }
 
 public record FilaOmitidaResponse(int NumeroFila, DateOnly? Fecha, string Detalle, string Motivo);
+
+/// <summary>
+/// Fila que si se importo, pero cuya descripcion tiene observaciones de calidad (ver
+/// Docs/plan-calidad-descripciones.md). No se rechaza: es carga historica de un Admin, solo
+/// se informa para que se revise si hace falta.
+/// </summary>
+public record FilaAdvertenciaResponse(int NumeroFila, DateOnly Fecha, string Detalle, List<string> Avisos);
 
 /// <summary>Un empleado que este revisor puede aprobar.</summary>
 public record EmpleadoRevisableResponse(string UserId, string Nombre);

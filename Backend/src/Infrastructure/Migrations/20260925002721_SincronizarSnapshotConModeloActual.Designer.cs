@@ -4,6 +4,7 @@ using KPG.Timesheet.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KPG.Timesheet.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925002721_SincronizarSnapshotConModeloActual")]
+    partial class SincronizarSnapshotConModeloActual
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,7 +119,7 @@ namespace KPG.Timesheet.Infrastructure.Migrations
 
                     b.HasIndex("TipoEvento");
 
-                    b.ToTable("BitacoraAuditoria", (string)null);
+                    b.ToTable("BitacoraAuditoria");
                 });
 
             modelBuilder.Entity("KPG.Timesheet.Domain.Entities.Cliente", b =>
@@ -317,7 +320,7 @@ namespace KPG.Timesheet.Infrastructure.Migrations
 
                     b.HasIndex("UserId", "Created");
 
-                    b.ToTable("NotificacionesEnviadas", (string)null);
+                    b.ToTable("NotificacionesEnviadas");
                 });
 
             modelBuilder.Entity("KPG.Timesheet.Domain.Entities.ParametroRestriccionDia", b =>
@@ -405,7 +408,7 @@ namespace KPG.Timesheet.Infrastructure.Migrations
                     b.HasIndex("Clave")
                         .IsUnique();
 
-                    b.ToTable("ParametrosSistema", (string)null);
+                    b.ToTable("ParametrosSistema");
                 });
 
             modelBuilder.Entity("KPG.Timesheet.Domain.Entities.Proyecto", b =>
@@ -484,7 +487,7 @@ namespace KPG.Timesheet.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("KPG.Timesheet.Domain.Entities.RegistroHoras", b =>

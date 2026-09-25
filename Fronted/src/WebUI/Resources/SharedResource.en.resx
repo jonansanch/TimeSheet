@@ -56,6 +56,7 @@
   <data name="Nav_GeneralConfig"><value>General Settings</value></data>
   <data name="Nav_Modalities"><value>Modalities</value></data>
   <data name="Nav_WorkPlaces"><value>Work Places</value></data>
+  <data name="Nav_DescriptionQuality"><value>Description Quality</value></data>
   <data name="Nav_Menu"><value>Menu</value></data>
   <data name="Nav_Logout"><value>Log out</value></data>
   <data name="Nav_ReporteHoras"><value>Hours Report</value></data>
@@ -196,6 +197,8 @@
   <data name="Imp_Failed"><value>failed</value></data>
   <data name="Imp_SkippedTitle"><value>Skipped because they already existed</value></data>
   <data name="Imp_FailedTitle"><value>Could not be imported</value></data>
+  <data name="Imp_DescriptionObservations"><value>with description observations</value></data>
+  <data name="Imp_DescriptionObservationsTitle"><value>Imported, but review the description</value></data>
   <data name="Imp_RowPrefix"><value>Row {0}:</value></data>
   <data name="Imp_NothingNew"><value>No records created: everything in the file was already loaded.</value></data>
   <data name="Imp_Done"><value>{0} record(s) imported.</value></data>
@@ -235,6 +238,8 @@
   <data name="Apr_UndoApprove"><value>Undo my approval</value></data>
   <data name="Apr_EditDescription"><value>Fix description</value></data>
   <data name="Apr_EditOnlyDescription"><value>Only the description is edited. Hours, project and modality are declared by whoever worked the day.</value></data>
+  <data name="Apr_ReviewDescription"><value>Review description</value></data>
+  <data name="Apr_ReviewDescriptionHint"><value>This description does not meet the quality guidelines. You can fix it with the edit button.</value></data>
   <data name="Apr_DescriptionUpdated"><value>Description fixed.</value></data>
   <data name="Apr_EditError"><value>Could not fix the description.</value></data>
   <data name="Apr_UndoReject"><value>Undo my rejection</value></data>
@@ -556,6 +561,55 @@
   <data name="Mod_ErrorSave"><value>Could not save the modality. Please try again.</value></data>
   <data name="Mod_ErrorLoad"><value>Could not load modalities.</value></data>
 
+  <!-- === ADMIN: DESCRIPTION QUALITY === -->
+  <data name="Desc_Title"><value>Description Quality</value></data>
+  <data name="Desc_Subtitle"><value>Terms warned or blocked in the time record description, with the suggested replacement.</value></data>
+  <data name="Desc_NewTerm"><value>New Term</value></data>
+  <data name="Desc_NewTermTitle"><value>New Term</value></data>
+  <data name="Desc_EditTermTitle"><value>Edit Term</value></data>
+  <data name="Desc_DeactivateConfirm"><value>Deactivate "{0}"? It will stop being warned or blocked in descriptions.</value></data>
+  <data name="Desc_SavedOk"><value>Term saved successfully.</value></data>
+  <data name="Desc_ErrorSave"><value>Could not save the term. Please try again.</value></data>
+  <data name="Desc_ErrorLoad"><value>Could not load the term catalog.</value></data>
+  <data name="Desc_Term"><value>Term or phrase</value></data>
+  <data name="Desc_Type"><value>Type</value></data>
+  <data name="Desc_Rule"><value>Rule</value></data>
+  <data name="Desc_Severity"><value>Severity</value></data>
+  <data name="Desc_Suggestion"><value>Suggested replacement</value></data>
+  <data name="Desc_Reason"><value>Reason</value></data>
+  <data name="Desc_Type_Palabra"><value>Word</value></data>
+  <data name="Desc_Type_Frase"><value>Phrase</value></data>
+  <data name="Desc_Rule_ProhibidoSiempre"><value>Always forbidden</value></data>
+  <data name="Desc_Rule_GenericoSiVaSolo"><value>Generic if alone</value></data>
+  <data name="Desc_Severity_Advertir"><value>Warn</value></data>
+  <data name="Desc_Severity_Bloquear"><value>Block</value></data>
+  <data name="Desc_ParamsTitle"><value>General parameters</value></data>
+  <data name="Desc_ParamsSaved"><value>Parameters saved successfully.</value></data>
+  <data name="Desc_ParamsError"><value>Could not save the parameters.</value></data>
+  <data name="Desc_ValidationActive"><value>Validation active</value></data>
+  <data name="Desc_ValidationActiveHint"><value>With this off, the catalog never warns or blocks anything.</value></data>
+  <data name="Desc_MinWords"><value>Minimum words</value></data>
+  <data name="Desc_MinContextWords"><value>Minimum context words</value></data>
+  <data name="Desc_BaseRulesSeverity"><value>Base rules severity</value></data>
+  <data name="Desc_TesterTitle"><value>Tester</value></data>
+  <data name="Desc_TesterHint"><value>Type a sample description to see what warnings it would generate.</value></data>
+  <data name="Desc_TesterProjectHint"><value>Optional: to test the project prefix and its name being excluded from context.</value></data>
+  <data name="Desc_TesterPlaceholder"><value>E.g.: CIMA WebClient - Adjustment to the evidence module for cancellation requests.</value></data>
+  <data name="Desc_TesterNoIssues"><value>No issues: the description meets the guidelines.</value></data>
+  <data name="Desc_TesterBlocks"><value>This description would be blocked when saving.</value></data>
+  <data name="Desc_FieldHint"><value>Suggested format: [App/Module] – [Technical action] – [Affected element] – [Expected result]</value></data>
+  <data name="Desc_ShowExamples"><value>See examples</value></data>
+  <data name="Desc_VerbsLabel"><value>Technical action verbs</value></data>
+  <data name="Desc_ImproveWithAi"><value>Improve with AI</value></data>
+  <data name="Desc_ProposalTitle"><value>AI proposal</value></data>
+  <data name="Desc_ProposalStillHasIssues"><value>This proposal still doesn't meet the quality guidelines.</value></data>
+  <data name="Desc_AcceptProposal"><value>Use this version</value></data>
+  <data name="Desc_DiscardProposal"><value>Discard</value></data>
+  <data name="Desc_ImproveError"><value>Could not improve the description. Please try again.</value></data>
+  <data name="Desc_ImproveNoChange"><value>The AI found no changes to propose: the text already meets the guide.</value></data>
+  <data name="Desc_FormatLabel"><value>Recommended format</value></data>
+  <data name="Desc_ApplySuggestion"><value>Apply suggestion</value></data>
+
   <!-- === ADMIN: WORK PLACES === -->
   <data name="WP_Title"><value>Work Places</value></data>
   <data name="WP_Subtitle"><value>Places available for selection in time records.</value></data>
@@ -597,6 +651,8 @@
   <data name="Rep_ColSal3"><value>Out 3</value></data>
   <data name="Rep_ColModality"><value>Modality</value></data>
   <data name="Rep_ColPlace"><value>Place</value></data>
+  <data name="Rep_ColObservations"><value>Observations</value></data>
+  <data name="Rep_FilterOnlyObservations"><value>Only with quality observations</value></data>
   <data name="Rep_NoResults2"><value>No records match the selected filters. Try widening the period or adjusting criteria.</value></data>
   <data name="Rep_TimesheetSubtitle"><value>Generate the monthly timesheet in Excel or PDF, with the official KPG format.</value></data>
   <data name="Rep_PrintFilters"><value>Print filters (optional)</value></data>
