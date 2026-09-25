@@ -13,6 +13,7 @@ public record ExportarReporteHorasQuery(
     string? Cliente,
     string? Proyecto,
     string? Recurso,
+    bool SoloConObservaciones,
     ExportFormato Formato) : IRequest<ExportarReporteHorasResult>;
 
 public record ExportarReporteHorasResult(byte[] Contenido, string ContentType, string FileName);

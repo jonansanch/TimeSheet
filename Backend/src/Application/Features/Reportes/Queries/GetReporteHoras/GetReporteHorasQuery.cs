@@ -14,4 +14,11 @@ public record GetReporteHorasQuery(
     int PageNumber,
     int PageSize,
     string? SortBy,
-    bool SortDescending) : IRequest<ReporteHorasResponse>;
+    bool SortDescending,
+    /// <summary>
+    /// True para quedarse solo con los registros cuya descripcion tiene observaciones de
+    /// calidad (ver Docs/plan-calidad-descripciones.md). Paginar esto requiere evaluar
+    /// todo lo que cae dentro del filtro, no solo la pagina pedida: por eso este modo tiene
+    /// un tope mas chico de filas exploradas (ver ReportesRepository).
+    /// </summary>
+    bool SoloConObservaciones = false) : IRequest<ReporteHorasResponse>;

@@ -25,4 +25,5 @@ public record ReporteHorasItemDto(
     string    Proyecto,
     string    Modalidad,
     string    Lugar,
-    string    Descripcion);
+    string    Descripcion,
+    bool      TieneObservacionesDescripcion);

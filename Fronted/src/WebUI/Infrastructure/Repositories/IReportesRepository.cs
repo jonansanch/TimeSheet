@@ -15,6 +15,7 @@ public interface IReportesRepository
         int pageSize = 10,
         string? sortBy = null,
         bool sortDescending = true,
+        bool soloConObservaciones = false,
         CancellationToken cancellationToken = default);
 
     Task<(byte[] Contenido, string ContentType, string FileName)?> ExportarAsync(
@@ -25,6 +26,7 @@ public interface IReportesRepository
         string? cliente = null,
         string? proyecto = null,
         string? recurso = null,
+        bool soloConObservaciones = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>

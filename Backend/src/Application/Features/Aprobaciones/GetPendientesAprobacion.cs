@@ -50,4 +50,11 @@ public record RegistroPendienteDto(
     int? NivelPendiente,
     string? ComentarioRechazo,
     /// <summary>Nivel que le toca revisar al usuario autenticado en este registro.</summary>
-    int NivelDelRevisor);
+    int NivelDelRevisor,
+    /// <summary>
+    /// True si la descripcion tiene algun hallazgo de calidad (ver
+    /// Docs/plan-calidad-descripciones.md). Se calcula al leer, contra el catalogo
+    /// vigente: no es un valor guardado, asi que siempre refleja las reglas actuales,
+    /// incluso sobre registros historicos.
+    /// </summary>
+    bool TieneObservacionesDescripcion);

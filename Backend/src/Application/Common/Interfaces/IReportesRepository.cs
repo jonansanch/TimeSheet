@@ -15,5 +15,6 @@ public interface IReportesRepository
         int pageSize,
         string? sortBy,
         bool sortDescending,
+        bool soloConObservaciones = false,
         CancellationToken cancellationToken = default);
 }

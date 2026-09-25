@@ -11,7 +11,8 @@ using ParametrosSistemaKeys = KPG.Timesheet.Domain.Constants.ParametrosSistema;
 
 namespace KPG.Timesheet.Infrastructure.Reportes;
 
-public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSistemaService parametros)
+public class ExportarReporteHorasQueryHandler(
+    IDbConnection db, IParametrosSistemaService parametros, IValidadorDescripcion validadorDescripcion)
     : IRequestHandler<ExportarReporteHorasQuery, ExportarReporteHorasResult>
 {
     private const string Sql = """
@@ -59,6 +60,15 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
             RecursoPattern  = BuildPrefixLikePattern(request.Recurso)
         })).ToList();
 
+        // Calidad de descripciones (ver Docs/plan-calidad-descripciones.md): se evalua todo
+        // lo exportado en un solo lote, nunca fila por fila.
+        var evaluaciones = await validadorDescripcion.EvaluarVariasPorNombreProyectoAsync(
+            rows.Select(r => ((string?)r.Descripcion, (string?)r.Proyecto)).ToList(), cancellationToken);
+        rows = rows
+            .Zip(evaluaciones, (r, e) => r with { TieneObservaciones = e.Hallazgos.Count > 0 })
+            .Where(r => !request.SoloConObservaciones || r.TieneObservaciones)
+            .ToList();
+
         var logo = await parametros.GetTextoAsync(ParametrosSistemaKeys.LogoReportes, string.Empty, cancellationToken);
 
         return request.Formato == ExportFormato.Excel
@@ -69,7 +79,8 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
     private static readonly string[] Encabezados =
     [
         "Empleado", "Email", "Fecha", "Entrada 1", "Salida 1", "Entrada 2", "Salida 2",
-        "Entrada 3", "Salida 3", "Horas", "Cliente", "Proyecto", "Modalidad", "Lugar", "Descripción"
+        "Entrada 3", "Salida 3", "Horas", "Cliente", "Proyecto", "Modalidad", "Lugar", "Descripción",
+        "Observaciones"
     ];
 
     private static ExportarReporteHorasResult GenerarExcel(
@@ -118,6 +129,9 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
             ws.Cell(fila, 13).Value = r.Modalidad;
             ws.Cell(fila, 14).Value = r.Lugar;
             ws.Cell(fila, 15).Value = r.Descripcion;
+            ws.Cell(fila, 16).Value = r.TieneObservaciones ? "Sí" : string.Empty;
+            if (r.TieneObservaciones)
+                ws.Cell(fila, 16).Style.Fill.BackgroundColor = XLColor.FromArgb(255, 243, 205);
 
             ws.Range(fila, 1, fila, Encabezados.Length).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             fila++;
@@ -210,6 +224,7 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
                         cols.RelativeColumn(2f);   // Cliente
                         cols.RelativeColumn(2f);   // Proyecto
                         cols.RelativeColumn(4f);   // Descripción
+                        cols.ConstantColumn(60);   // Observaciones
                     });
 
                     static IContainer HeaderCell(IContainer c) =>
@@ -219,7 +234,7 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
 
                     table.Header(header =>
                     {
-                        foreach (var h in new[] { "Empleado", "Fecha", "Entrada 1", "Salida 1", "Entrada 2", "Salida 2", "Entrada 3", "Salida 3", "Horas", "Cliente", "Proyecto", "Descripción" })
+                        foreach (var h in new[] { "Empleado", "Fecha", "Entrada 1", "Salida 1", "Entrada 2", "Salida 2", "Entrada 3", "Salida 3", "Horas", "Cliente", "Proyecto", "Descripción", "Obs." })
                             header.Cell().Element(HeaderCell).Text(h);
                     });
 
@@ -232,7 +247,7 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
                         static IContainer DataCell(IContainer c, string bg) =>
                             c.Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(3);
 
-                        foreach (var val in new[] { r.Empleado, r.Fecha, r.Entrada1, r.Salida1, r.Entrada2, r.Salida2, r.Entrada3, r.Salida3, r.Horas.ToString("F2"), r.Cliente, r.Proyecto, r.Descripcion })
+                        foreach (var val in new[] { r.Empleado, r.Fecha, r.Entrada1, r.Salida1, r.Entrada2, r.Salida2, r.Entrada3, r.Salida3, r.Horas.ToString("F2"), r.Cliente, r.Proyecto, r.Descripcion, r.TieneObservaciones ? "Sí" : "" })
                             table.Cell().Element(c => DataCell(c, bg)).Text(val ?? string.Empty);
                     }
                 });
@@ -266,5 +281,12 @@ public class ExportarReporteHorasQueryHandler(IDbConnection db, IParametrosSiste
         string  Proyecto,
         string  Modalidad,
         string  Lugar,
-        string  Descripcion);
+        string  Descripcion)
+    {
+        /// <summary>
+        /// Calculado despues de leer la fila (ver Handle): Dapper no la llena, por eso va
+        /// aparte del constructor posicional y arranca en false.
+        /// </summary>
+        public bool TieneObservaciones { get; init; }
+    }
 }

@@ -17,5 +17,6 @@ public class GetReporteHorasQueryHandler(IReportesRepository repository)
             request.PageSize,
             request.SortBy,
             request.SortDescending,
+            request.SoloConObservaciones,
             cancellationToken);
 }

@@ -25,4 +25,9 @@ public record ReporteHorasItemDto(
     string    Proyecto,
     string    Modalidad,
     string    Lugar,
-    string    Descripcion);
+    string    Descripcion,
+    /// <summary>
+    /// True si la descripcion tiene algun hallazgo de calidad contra el catalogo vigente
+    /// (ver Docs/plan-calidad-descripciones.md). Se calcula al leer, no se guarda.
+    /// </summary>
+    bool      TieneObservacionesDescripcion);

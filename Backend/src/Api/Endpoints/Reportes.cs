@@ -44,7 +44,8 @@ public class Reportes : IEndpointGroup
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? sortBy = null,
-        [FromQuery] bool sortDescending = true)
+        [FromQuery] bool sortDescending = true,
+        [FromQuery] bool soloConObservaciones = false)
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var desdeEfectivo = desde ?? new DateOnly(hoy.Year, hoy.Month, 1);
@@ -69,7 +70,8 @@ public class Reportes : IEndpointGroup
             pageNumber,
             pageSize,
             sortBy,
-            sortDescending);
+            sortDescending,
+            soloConObservaciones);
         var result = await sender.Send(query, cancellationToken);
         return Results.Ok(result);
     }
@@ -87,8 +89,9 @@ public class Reportes : IEndpointGroup
         [FromQuery] string? userId = null,
         [FromQuery] string? cliente = null,
         [FromQuery] string? proyecto = null,
-        [FromQuery] string? recurso = null)
-        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, recurso, ExportFormato.Excel);
+        [FromQuery] string? recurso = null,
+        [FromQuery] bool soloConObservaciones = false)
+        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, recurso, soloConObservaciones, ExportFormato.Excel);
 
     [EndpointSummary("Exportar reporte de horas a PDF")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -103,8 +106,9 @@ public class Reportes : IEndpointGroup
         [FromQuery] string? userId = null,
         [FromQuery] string? cliente = null,
         [FromQuery] string? proyecto = null,
-        [FromQuery] string? recurso = null)
-        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, recurso, ExportFormato.Pdf);
+        [FromQuery] string? recurso = null,
+        [FromQuery] bool soloConObservaciones = false)
+        => await Exportar(sender, cancellationToken, desde, hasta, userId, cliente, proyecto, recurso, soloConObservaciones, ExportFormato.Pdf);
 
     [EndpointSummary("Exportar timesheet mensual por empleado en Excel")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -168,6 +172,7 @@ public class Reportes : IEndpointGroup
         CancellationToken cancellationToken,
         DateOnly? desde, DateOnly? hasta,
         string? userId, string? cliente, string? proyecto, string? recurso,
+        bool soloConObservaciones,
         ExportFormato formato)
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
@@ -178,7 +183,7 @@ public class Reportes : IEndpointGroup
             return Results.BadRequest("'desde' no puede ser posterior a 'hasta'.");
 
         var query = new ExportarReporteHorasQuery(
-            desdeEfectivo, hastaEfectivo, userId, cliente, proyecto, recurso, formato);
+            desdeEfectivo, hastaEfectivo, userId, cliente, proyecto, recurso, soloConObservaciones, formato);
         var result = await sender.Send(query, cancellationToken);
         return Results.File(result.Contenido, result.ContentType, result.FileName);
     }

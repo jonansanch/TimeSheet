@@ -164,6 +164,16 @@
                                     </td>
                                     <td class="approval-table__description">
                                         <span class="approval-table__clamp" title="@r.Descripcion">@r.Descripcion</span>
+                                        @if (r.TieneObservacionesDescripcion)
+                                        {
+                                            <MudTooltip Text="@L["Apr_ReviewDescriptionHint"]">
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                                                         Icon="@Icons.Material.Filled.WarningAmber"
+                                                         Class="approval-table__desc-chip">
+                                                    @L["Apr_ReviewDescription"]
+                                                </MudChip>
+                                            </MudTooltip>
+                                        }
                                         @if (!string.IsNullOrWhiteSpace(r.ComentarioRechazo))
                                         {
                                             <span class="approval-table__reject-reason"><b>@L["Apr_RejectReason"]:</b> @r.ComentarioRechazo</span>
@@ -559,7 +569,8 @@
         var parameters = new DialogParameters<KpgEditDescripcionDialog>
         {
             { x => x.DescripcionActual, registro.Descripcion ?? string.Empty },
-            { x => x.SoloDescripcion,   true }
+            { x => x.SoloDescripcion,   true },
+            { x => x.ProyectoId,        registro.ProyectoId }
         };
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
 

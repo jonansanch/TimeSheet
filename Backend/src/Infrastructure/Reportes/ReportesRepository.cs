@@ -5,8 +5,16 @@ using KPG.Timesheet.Application.Features.Reportes.Queries.GetReporteHoras;
 
 namespace KPG.Timesheet.Infrastructure.Reportes;
 
-public class ReportesRepository(IDbConnection db) : IReportesRepository
+public class ReportesRepository(IDbConnection db, IValidadorDescripcion validadorDescripcion) : IReportesRepository
 {
+    /// <summary>
+    /// Tope de filas exploradas cuando <c>soloConObservaciones=true</c>: hay que traer y
+    /// evaluar TODO lo que cae dentro de los filtros (no solo la pagina) para poder contar
+    /// y paginar sobre el conjunto ya filtrado. Sin tope, un rango de fechas muy amplio
+    /// evaluaria miles de filas en una sola llamada.
+    /// </summary>
+    private const int TopeFilasParaFiltroObservaciones = 3000;
+
     private const string SqlBase = """
         FROM   RegistrosHoras r
         JOIN   AspNetUsers u ON r.UserId = u.Id
@@ -61,12 +69,35 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
         int pageSize,
         string? sortBy,
         bool sortDescending,
+        bool soloConObservaciones = false,
         CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var offset = (pageNumber - 1) * pageSize;
         var orderBy = BuildOrderBy(sortBy, sortDescending);
+        var parametrosSql = new
+        {
+            Desde    = desde,
+            Hasta    = hasta,
+            UserId   = string.IsNullOrWhiteSpace(userId)   ? null : userId,
+            ClientePattern  = BuildPrefixLikePattern(cliente),
+            ProyectoPattern = BuildPrefixLikePattern(proyecto),
+            RecursoPattern  = BuildPrefixLikePattern(recurso)
+        };
+
+        return soloConObservaciones
+            ? await GetReporteFiltradoPorObservacionesAsync(
+                desde, hasta, pageNumber, pageSize, orderBy, parametrosSql, cancellationToken)
+            : await GetReportePaginadoAsync(
+                desde, hasta, pageNumber, pageSize, orderBy, parametrosSql, cancellationToken);
+    }
+
+    /// <summary>Camino normal: paginacion en SQL, igual que antes de la calidad de descripciones.</summary>
+    private async Task<ReporteHorasResponse> GetReportePaginadoAsync(
+        DateOnly desde, DateOnly hasta, int pageNumber, int pageSize, string orderBy,
+        object parametrosSql, CancellationToken cancellationToken)
+    {
+        var offset = (pageNumber - 1) * pageSize;
         var sql = $"""
             {SqlResumen}
 
@@ -76,22 +107,84 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
             OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
             """;
 
-        using var multi = await db.QueryMultipleAsync(new CommandDefinition(sql, new
-        {
-            Desde    = desde,
-            Hasta    = hasta,
-            UserId   = string.IsNullOrWhiteSpace(userId)   ? null : userId,
-            ClientePattern  = BuildPrefixLikePattern(cliente),
-            ProyectoPattern = BuildPrefixLikePattern(proyecto),
-            RecursoPattern  = BuildPrefixLikePattern(recurso),
-            Offset   = offset,
-            PageSize = pageSize
-        }, cancellationToken: cancellationToken));
+        using var multi = await db.QueryMultipleAsync(new CommandDefinition(
+            sql, ConParametros(parametrosSql, new { Offset = offset, PageSize = pageSize }),
+            cancellationToken: cancellationToken));
 
         var resumen = await multi.ReadSingleAsync<ResumenRow>();
         var rows = (await multi.ReadAsync<RawRow>()).ToList();
 
-        var items = rows.Select(r => new ReporteHorasItemDto(
+        // Se evalua solo la pagina que se muestra: es lo unico que hace falta pintar, y
+        // evita evaluar el reporte entero en el camino normal (sin el filtro activo).
+        var conObservaciones = await EvaluarObservacionesAsync(rows, cancellationToken);
+
+        return new ReporteHorasResponse(
+            Desde:          desde,
+            Hasta:          hasta,
+            PageNumber:     pageNumber,
+            PageSize:       pageSize,
+            TotalRegistros: resumen.TotalRegistros,
+            TotalHoras:     resumen.TotalHoras,
+            Items:          MapearItems(rows, conObservaciones));
+    }
+
+    /// <summary>
+    /// "Solo con observaciones": no se puede filtrar en SQL (la calidad depende del
+    /// catalogo, no de una columna), asi que se trae todo lo que entra en el filtro (hasta
+    /// <see cref="TopeFilasParaFiltroObservaciones"/>), se evalua una vez y se pagina en
+    /// memoria sobre el subconjunto ya filtrado.
+    /// </summary>
+    private async Task<ReporteHorasResponse> GetReporteFiltradoPorObservacionesAsync(
+        DateOnly desde, DateOnly hasta, int pageNumber, int pageSize, string orderBy,
+        object parametrosSql, CancellationToken cancellationToken)
+    {
+        var sql = $"""
+            {SqlItems}
+            {SqlBase}
+            ORDER BY {orderBy}
+            OFFSET 0 ROWS FETCH NEXT {TopeFilasParaFiltroObservaciones} ROWS ONLY;
+            """;
+
+        var rows = (await db.QueryAsync<RawRow>(new CommandDefinition(
+            sql, parametrosSql, cancellationToken: cancellationToken))).ToList();
+
+        var conObservaciones = await EvaluarObservacionesAsync(rows, cancellationToken);
+
+        var filasConObservaciones = rows
+            .Zip(conObservaciones, (fila, tiene) => (Fila: fila, TieneObservaciones: tiene))
+            .Where(x => x.TieneObservaciones)
+            .Select(x => x.Fila)
+            .ToList();
+
+        var pagina = filasConObservaciones
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new ReporteHorasResponse(
+            Desde:          desde,
+            Hasta:          hasta,
+            PageNumber:     pageNumber,
+            PageSize:       pageSize,
+            TotalRegistros: filasConObservaciones.Count,
+            TotalHoras:     Math.Round(filasConObservaciones.Sum(f => f.Horas), 2),
+            // Todas las filas de esta pagina ya pasaron el filtro: el flag es true en todas.
+            Items:          MapearItems(pagina, pagina.Select(_ => true).ToList()));
+    }
+
+    private async Task<List<bool>> EvaluarObservacionesAsync(List<RawRow> rows, CancellationToken cancellationToken)
+    {
+        if (rows.Count == 0)
+            return [];
+
+        var evaluaciones = await validadorDescripcion.EvaluarVariasPorNombreProyectoAsync(
+            rows.Select(r => ((string?)r.Descripcion, (string?)r.Proyecto)).ToList(), cancellationToken);
+
+        return evaluaciones.Select(e => e.Hallazgos.Count > 0).ToList();
+    }
+
+    private static List<ReporteHorasItemDto> MapearItems(List<RawRow> rows, IReadOnlyList<bool> conObservaciones) =>
+        rows.Select((r, i) => new ReporteHorasItemDto(
             r.UserId,
             r.NombreEmpleado,
             r.Email,
@@ -107,17 +200,16 @@ public class ReportesRepository(IDbConnection db) : IReportesRepository
             r.Proyecto,
             r.Modalidad,
             r.Lugar,
-            r.Descripcion
+            r.Descripcion,
+            conObservaciones[i]
         )).ToList();
 
-        return new ReporteHorasResponse(
-            Desde:          desde,
-            Hasta:          hasta,
-            PageNumber:     pageNumber,
-            PageSize:       pageSize,
-            TotalRegistros: resumen.TotalRegistros,
-            TotalHoras:     resumen.TotalHoras,
-            Items:          items);
+    /// <summary>Combina los parametros base del filtro con los propios de cada camino (paginacion).</summary>
+    private static DynamicParameters ConParametros(object baseParams, object extra)
+    {
+        var parametros = new DynamicParameters(baseParams);
+        parametros.AddDynamicParams(extra);
+        return parametros;
     }
 
     private static string BuildOrderBy(string? sortBy, bool descending)

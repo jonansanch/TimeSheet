@@ -6,7 +6,7 @@ using KPG.Timesheet.Domain.Enums;
 
 namespace KPG.Timesheet.Infrastructure.Organizacion;
 
-public class AprobacionesRepository(IDbConnection db) : IAprobacionesRepository
+public class AprobacionesRepository(IDbConnection db, IValidadorDescripcion validadorDescripcion) : IAprobacionesRepository
 {
     /// <summary>
     /// Resuelve los tres aprobadores <b>dentro</b> de la consulta y devuelve solo los
@@ -146,6 +146,15 @@ public class AprobacionesRepository(IDbConnection db) : IAprobacionesRepository
             IncluirRevisados = filtros.IncluirRevisados ? 1 : 0
         }, cancellationToken: cancellationToken))).ToList();
 
+        // Una sola llamada evalua la calidad de todas las descripciones del lote (ver
+        // Docs/plan-calidad-descripciones.md): el chip "Revisar descripcion" refleja el
+        // catalogo vigente incluso sobre registros historicos, sin guardar nada nuevo.
+        var evaluaciones = await validadorDescripcion.EvaluarVariasAsync(
+            filas.Select(f => ((string?)f.Descripcion, (int?)f.ProyectoId)).ToList(), cancellationToken);
+        var conObservaciones = filas
+            .Zip(evaluaciones, (fila, evaluacion) => (fila.Id, TieneObservaciones: evaluacion.Hallazgos.Count > 0))
+            .ToDictionary(x => x.Id, x => x.TieneObservaciones);
+
         // El agrupamiento por (empleado, dia) se hace en memoria: la consulta ya vino
         // acotada al rango y al revisor, asi que es un conjunto pequeno.
         var dias = filas
@@ -167,7 +176,8 @@ public class AprobacionesRepository(IDbConnection db) : IAprobacionesRepository
                     (EstadoAprobacion)f.Estado,
                     f.NivelPendiente,
                     f.ComentarioRechazo,
-                    f.NivelDelRevisor)).ToList()))
+                    f.NivelDelRevisor,
+                    conObservaciones[f.Id])).ToList()))
             .OrderBy(d => d.NombreEmpleado).ThenBy(d => d.Fecha)
             .ToList();
 

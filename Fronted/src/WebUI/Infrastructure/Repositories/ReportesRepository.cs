@@ -28,12 +28,13 @@ public class ReportesRepository : IReportesRepository
         int pageSize = 10,
         string? sortBy = null,
         bool sortDescending = true,
+        bool soloConObservaciones = false,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
             throw new UnauthorizedAccessException("No hay token de acceso activo.");
 
-        var sb = new StringBuilder($"api/reportes/horas?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}&pageNumber={pageNumber}&pageSize={pageSize}&sortDescending={sortDescending}");
+        var sb = new StringBuilder($"api/reportes/horas?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}&pageNumber={pageNumber}&pageSize={pageSize}&sortDescending={sortDescending}&soloConObservaciones={soloConObservaciones}");
         if (!string.IsNullOrWhiteSpace(userId))   sb.Append($"&userId={Uri.EscapeDataString(userId)}");
         if (!string.IsNullOrWhiteSpace(cliente))  sb.Append($"&cliente={Uri.EscapeDataString(cliente)}");
         if (!string.IsNullOrWhiteSpace(proyecto)) sb.Append($"&proyecto={Uri.EscapeDataString(proyecto)}");
@@ -58,12 +59,13 @@ public class ReportesRepository : IReportesRepository
         string? cliente = null,
         string? proyecto = null,
         string? recurso = null,
+        bool soloConObservaciones = false,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_authState.AccessToken))
             throw new UnauthorizedAccessException("No hay token de acceso activo.");
 
-        var sb = new StringBuilder($"api/reportes/horas/{formato}?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}");
+        var sb = new StringBuilder($"api/reportes/horas/{formato}?desde={desde:yyyy-MM-dd}&hasta={hasta:yyyy-MM-dd}&soloConObservaciones={soloConObservaciones}");
         if (!string.IsNullOrWhiteSpace(userId))   sb.Append($"&userId={Uri.EscapeDataString(userId)}");
         if (!string.IsNullOrWhiteSpace(cliente))  sb.Append($"&cliente={Uri.EscapeDataString(cliente)}");
         if (!string.IsNullOrWhiteSpace(proyecto)) sb.Append($"&proyecto={Uri.EscapeDataString(proyecto)}");

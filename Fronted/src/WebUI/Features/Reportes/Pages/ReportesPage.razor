@@ -93,6 +93,12 @@
                               aria-label="@L["Rep_FilterResource"]" />
             </MudItem>
 
+            <MudItem xs="12" sm="6" md="4">
+                <MudSwitch @bind-Value="_filtroSoloConObservaciones"
+                           Color="Color.Warning"
+                           Label="@L["Rep_FilterOnlyObservations"]" />
+            </MudItem>
+
             <MudItem xs="12">
                 <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                     <MudButton Variant="Variant.Filled"
@@ -206,6 +212,16 @@
                 <PropertyColumn Property="x => x.Modalidad" Title="@L["Rep_ColModality"]" />
                 <PropertyColumn Property="x => x.Lugar" Title="@L["Rep_ColPlace"]" />
                 <PropertyColumn Property="x => x.Descripcion" Title="@L["Label_Description"]" Sortable="false" />
+                <TemplateColumn Title="@L["Rep_ColObservations"]" Sortable="false">
+                    <CellTemplate>
+                        @if (context.Item.TieneObservacionesDescripcion)
+                        {
+                            <MudTooltip Text="@L["Apr_ReviewDescriptionHint"]">
+                                <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" Size="Size.Small" />
+                            </MudTooltip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
             </Columns>
             <NoRecordsContent>
                 <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.SearchOff">
@@ -240,6 +256,7 @@
     private string _filtroCliente = string.Empty;
     private string _filtroProyecto = string.Empty;
     private string _filtroRecurso = string.Empty;
+    private bool _filtroSoloConObservaciones = false;
 
     private Periodo _periodo = Periodo.Mes;
     private DateRange _rango = new(
@@ -311,7 +328,8 @@
                 pageNumber: state.Page + 1,
                 pageSize: state.PageSize,
                 sortBy: MapSortBy(sort?.SortBy),
-                sortDescending: sort?.Descending ?? true);
+                sortDescending: sort?.Descending ?? true,
+                soloConObservaciones: _filtroSoloConObservaciones);
 
             if (_reporte is null)
             {
@@ -377,7 +395,8 @@
                 string.IsNullOrWhiteSpace(_filtroUserId)   ? null : _filtroUserId,
                 string.IsNullOrWhiteSpace(_filtroCliente)  ? null : _filtroCliente,
                 string.IsNullOrWhiteSpace(_filtroProyecto) ? null : _filtroProyecto,
-                string.IsNullOrWhiteSpace(_filtroRecurso)  ? null : _filtroRecurso);
+                string.IsNullOrWhiteSpace(_filtroRecurso)  ? null : _filtroRecurso,
+                _filtroSoloConObservaciones);
 
             if (result is null)
             {
