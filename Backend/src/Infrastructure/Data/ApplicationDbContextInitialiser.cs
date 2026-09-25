@@ -734,6 +734,11 @@ public class ApplicationDbContextInitialiser
             BEGIN
                 ALTER TABLE [dbo].[AspNetUsers] ADD [DeactivatedBy] nvarchar(450) NULL;
             END
+
+            IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'CodigoPais') IS NULL
+            BEGIN
+                ALTER TABLE [dbo].[AspNetUsers] ADD [CodigoPais] nvarchar(2) NULL;
+            END
             """);
 
         await _context.Database.ExecuteSqlRawAsync("""
