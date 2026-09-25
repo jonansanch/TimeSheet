@@ -17,6 +17,14 @@ public static class ParametrosSistema
     /// </summary>
     public const string LogoReportes = "LogoReportes";
 
+    /// <summary>
+    /// API key de Gemini usada para el dictado por voz y "mejorar redaccion" con IA. Vacio
+    /// significa que esas funciones no estan disponibles. Se parametriza desde el propio
+    /// sistema (pantalla de administracion) para poder renovarla el dia que venza, sin
+    /// depender de un despliegue.
+    /// </summary>
+    public const string GeminiApiKey = "GeminiApiKey";
+
     // ── Calidad de descripciones (ver Docs/plan-calidad-descripciones.md) ──
 
     /// <summary>"true"/"false". Interruptor general: en false, IValidadorDescripcion nunca bloquea.</summary>

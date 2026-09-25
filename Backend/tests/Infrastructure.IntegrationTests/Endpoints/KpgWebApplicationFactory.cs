@@ -124,7 +124,15 @@ public class KpgWebApplicationFactory : WebApplicationFactory<Program>
     {
         if (await mgr.FindByEmailAsync(email) is not null) return;
 
-        var user = new ApplicationUser { UserName = email, Email = email, IsActive = true, Created = DateTimeOffset.UtcNow };
+        var user = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            NombreCompleto = role == Roles.Admin ? "Administradora de pruebas" : "Empleado de pruebas",
+            CodigoPais = role == Roles.Admin ? "CO" : null,
+            IsActive = true,
+            Created = DateTimeOffset.UtcNow
+        };
         var result = await mgr.CreateAsync(user, password);
         if (!result.Succeeded)
             throw new InvalidOperationException($"Seed failed for {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");

@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using System.Security.Claims;
 using KPG.Timesheet.Application.Common.Interfaces;
 using KPG.Timesheet.Application.Common.Models;
 using KPG.Timesheet.Application.Features.Users.Queries.GetOrganigrama;
@@ -193,6 +194,16 @@ public class IdentityService : IIdentityService
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
             return (result.ToApplicationResult(), null);
+
+        if (actualizarCodigoPais)
+        {
+            var claims = await _userManager.GetClaimsAsync(user);
+            var marcasDemo = claims
+                .Where(claim => claim.Type == ApplicationUserClaimTypes.NacionalidadDemostrativa)
+                .ToList();
+            if (marcasDemo.Count > 0)
+                await _userManager.RemoveClaimsAsync(user, marcasDemo);
+        }
 
         var roles = await _userManager.GetRolesAsync(user);
         return (Result.Success(), ToUserAdminDto(user, roles.FirstOrDefault() ?? string.Empty));

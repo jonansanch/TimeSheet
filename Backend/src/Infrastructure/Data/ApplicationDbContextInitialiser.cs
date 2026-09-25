@@ -1,3 +1,6 @@
+using System.Buffers.Binary;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using KPG.Timesheet.Domain.Constants;
 using KPG.Timesheet.Domain.Entities;
@@ -124,7 +127,10 @@ public class ApplicationDbContextInitialiser
         // Tiene un guard adicional porque RunDatabaseInitialiser tambien puede habilitarse
         // fuera de Development para tareas operativas y estas cuentas son solo de QA.
         if (_environment.IsDevelopment())
+        {
             await SeedOrganigramaQaAsync(gerente);
+            await BackfillNacionalidadesDemoAsync();
+        }
 
         // ── Registros de horas (histórico 2 meses) ───────────────────────────
         if (!_context.RegistrosHoras.Any())
@@ -163,6 +169,60 @@ public class ApplicationDbContextInitialiser
             await _userManager.UpdateAsync(user);
         }
         return user;
+    }
+
+    private static readonly string[] CodigosPaisDemo =
+    [
+        "AR", "BR", "CA", "CL", "CO", "CR",
+        "EC", "ES", "MX", "PA", "PE", "US"
+    ];
+
+    /// <summary>
+    /// Completa solo datos ausentes en Development. El correo normalizado y SHA-256
+    /// hacen que cada usuario conserve el mismo pais entre reinicios y procesos.
+    /// </summary>
+    private async Task BackfillNacionalidadesDemoAsync()
+    {
+        var usuariosSinPais = await _context.Users
+            .Where(user => user.CodigoPais == null || user.CodigoPais.Trim() == "")
+            .ToListAsync(CancellationToken.None);
+
+        AsignarNacionalidadesDemo(usuariosSinPais);
+
+        if (usuariosSinPais.Count > 0)
+        {
+            await _context.SaveChangesAsync(CancellationToken.None);
+            foreach (var user in usuariosSinPais)
+            {
+                var result = await _userManager.AddClaimAsync(
+                    user,
+                    new Claim(ApplicationUserClaimTypes.NacionalidadDemostrativa, bool.TrueString));
+                if (!result.Succeeded)
+                    throw new InvalidOperationException(
+                        $"No fue posible marcar la nacionalidad demostrativa del usuario {user.Id}.");
+            }
+        }
+    }
+
+    public static string SeleccionarCodigoPaisDemo(string claveEstable)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(claveEstable);
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(claveEstable.Trim().ToUpperInvariant()));
+        var indice = BinaryPrimitives.ReadUInt32BigEndian(hash) % (uint)CodigosPaisDemo.Length;
+        return CodigosPaisDemo[indice];
+    }
+
+    public static int AsignarNacionalidadesDemo(IEnumerable<ApplicationUser> usuarios)
+    {
+        var asignados = 0;
+        foreach (var user in usuarios.Where(user => string.IsNullOrWhiteSpace(user.CodigoPais)))
+        {
+            var claveEstable = user.NormalizedEmail ?? user.Email ?? user.Id;
+            user.CodigoPais = SeleccionarCodigoPaisDemo(claveEstable);
+            asignados++;
+        }
+
+        return asignados;
     }
 
     private async Task EnsureParametroAsync(string clave, string valor)

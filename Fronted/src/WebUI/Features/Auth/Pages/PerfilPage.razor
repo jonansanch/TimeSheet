@@ -24,9 +24,40 @@
                 <MudDivider Class="mb-4" />
 
                 <MudStack Spacing="3">
+                    @if (!string.IsNullOrWhiteSpace(_nombreCompleto))
+                    {
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Profile_LabelName"]</MudText>
+                            <MudText Typo="Typo.body1"><strong>@_nombreCompleto</strong></MudText>
+                        </div>
+                    }
                     <div>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Profile_LabelEmail"]</MudText>
                         <MudText Typo="Typo.body1"><strong>@_email</strong></MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Profile_LabelNationality"]</MudText>
+                        @if (_pais is not null)
+                        {
+                            <MudText Typo="Typo.body1" Class="d-flex align-center">
+                                <span class="@($"fi fi-{_pais.Codigo.ToLowerInvariant()}")" style="border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.1);" aria-hidden="true"></span>
+                                <strong class="ml-2">@_pais.Nombre</strong>
+                            </MudText>
+                            @if (_nacionalidadDemostrativa)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @L["Profile_NationalityDemo"]
+                                </MudText>
+                            }
+                        }
+                        else if (_profileLoadFailed)
+                        {
+                            <MudText Typo="Typo.body1" Color="Color.Error">@L["Profile_LoadError"]</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body1" Color="Color.Secondary">@L["Profile_NationalityNotAssigned"]</MudText>
+                        }
                     </div>
                     <div>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Profile_LabelRoles"]</MudText>
@@ -110,6 +141,10 @@
     ];
 
     private string _email = string.Empty;
+    private string? _nombreCompleto;
+    private PaisIso? _pais;
+    private bool _nacionalidadDemostrativa;
+    private bool _profileLoadFailed;
     private List<string> _roles = [];
     private bool _isSaving;
 
@@ -131,6 +166,27 @@
             ?? user.FindFirst("email")?.Value
             ?? string.Empty;
         _roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+
+        if (!string.IsNullOrWhiteSpace(AuthState.AccessToken))
+        {
+            var perfil = await AuthRepo.GetCurrentUserAsync(AuthState.AccessToken);
+            if (perfil is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(perfil.Email))
+                    _email = perfil.Email;
+                if (perfil.Roles is not null)
+                    _roles = perfil.Roles;
+                if (!string.IsNullOrWhiteSpace(perfil.NombreCompleto))
+                    _nombreCompleto = perfil.NombreCompleto;
+                _pais = PaisesIso.Obtener().FirstOrDefault(p =>
+                    string.Equals(p.Codigo, perfil.CodigoPais, StringComparison.OrdinalIgnoreCase));
+                _nacionalidadDemostrativa = perfil.NacionalidadDemostrativa && _pais is not null;
+            }
+            else
+                _profileLoadFailed = true;
+        }
+        else
+            _profileLoadFailed = true;
     }
 
     private async Task CambiarPasswordAsync()

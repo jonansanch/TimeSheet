@@ -6,7 +6,9 @@ using KPG.Timesheet.Application.Features.Auth.Commands.Login;
 using KPG.Timesheet.Application.Features.Auth.Commands.Logout;
 using KPG.Timesheet.Application.Features.Auth.Commands.Refresh;
 using KPG.Timesheet.Application.Features.Auth.Commands.ResetPassword;
+using KPG.Timesheet.Infrastructure.Identity;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KPG.Timesheet.Api.Endpoints;
@@ -75,21 +77,39 @@ public class Auth : IEndpointGroup
     }
 
     [EndpointSummary("Usuario actual")]
-    [EndpointDescription("Retorna el userId, email y roles del usuario autenticado.")]
+    [EndpointDescription("Retorna los datos actuales del usuario autenticado desde la base de datos.")]
     [ProducesResponseType<MeResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public static IResult Me(HttpContext context)
+    public static async Task<IResult> Me(
+        HttpContext context,
+        UserManager<ApplicationUser> userManager,
+        CancellationToken cancellationToken)
     {
-        var user = context.User;
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? user.FindFirstValue(JwtRegisteredClaimNames.Sub)
-            ?? string.Empty;
-        var email = user.FindFirstValue(ClaimTypes.Email)
-            ?? user.FindFirstValue(JwtRegisteredClaimNames.Email)
-            ?? string.Empty;
-        var roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+        var principal = context.User;
+        var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-        return Results.Ok(new MeResponseDto(userId, email, roles));
+        if (string.IsNullOrWhiteSpace(userId))
+            return Results.Unauthorized();
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null || !user.IsActive)
+            return Results.Unauthorized();
+
+        var roles = await userManager.GetRolesAsync(user);
+        var claims = await userManager.GetClaimsAsync(user);
+        var nacionalidadDemostrativa = claims.Any(claim =>
+            claim.Type == ApplicationUserClaimTypes.NacionalidadDemostrativa
+            && bool.TryParse(claim.Value, out var value)
+            && value);
+
+        return Results.Ok(new MeResponseDto(
+            user.Id,
+            user.Email ?? string.Empty,
+            roles.ToList(),
+            user.NombreCompleto,
+            user.CodigoPais,
+            nacionalidadDemostrativa));
     }
 
     [EndpointSummary("Cambiar contraseña")]

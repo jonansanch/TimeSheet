@@ -710,6 +710,12 @@
   <data name="Profile_SectionPassword"><value>Cambiar contraseña</value></data>
   <data name="Profile_LabelEmail"><value>Correo electrónico</value></data>
   <data name="Profile_LabelRoles"><value>Roles asignados</value></data>
+  <data name="Profile_LabelName"><value>Nombre completo</value></data>
+  <data name="Profile_LabelNationality"><value>Nacionalidad</value></data>
+  <data name="Profile_NationalityAria"><value>Nacionalidad: {0}</value></data>
+  <data name="Profile_NationalityNotAssigned"><value>No asignada</value></data>
+  <data name="Profile_NationalityDemo"><value>Dato demostrativo/no verificado</value></data>
+  <data name="Profile_LoadError"><value>No fue posible cargar la información actual del perfil.</value></data>
   <data name="Profile_CurrentPassword"><value>Contraseña actual</value></data>
   <data name="Profile_NewPassword"><value>Nueva contraseña</value></data>
   <data name="Profile_ConfirmPassword"><value>Confirmar nueva contraseña</value></data>

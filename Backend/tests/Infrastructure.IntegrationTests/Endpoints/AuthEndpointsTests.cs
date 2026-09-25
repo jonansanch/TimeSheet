@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using KPG.Timesheet.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KPG.Timesheet.Infrastructure.IntegrationTests.Endpoints;
 
@@ -99,6 +102,81 @@ public class AuthEndpointsTests : IClassFixture<KpgWebApplicationFactory>, IAsyn
             .Should().Be(KpgWebApplicationFactory.AdminEmail);
         body.RootElement.GetProperty("roles").EnumerateArray()
             .Should().Contain(e => e.GetString() == "Admin");
+        body.RootElement.GetProperty("nombreCompleto").GetString()
+            .Should().Be("Administradora de pruebas");
+        body.RootElement.GetProperty("codigoPais").GetString().Should().Be("CO");
+        body.RootElement.GetProperty("nacionalidadDemostrativa").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Me_WithInactiveUser_Returns401()
+    {
+        var token = await GetTokenAsync(KpgWebApplicationFactory.EmpleadoEmail);
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(KpgWebApplicationFactory.EmpleadoEmail);
+        user!.IsActive = false;
+        await userManager.UpdateAsync(user);
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _client.SendAsync(request);
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+        finally
+        {
+            user.IsActive = true;
+            await userManager.UpdateAsync(user);
+        }
+    }
+
+    [Fact]
+    public async Task Me_WithDemoNationalityClaim_ExposesUnverifiedSignal()
+    {
+        var token = await GetTokenAsync(KpgWebApplicationFactory.EmpleadoEmail);
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(KpgWebApplicationFactory.EmpleadoEmail);
+        user!.CodigoPais = "MX";
+        await userManager.UpdateAsync(user);
+        var claim = new System.Security.Claims.Claim(
+            ApplicationUserClaimTypes.NacionalidadDemostrativa,
+            bool.TrueString);
+        await userManager.AddClaimAsync(user, claim);
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _client.SendAsync(request);
+            var body = await ParseJsonAsync(response);
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            body.RootElement.GetProperty("nacionalidadDemostrativa").GetBoolean().Should().BeTrue();
+        }
+        finally
+        {
+            await userManager.RemoveClaimAsync(user, claim);
+            user.CodigoPais = null;
+            await userManager.UpdateAsync(user);
+        }
+    }
+
+    [Fact]
+    public async Task Me_WithUserWithoutCountry_ReturnsNullCountry()
+    {
+        var token = await GetTokenAsync(KpgWebApplicationFactory.EmpleadoEmail);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await ParseJsonAsync(response);
+        body.RootElement.GetProperty("codigoPais").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     // ── Refresh ────────────────────────────────────────────────────────────

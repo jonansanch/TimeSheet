@@ -710,6 +710,12 @@
   <data name="Profile_SectionPassword"><value>Change password</value></data>
   <data name="Profile_LabelEmail"><value>Email address</value></data>
   <data name="Profile_LabelRoles"><value>Assigned roles</value></data>
+  <data name="Profile_LabelName"><value>Full name</value></data>
+  <data name="Profile_LabelNationality"><value>Nationality</value></data>
+  <data name="Profile_NationalityAria"><value>Nationality: {0}</value></data>
+  <data name="Profile_NationalityNotAssigned"><value>Not assigned</value></data>
+  <data name="Profile_NationalityDemo"><value>Demonstration data/not verified</value></data>
+  <data name="Profile_LoadError"><value>Current profile information could not be loaded.</value></data>
   <data name="Profile_CurrentPassword"><value>Current password</value></data>
   <data name="Profile_NewPassword"><value>New password</value></data>
   <data name="Profile_ConfirmPassword"><value>Confirm new password</value></data>

@@ -21,6 +21,14 @@ public record RefreshResponse(
 
 public record LogoutRequest(string RefreshToken);
 
+public record CurrentUserResponse(
+    string UserId,
+    string Email,
+    List<string>? Roles,
+    string? NombreCompleto,
+    string? CodigoPais,
+    bool NacionalidadDemostrativa);
+
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 public record ForgotPasswordRequest(string Email);
