@@ -1,0 +1,396 @@
+@* Campo de descripcion con el aviso en vivo de calidad (ver Docs/plan-calidad-descripciones.md).
+   Reemplaza al MudTextField suelto en KpgShiftForm y KpgEditDescripcionDialog: mismo campo,
+   con el formato sugerido por la guia, ejemplos y el chequeo que corre contra
+   /api/descripciones/evaluar — el mismo que aplica el backend al guardar, asi el aviso y el
+   bloqueo real nunca se contradicen. *@
+@inject IStringLocalizer<SharedResource> L
+@inject ITerminoDescripcionRepository DescripcionRepo
+@implements IDisposable
+
+<div class="kpg-descripcion-field">
+    <MudTextField @ref="_field"
+                  T="string"
+                  Label="@L["Label_Description"]"
+                  Variant="Variant.Outlined"
+                  Margin="@Margin"
+                  Lines="@Lines"
+                  Value="@Value"
+                  ValueChanged="@HandleValueChanged"
+                  Immediate="true"
+                  MaxLength="@MaxLength"
+                  Required="@Required"
+                  RequiredError="@L["Reg_DescriptionRequired"]"
+                  Counter="@MaxLength"
+                  HelperText="@L["Desc_FieldHint"]"
+                  Error="@(Excedida || (_evaluacion?.Bloquea ?? false))"
+                  ErrorText="@(Excedida ? string.Format(L["Reg_DescriptionTooLong"], MaxLength) : L["Desc_TesterBlocks"].Value)"
+                  Class="@(Excedida ? "kpg-field-error" : null)"
+                  aria-label="@L["Label_Description"]" />
+
+    <div class="kpg-descripcion-field__verbs" role="group" aria-label="@L["Desc_VerbsLabel"]">
+        @foreach (var verbo in VerbosTecnicos)
+        {
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Text"
+                     Color="Color.Primary"
+                     OnClick="@(() => AgregarVerboAsync(verbo))">
+                @verbo
+            </MudChip>
+        }
+    </div>
+
+    <div class="kpg-descripcion-field__toolbar">
+        <button type="button" class="kpg-descripcion-field__examples" @onclick="@(() => _mostrarEjemplos = !_mostrarEjemplos)">
+            @L["Desc_ShowExamples"]
+        </button>
+
+        @if (_iaDisponible)
+        {
+            <MudButton Variant="Variant.Text"
+                       Size="Size.Small"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.AutoAwesome"
+                       Disabled="@(_mejorando || string.IsNullOrWhiteSpace(Value))"
+                       OnClick="MejorarConIaAsync">
+                @if (_mejorando)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                }
+                @L["Desc_ImproveWithAi"]
+            </MudButton>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMejora))
+    {
+        <MudAlert Severity="@(_mejoraEsInfo ? Severity.Info : Severity.Error)" Dense="true" Class="mt-1" aria-live="polite">
+            @_errorMejora
+        </MudAlert>
+    }
+
+    @if (_propuesta is not null)
+    {
+        <div class="kpg-descripcion-field__propuesta" role="note" aria-live="polite">
+            <div class="kpg-descripcion-field__propuesta-header">
+                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" Color="Color.Primary" />
+                <span>@L["Desc_ProposalTitle"]</span>
+            </div>
+            <p class="kpg-descripcion-field__propuesta-texto">@_propuesta.Propuesta</p>
+            @if (_propuesta.Cambios.Count > 0)
+            {
+                <ul class="kpg-descripcion-field__propuesta-cambios">
+                    @foreach (var cambio in _propuesta.Cambios)
+                    {
+                        <li>@cambio</li>
+                    }
+                </ul>
+            }
+            @if (_propuesta.PropuestaBloquea)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">
+                    @L["Desc_ProposalStillHasIssues"]
+                </MudAlert>
+            }
+            <div class="kpg-descripcion-field__propuesta-actions">
+                <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="DescartarPropuesta">
+                    @L["Desc_DiscardProposal"]
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" OnClick="AceptarPropuestaAsync">
+                    @L["Desc_AcceptProposal"]
+                </MudButton>
+            </div>
+        </div>
+    }
+
+    @if (_mostrarEjemplos)
+    {
+        <div class="kpg-descripcion-field__examples-box" role="note">
+            <p><b>@L["Desc_FormatLabel"]:</b> [App/Módulo] – [Acción técnica] – [Elemento afectado] – [Resultado esperado]</p>
+            <ul>
+                <li>CIMA WebClient – Ajuste en módulo de evidencias para solicitudes de cancelación.</li>
+                <li>ACUDEN Digital – Optimización aplicada al someter solicitud.</li>
+                <li>API – Validación de SPS en aprobar y rechazar documentos.</li>
+            </ul>
+        </div>
+    }
+
+    @if (_evaluando)
+    {
+        <div class="kpg-descripcion-field__checking" aria-hidden="true">
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        </div>
+    }
+    else if (_evaluacion is { Hallazgos.Count: > 0 })
+    {
+        <div class="kpg-descripcion-field__hallazgos" aria-live="polite">
+            @foreach (var h in _evaluacion.Hallazgos)
+            {
+                var bloquea = h.Severidad == nameof(SeveridadTermino.Bloquear);
+                <MudAlert Severity="@(bloquea ? Severity.Error : Severity.Warning)" Dense="true" Class="mt-1">
+                    <span>@h.Mensaje</span>
+                    @if (!string.IsNullOrWhiteSpace(h.Sugerencia))
+                    {
+                        <MudButton Variant="Variant.Text"
+                                   Size="Size.Small"
+                                   Color="@(bloquea ? Color.Error : Color.Warning)"
+                                   Class="ml-2"
+                                   OnClick="@(() => AplicarSugerenciaAsync(h))">
+                            @L["Desc_ApplySuggestion"]
+                        </MudButton>
+                    }
+                </MudAlert>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Texto actual, en modo bind: <c>@bind-Value="_model.Descripcion"</c>.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Proyecto elegido en el formulario. Habilita el prefijo automatico "[Proyecto] - " y
+    /// hace que el evaluador no cuente el nombre del proyecto como "contexto" de un termino
+    /// generico. Null cuando el formulario no tiene proyecto (p. ej. la edicion desde la
+    /// pantalla de revision, que no lo conoce en ese momento).
+    /// </summary>
+    [Parameter] public int? ProyectoId { get; set; }
+
+    /// <summary>Nombre del proyecto elegido; solo se usa para el prefijo automatico.</summary>
+    [Parameter] public string? ProyectoNombre { get; set; }
+
+    [Parameter] public int MaxLength { get; set; } = 1000;
+    [Parameter] public int Lines { get; set; } = 3;
+    [Parameter] public bool Required { get; set; } = true;
+    [Parameter] public Margin Margin { get; set; } = Margin.Dense;
+
+    /// <summary>
+    /// Verbos de accion tecnica que pide el formato de la guia (ver
+    /// Docs/plan-calidad-descripciones.md, story 10.9). Lista fija: no vale la pena un
+    /// catalogo editable para 8 palabras que casi no cambian.
+    /// </summary>
+    private static readonly string[] VerbosTecnicos =
+    [
+        "Ajuste", "Corrección", "Implementación", "Optimización",
+        "Validación", "Análisis", "Pruebas", "Documentación"
+    ];
+
+    private MudTextField<string> _field = default!;
+    private bool _mostrarEjemplos;
+    private bool _evaluando;
+    private EvaluacionDescripcionResponse? _evaluacion;
+
+    private string? _ultimoProyectoNombre;
+    private string? _ultimoValorEvaluado;
+    private CancellationTokenSource? _debounceCts;
+
+    private bool _iaDisponible;
+    private bool _mejorando;
+    private string? _errorMejora;
+    private bool _mejoraEsInfo;
+    private MejorarDescripcionResultResponse? _propuesta;
+
+    private bool Excedida => (Value?.Length ?? 0) > MaxLength;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _iaDisponible = await DescripcionRepo.MejorarDisponibleAsync(); }
+        catch { _iaDisponible = false; }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Al elegir proyecto con la descripcion vacia se precarga el prefijo del formato
+        // que pide la guia; el usuario lo completa desde ahi. Si ya habia texto, no se toca.
+        if (ProyectoNombre != _ultimoProyectoNombre)
+        {
+            _ultimoProyectoNombre = ProyectoNombre;
+            if (!string.IsNullOrWhiteSpace(ProyectoNombre) && string.IsNullOrWhiteSpace(Value))
+            {
+                await HandleValueChanged($"{ProyectoNombre} – ");
+                return;
+            }
+        }
+
+        // El texto tambien puede cambiar desde afuera del campo (una sugerencia reciente
+        // reusada, el dictado por voz): sin esto esas descripciones quedaban sin evaluar
+        // hasta que el usuario tocara el campo.
+        if (Value != _ultimoValorEvaluado)
+        {
+            _ultimoValorEvaluado = Value;
+            DispararEvaluacionConDebounce();
+        }
+    }
+
+    private async Task HandleValueChanged(string? nuevo)
+    {
+        Value = nuevo;
+        _ultimoValorEvaluado = nuevo;
+        // Cualquier cambio de texto —tecleado, sugerencia aplicada o propuesta aceptada—
+        // deja obsoleta la propuesta que estuviera mostrandose.
+        _propuesta = null;
+        _errorMejora = null;
+        _mejoraEsInfo = false;
+        await ValueChanged.InvokeAsync(nuevo);
+        DispararEvaluacionConDebounce();
+    }
+
+    /// <summary>
+    /// Pide una reescritura con IA del texto actual. Nunca reemplaza el campo por su
+    /// cuenta: la propuesta queda en pantalla hasta que el usuario la acepta o la descarta.
+    /// </summary>
+    private async Task MejorarConIaAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Value)) return;
+
+        _mejorando = true;
+        _errorMejora = null;
+        _mejoraEsInfo = false;
+        _propuesta = null;
+        StateHasChanged();
+
+        try
+        {
+            var (resultado, error) = await DescripcionRepo.MejorarAsync(Value, ProyectoId);
+
+            if (resultado is null)
+            {
+                _errorMejora = error ?? L["Desc_ImproveError"].Value;
+            }
+            else if (!resultado.Disponible)
+            {
+                // Se apago entre que se cargo el formulario y ahora: se oculta el boton.
+                _iaDisponible = false;
+            }
+            else if (string.IsNullOrWhiteSpace(resultado.Propuesta))
+            {
+                _errorMejora = L["Desc_ImproveNoChange"].Value;
+                _mejoraEsInfo = true;
+            }
+            else
+            {
+                _propuesta = resultado;
+            }
+        }
+        catch { _errorMejora = L["Desc_ImproveError"].Value; }
+        finally
+        {
+            _mejorando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AceptarPropuestaAsync()
+    {
+        if (_propuesta?.Propuesta is null) return;
+
+        await HandleValueChanged(_propuesta.Propuesta);
+        await _field.FocusAsync();
+    }
+
+    private void DescartarPropuesta() => _propuesta = null;
+
+    /// <summary>
+    /// Espera a que el usuario deje de teclear antes de llamar al backend: evaluar en cada
+    /// tecla saturaria la API sin aportar nada, la descripcion cambia constantemente.
+    /// </summary>
+    private void DispararEvaluacionConDebounce()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        _ = EvaluarConDebounceAsync(token);
+    }
+
+    private async Task EvaluarConDebounceAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(600, token);
+        }
+        catch (TaskCanceledException) { return; }
+
+        if (token.IsCancellationRequested) return;
+
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            _evaluacion = null;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        _evaluando = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var resultado = await DescripcionRepo.EvaluarAsync(Value, ProyectoId, token);
+            if (token.IsCancellationRequested) return;
+            _evaluacion = resultado;
+        }
+        catch { /* el aviso en vivo es una ayuda, no algo critico: si falla, se sigue sin el */ }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                _evaluando = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reemplaza el fragmento marcado por la sugerencia del catalogo. Si el fragmento ya no
+    /// esta (el usuario siguio editando), la sugerencia se agrega al final en su lugar.
+    /// </summary>
+    private async Task AplicarSugerenciaAsync(HallazgoDescripcionResponse hallazgo)
+    {
+        if (string.IsNullOrWhiteSpace(hallazgo.Sugerencia)) return;
+
+        var texto = Value ?? string.Empty;
+        var nuevo = !string.IsNullOrWhiteSpace(hallazgo.Fragmento)
+                    && texto.Contains(hallazgo.Fragmento, StringComparison.OrdinalIgnoreCase)
+            ? ReemplazarPrimeraOcurrencia(texto, hallazgo.Fragmento!, hallazgo.Sugerencia)
+            : hallazgo.Sugerencia;
+
+        await HandleValueChanged(nuevo);
+        await _field.FocusAsync();
+    }
+
+    /// <summary>
+    /// Agrega el verbo al final del texto, con el separador "– " del formato de la guia.
+    /// No inserta en la posicion del cursor (requeriria interop de JS para leer la
+    /// seleccion del textarea de MudBlazor antes de que el clic del chip le quite el
+    /// foco); al final es donde casi siempre esta escribiendo el usuario, asi que alcanza.
+    /// </summary>
+    private async Task AgregarVerboAsync(string verbo)
+    {
+        var texto = Value ?? string.Empty;
+        var nuevo = texto.Length == 0
+            ? $"{verbo} "
+            : texto.EndsWith(' ')
+                ? $"{texto}– {verbo} "
+                : $"{texto} – {verbo} ";
+
+        await HandleValueChanged(nuevo);
+        await _field.FocusAsync();
+    }
+
+    private static string ReemplazarPrimeraOcurrencia(string texto, string fragmento, string reemplazo)
+    {
+        var idx = texto.IndexOf(fragmento, StringComparison.OrdinalIgnoreCase);
+        return idx < 0 ? texto : string.Concat(texto.AsSpan(0, idx), reemplazo, texto.AsSpan(idx + fragmento.Length));
+    }
+
+    public ValueTask FocusAsync() => _field.FocusAsync();
+
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
+}

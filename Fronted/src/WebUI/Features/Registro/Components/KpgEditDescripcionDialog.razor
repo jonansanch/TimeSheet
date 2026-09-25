@@ -16,17 +16,10 @@
                 @(SoloDescripcion ? L["Apr_EditOnlyDescription"] : L["Hist_EditOnlyMetadata"])
             </MudAlert>
 
-            <MudTextField @ref="_descripcionField"
-                          T="string"
-                          Label="@L["Label_Description"]"
-                          Variant="Variant.Outlined"
-                          Lines="4"
-                          @bind-Value="_descripcion"
-                          MaxLength="1000"
-                          Counter="1000"
-                          Required="true"
-                          RequiredError="@L["Reg_DescriptionRequired"]"
-                          aria-label="@L["Label_Description"]" />
+            <KpgDescripcionField @ref="_descripcionField"
+                                 @bind-Value="_descripcion"
+                                 ProyectoId="@ProyectoId"
+                                 Lines="4" />
 
             @* Desde la revision solo se aclara la descripcion: la modalidad, el recurso y
                el lugar los declara quien trabajo el dia, no quien lo aprueba. *@
@@ -98,7 +91,13 @@
     /// </summary>
     [Parameter] public bool SoloDescripcion { get; set; }
 
-    private MudTextField<string> _descripcionField = default!;
+    /// <summary>
+    /// Proyecto del registro que se edita, si se conoce, para que el aviso en vivo excluya
+    /// su nombre del conteo de contexto. Null es valido: se evalua sin ese contexto.
+    /// </summary>
+    [Parameter] public int? ProyectoId { get; set; }
+
+    private KpgDescripcionField _descripcionField = default!;
 
     private string  _descripcion = string.Empty;
     private string? _modalidad;

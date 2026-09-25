@@ -249,19 +249,10 @@
                     </MudSelect>
                 </div>
                 <div class="kpg-shift-form__description">
-                    <MudTextField T="string"
-                                  Label="@L["Label_Description"]"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Lines="3"
-                                  @bind-Value="_model.Descripcion"
-                                  Immediate="true"
-                                  MaxLength="@MaxDescripcion"
-                                  Required="true" RequiredError="@L["Reg_DescriptionRequired"]"
-                                  Counter="@MaxDescripcion"
-                                  Error="@DescripcionExcedida"
-                                  ErrorText="@string.Format(L["Reg_DescriptionTooLong"], MaxDescripcion)"
-                                  Class="@(DescripcionExcedida ? "kpg-field-error" : null)" />
+                    <KpgDescripcionField @bind-Value="_model.Descripcion"
+                                         ProyectoId="@_model.ProyectoId"
+                                         ProyectoNombre="@ProyectoSeleccionadoNombre"
+                                         MaxLength="@MaxDescripcion" />
                 </div>
             </div>
 
@@ -423,6 +414,10 @@
         _catalogoClientes.FirstOrDefault(c => c.Id == _model.ClienteId)?.ProyectosActivos
         ?? Enumerable.Empty<ProyectoActivoResponse>();
 
+    /// <summary>Para el prefijo automatico "[Proyecto] - " de KpgDescripcionField.</summary>
+    private string? ProyectoSeleccionadoNombre =>
+        ProyectosDelCliente.FirstOrDefault(p => p.Id == _model.ProyectoId)?.Nombre;
+
     /// <summary>Al cambiar de cliente se limpia el proyecto: ya no pertenece al nuevo cliente.</summary>
     private void HandleClienteChanged(int? clienteId)
     {
@@ -581,8 +576,6 @@
 
     /// <summary>Limite de RegistrosHoras.Descripcion (NVARCHAR(1000)).</summary>
     private const int MaxDescripcion = 1000;
-
-    private bool DescripcionExcedida => (_model.Descripcion?.Length ?? 0) > MaxDescripcion;
 
     /// <summary>
     /// El atributo step del input no impide teclear un valor libre, asi que el cuarto de
