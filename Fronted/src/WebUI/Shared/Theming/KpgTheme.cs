@@ -67,7 +67,7 @@ public static class KpgTheme
         LayoutProperties = new LayoutProperties
         {
             DefaultBorderRadius = "10px",
-            DrawerWidthLeft = "232px"
+            DrawerWidthLeft = "280px"
         }
     };
 }
