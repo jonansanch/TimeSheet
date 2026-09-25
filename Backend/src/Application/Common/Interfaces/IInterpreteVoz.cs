@@ -12,9 +12,10 @@ public interface IInterpreteVoz
 {
     /// <summary>
     /// False cuando no hay API key configurada. El frontend usa entonces su parser de
-    /// reglas, que no necesita red ni credenciales.
+    /// reglas, que no necesita red ni credenciales. La key vive en <see cref="Domain.Entities.ParametroSistema"/>,
+    /// por eso la consulta es asincrona.
     /// </summary>
-    bool Disponible { get; }
+    Task<bool> DisponibleAsync(CancellationToken cancellationToken = default);
 
     Task<InterpretacionVozDto> InterpretarAsync(
         string transcripcion,

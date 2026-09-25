@@ -1,28 +1,22 @@
 using System.Text.Json;
-using Anthropic;
-using Anthropic.Models.Messages;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Infrastructure.Ia;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ParametrosSistemaKeys = KPG.Timesheet.Domain.Constants.ParametrosSistema;
 
 namespace KPG.Timesheet.Infrastructure.Voz;
 
-public class AnthropicSettings
+public class GeminiSettings
 {
-    /// <summary>
-    /// Vacia en appsettings a proposito: se inyecta por variable de entorno
-    /// (ANTHROPIC_API_KEY o Anthropic__ApiKey). Nunca se commitea una key.
-    /// </summary>
-    public string ApiKey { get; set; } = string.Empty;
-
-    public string Model { get; set; } = "claude-opus-5";
+    public string Model { get; set; } = "gemini-flash-latest";
 
     /// <summary>Un dictado es una frase corta: no hace falta pensar mucho ni escribir mucho.</summary>
     public int MaxTokens { get; set; } = 1024;
 }
 
 /// <summary>
-/// Interpreta el dictado con Claude usando salida estructurada: el modelo devuelve
+/// Interpreta el dictado con Gemini usando salida estructurada: el modelo devuelve
 /// directamente el JSON con la forma que espera el formulario, sin texto alrededor que
 /// haya que recortar.
 ///
@@ -30,14 +24,26 @@ public class AnthropicSettings
 /// No inventa valores de catalogo: el prompt le pasa los clientes, proyectos, modalidades,
 /// recursos y lugares reales y le exige elegir de esas listas o dejar el campo nulo.
 /// </para>
+///
+/// <para>
+/// La API key no vive en configuracion: se lee de <see cref="Domain.Entities.ParametroSistema"/>
+/// en cada llamada, para que se pueda renovar desde la pantalla de administracion el dia que
+/// venza, sin necesidad de un despliegue.
+/// </para>
 /// </summary>
-public class ClaudeInterpreteVoz(
-    IOptions<AnthropicSettings> settings,
-    ILogger<ClaudeInterpreteVoz> logger) : IInterpreteVoz
+public class GeminiInterpreteVoz(
+    GeminiApiClient cliente,
+    IParametrosSistemaService parametros,
+    IOptions<GeminiSettings> settings,
+    ILogger<GeminiInterpreteVoz> logger) : IInterpreteVoz
 {
-    private readonly AnthropicSettings _settings = settings.Value;
+    private readonly GeminiSettings _settings = settings.Value;
 
-    public bool Disponible => !string.IsNullOrWhiteSpace(_settings.ApiKey);
+    public async Task<bool> DisponibleAsync(CancellationToken cancellationToken = default) =>
+        !string.IsNullOrWhiteSpace(await ObtenerApiKeyAsync(cancellationToken));
+
+    private Task<string> ObtenerApiKeyAsync(CancellationToken cancellationToken) =>
+        parametros.GetTextoAsync(ParametrosSistemaKeys.GeminiApiKey, string.Empty, cancellationToken);
 
     public async Task<InterpretacionVozDto> InterpretarAsync(
         string transcripcion,
@@ -45,42 +51,31 @@ public class ClaudeInterpreteVoz(
         DateOnly hoy,
         CancellationToken cancellationToken = default)
     {
-        if (!Disponible)
+        var apiKey = await ObtenerApiKeyAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(apiKey))
             return InterpretacionVozDto.Vacia;
 
-        var client = new AnthropicClient { ApiKey = _settings.ApiKey };
+        var resultado = await cliente.GenerarJsonAsync(
+            apiKey,
+            _settings.Model,
+            _settings.MaxTokens,
+            ConstruirInstrucciones(catalogo, hoy),
+            transcripcion,
+            Esquema(),
+            cancellationToken);
 
-        var respuesta = await client.Messages.Create(new MessageCreateParams
+        // Un rechazo (filtro de seguridad, prompt bloqueado) no trae contenido util. Se
+        // trata como "no entendi": el formulario queda como estaba y el usuario completa a
+        // mano.
+        if (resultado.Rechazado)
         {
-            Model      = _settings.Model,
-            MaxTokens  = _settings.MaxTokens,
-            System     = ConstruirInstrucciones(catalogo, hoy),
-            // Extraccion corta y acotada: no necesita el esfuerzo alto por defecto.
-            OutputConfig = new OutputConfig
-            {
-                Effort = Effort.Low,
-                Format = new JsonOutputFormat { Schema = Esquema() }
-            },
-            Messages = [new() { Role = Role.User, Content = transcripcion }]
-        }, cancellationToken: cancellationToken);
-
-        // Una negativa del modelo no trae contenido util. Se trata como "no entendi":
-        // el formulario queda como estaba y el usuario completa a mano.
-        if (respuesta.StopReason == StopReason.Refusal)
-        {
-            logger.LogWarning("Claude rechazo interpretar el dictado: {Detalle}", respuesta.StopDetails);
+            logger.LogWarning("Gemini rechazo interpretar el dictado.");
             return InterpretacionVozDto.Vacia;
         }
 
-        // El contenido es una union de bloques; solo interesa el de texto, que con salida
-        // estructurada trae el JSON completo.
-        var json = respuesta.Content
-            .Select(bloque => bloque.TryPickText(out var texto) ? texto.Text : null)
-            .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
-
-        return string.IsNullOrWhiteSpace(json)
+        return string.IsNullOrWhiteSpace(resultado.Json)
             ? InterpretacionVozDto.Vacia
-            : Deserializar(json);
+            : Deserializar(resultado.Json);
     }
 
     private InterpretacionVozDto Deserializar(string json)
@@ -108,7 +103,7 @@ public class ClaudeInterpreteVoz(
         catch (JsonException ex)
         {
             // El dictado no vale un 500: se responde vacio y el usuario llena a mano.
-            logger.LogWarning(ex, "No se pudo leer la respuesta de Claude para el dictado.");
+            logger.LogWarning(ex, "No se pudo leer la respuesta de Gemini para el dictado.");
             return InterpretacionVozDto.Vacia;
         }
     }
@@ -163,7 +158,7 @@ public class ClaudeInterpreteVoz(
     private static string Dia(DateOnly fecha) =>
         fecha.ToString("dddd", new System.Globalization.CultureInfo("es-CO"));
 
-    private static Dictionary<string, JsonElement> Esquema()
+    private static object Esquema()
     {
         string[] campos =
         [
@@ -174,18 +169,17 @@ public class ClaudeInterpreteVoz(
             "cliente", "proyecto", "modalidad", "recurso", "lugar", "descripcion"
         ];
 
-        // Todos los campos son requeridos y nullables: obliga al modelo a pronunciarse
-        // sobre cada uno en vez de omitir los que no encontro.
+        // Todos los campos son nullable: obliga al modelo a pronunciarse sobre cada uno en
+        // vez de omitir los que no encontro.
         var propiedades = campos.ToDictionary(
             campo => campo,
-            _ => new { type = new[] { "string", "null" } });
+            object (_) => new { type = "STRING", nullable = true });
 
-        return new Dictionary<string, JsonElement>
+        return new
         {
-            ["type"]                 = JsonSerializer.SerializeToElement("object"),
-            ["properties"]           = JsonSerializer.SerializeToElement(propiedades),
-            ["required"]             = JsonSerializer.SerializeToElement(campos),
-            ["additionalProperties"] = JsonSerializer.SerializeToElement(false)
+            type = "OBJECT",
+            properties = propiedades,
+            required = campos
         };
     }
 

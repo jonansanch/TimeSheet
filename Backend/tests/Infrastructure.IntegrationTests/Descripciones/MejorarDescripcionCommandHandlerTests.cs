@@ -160,7 +160,7 @@ public class MejorarDescripcionCommandHandlerTests
     private static IRedactorDescripcion RedactorFalso(bool disponible, int limiteDiario = 20)
     {
         var redactor = Substitute.For<IRedactorDescripcion>();
-        redactor.Disponible.Returns(disponible);
+        redactor.DisponibleAsync(Arg.Any<CancellationToken>()).Returns(disponible);
         redactor.LimiteDiarioPorUsuario.Returns(limiteDiario);
         return redactor;
     }

@@ -1,20 +1,20 @@
 using System.Text.Json;
-using Anthropic;
-using Anthropic.Models.Messages;
 using KPG.Timesheet.Application.Common.Interfaces;
+using KPG.Timesheet.Infrastructure.Ia;
 using KPG.Timesheet.Infrastructure.Voz;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ParametrosSistemaKeys = KPG.Timesheet.Domain.Constants.ParametrosSistema;
 
 namespace KPG.Timesheet.Infrastructure.Descripciones;
 
 public class RedactorDescripcionSettings
 {
     /// <summary>
-    /// Modelo aparte del dictado por voz (<see cref="AnthropicSettings.Model"/>): reescribir
+    /// Modelo aparte del dictado por voz (<see cref="GeminiSettings"/>): reescribir
     /// una frase corta con un formato fijo no necesita el modelo mas grande.
     /// </summary>
-    public string Model { get; set; } = "claude-haiku-4-5-20251001";
+    public string Model { get; set; } = "gemini-flash-lite-latest";
 
     public int MaxTokens { get; set; } = 512;
 
@@ -26,19 +26,23 @@ public class RedactorDescripcionSettings
 }
 
 /// <summary>
-/// Reescribe la descripcion con Claude, con salida estructurada, reutilizando la API key de
-/// <see cref="AnthropicSettings"/> (mismo proveedor y cuenta que el dictado de voz) pero con
-/// su propio modelo y limites.
+/// Reescribe la descripcion con Gemini, con salida estructurada, reutilizando la API key de
+/// <see cref="Domain.Constants.ParametrosSistema.GeminiApiKey"/> (misma cuenta que el dictado
+/// de voz) pero con su propio modelo y limites.
 /// </summary>
-public class ClaudeRedactorDescripcion(
-    IOptions<AnthropicSettings> vozSettings,
+public class GeminiRedactorDescripcion(
+    GeminiApiClient cliente,
+    IParametrosSistemaService parametros,
     IOptions<RedactorDescripcionSettings> settings,
-    ILogger<ClaudeRedactorDescripcion> logger) : IRedactorDescripcion
+    ILogger<GeminiRedactorDescripcion> logger) : IRedactorDescripcion
 {
-    private readonly AnthropicSettings _vozSettings = vozSettings.Value;
     private readonly RedactorDescripcionSettings _settings = settings.Value;
 
-    public bool Disponible => !string.IsNullOrWhiteSpace(_vozSettings.ApiKey);
+    public async Task<bool> DisponibleAsync(CancellationToken cancellationToken = default) =>
+        !string.IsNullOrWhiteSpace(await ObtenerApiKeyAsync(cancellationToken));
+
+    private Task<string> ObtenerApiKeyAsync(CancellationToken cancellationToken) =>
+        parametros.GetTextoAsync(ParametrosSistemaKeys.GeminiApiKey, string.Empty, cancellationToken);
 
     public int LimiteDiarioPorUsuario => _settings.LimiteDiarioPorUsuario;
 
@@ -49,37 +53,28 @@ public class ClaudeRedactorDescripcion(
         IReadOnlyList<string> hallazgosActuales,
         CancellationToken cancellationToken = default)
     {
-        if (!Disponible || string.IsNullOrWhiteSpace(texto))
+        var apiKey = await ObtenerApiKeyAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(texto))
             return PropuestaDescripcionDto.Vacia;
 
-        var client = new AnthropicClient { ApiKey = _vozSettings.ApiKey };
+        var resultado = await cliente.GenerarJsonAsync(
+            apiKey,
+            _settings.Model,
+            _settings.MaxTokens,
+            ConstruirInstrucciones(nombreCliente, nombreProyecto, hallazgosActuales),
+            texto,
+            Esquema(),
+            cancellationToken);
 
-        var respuesta = await client.Messages.Create(new MessageCreateParams
+        // Igual que con el dictado: un rechazo no trae contenido util. Se trata como "no se
+        // pudo mejorar" y el usuario sigue con el texto que ya tenia.
+        if (resultado.Rechazado)
         {
-            Model     = _settings.Model,
-            MaxTokens = _settings.MaxTokens,
-            System    = ConstruirInstrucciones(nombreCliente, nombreProyecto, hallazgosActuales),
-            OutputConfig = new OutputConfig
-            {
-                Effort = Effort.Low,
-                Format = new JsonOutputFormat { Schema = Esquema() }
-            },
-            Messages = [new() { Role = Role.User, Content = texto }]
-        }, cancellationToken: cancellationToken);
-
-        // Igual que con el dictado: una negativa no trae contenido util. Se trata como "no
-        // se pudo mejorar" y el usuario sigue con el texto que ya tenia.
-        if (respuesta.StopReason == StopReason.Refusal)
-        {
-            logger.LogWarning("Claude rechazo mejorar la descripcion: {Detalle}", respuesta.StopDetails);
+            logger.LogWarning("Gemini rechazo mejorar la descripcion.");
             return PropuestaDescripcionDto.Vacia;
         }
 
-        var json = respuesta.Content
-            .Select(bloque => bloque.TryPickText(out var t) ? t.Text : null)
-            .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
-
-        return string.IsNullOrWhiteSpace(json) ? PropuestaDescripcionDto.Vacia : Deserializar(json);
+        return string.IsNullOrWhiteSpace(resultado.Json) ? PropuestaDescripcionDto.Vacia : Deserializar(resultado.Json);
     }
 
     private PropuestaDescripcionDto Deserializar(string json)
@@ -96,7 +91,7 @@ public class ClaudeRedactorDescripcion(
         }
         catch (JsonException ex)
         {
-            logger.LogWarning(ex, "No se pudo leer la respuesta de Claude para mejorar la descripcion.");
+            logger.LogWarning(ex, "No se pudo leer la respuesta de Gemini para mejorar la descripcion.");
             return PropuestaDescripcionDto.Vacia;
         }
     }
@@ -150,16 +145,15 @@ public class ClaudeRedactorDescripcion(
             """;
     }
 
-    private static Dictionary<string, JsonElement> Esquema() => new()
+    private static object Esquema() => new
     {
-        ["type"] = JsonSerializer.SerializeToElement("object"),
-        ["properties"] = JsonSerializer.SerializeToElement(new
+        type = "OBJECT",
+        properties = new
         {
-            propuesta = new { type = "string" },
-            cambios = new { type = "array", items = new { type = "string" } }
-        }),
-        ["required"] = JsonSerializer.SerializeToElement(new[] { "propuesta", "cambios" }),
-        ["additionalProperties"] = JsonSerializer.SerializeToElement(false)
+            propuesta = new { type = "STRING" },
+            cambios = new { type = "ARRAY", items = new { type = "STRING" } }
+        },
+        required = new[] { "propuesta", "cambios" }
     };
 
     private sealed record RespuestaCruda(string? propuesta, List<string>? cambios);

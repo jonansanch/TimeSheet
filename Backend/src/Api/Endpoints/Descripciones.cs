@@ -68,8 +68,8 @@ public class Descripciones : IEndpointGroup
     [EndpointSummary("Indica si mejorar la redaccion con IA esta configurado en este ambiente")]
     [EndpointDescription("Permite al cliente decidir si ofrece el boton de mejorar, igual que /api/voz/disponible.")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    private static IResult MejorarDisponible(IRedactorDescripcion redactor)
-        => Results.Ok(new { disponible = redactor.Disponible });
+    private static async Task<IResult> MejorarDisponible(IRedactorDescripcion redactor, CancellationToken cancellationToken)
+        => Results.Ok(new { disponible = await redactor.DisponibleAsync(cancellationToken) });
 
     [EndpointSummary("Obtener los parametros de calidad de descripciones")]
     [ProducesResponseType<ParametrosDescripcionDto>(StatusCodes.Status200OK)]

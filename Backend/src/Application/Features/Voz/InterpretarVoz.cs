@@ -37,7 +37,7 @@ public class InterpretarVozCommandHandler(
         InterpretarVozCommand request,
         CancellationToken cancellationToken)
     {
-        if (!interprete.Disponible)
+        if (!await interprete.DisponibleAsync(cancellationToken))
             throw new Common.Exceptions.ServicioNoDisponibleException(
                 "La interpretacion por IA no esta configurada en este ambiente.");
 

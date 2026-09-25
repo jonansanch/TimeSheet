@@ -140,6 +140,9 @@ public class InterpretarVozCommandHandlerTests
         public CatalogoVozDto? Catalogo { get; private set; }
         public DateOnly Hoy { get; private set; }
 
+        public Task<bool> DisponibleAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(Disponible);
+
         public Task<InterpretacionVozDto> InterpretarAsync(
             string transcripcion, CatalogoVozDto catalogo, DateOnly hoy,
             CancellationToken cancellationToken = default)

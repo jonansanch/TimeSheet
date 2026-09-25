@@ -112,17 +112,21 @@ public static class DependencyInjection
         builder.Services.AddScoped<INotificadorAprobacion, KPG.Timesheet.Infrastructure.Notificaciones.NotificadorAprobacion>();
         builder.Services.AddScoped<ITimesheetImportParser, TimesheetImportParser>();
 
-        // Interpretacion de voz por IA. La key llega por variable de entorno; sin ella el
+        // Interpretacion de voz y "mejorar redaccion" por IA (Gemini). La API key vive en
+        // ParametroSistema (pantalla de administracion), no en configuracion: sin ella cada
         // servicio queda "no disponible" y el frontend usa su parser de reglas.
-        builder.Services.Configure<KPG.Timesheet.Infrastructure.Voz.AnthropicSettings>(
-            builder.Configuration.GetSection("Anthropic"));
-        builder.Services.AddScoped<IInterpreteVoz, KPG.Timesheet.Infrastructure.Voz.ClaudeInterpreteVoz>();
+        builder.Services.AddHttpClient<KPG.Timesheet.Infrastructure.Ia.GeminiApiClient>(http =>
+            http.BaseAddress = new Uri("https://generativelanguage.googleapis.com/"));
+
+        builder.Services.Configure<KPG.Timesheet.Infrastructure.Voz.GeminiSettings>(
+            builder.Configuration.GetSection("Gemini"));
+        builder.Services.AddScoped<IInterpreteVoz, KPG.Timesheet.Infrastructure.Voz.GeminiInterpreteVoz>();
 
         // "Mejorar redaccion" con IA (ver Docs/plan-calidad-descripciones.md). Reusa la
         // misma API key de arriba; el modelo y el limite diario van aparte.
         builder.Services.Configure<KPG.Timesheet.Infrastructure.Descripciones.RedactorDescripcionSettings>(
-            builder.Configuration.GetSection("AnthropicRedactorDescripcion"));
-        builder.Services.AddScoped<IRedactorDescripcion, KPG.Timesheet.Infrastructure.Descripciones.ClaudeRedactorDescripcion>();
+            builder.Configuration.GetSection("GeminiRedactorDescripcion"));
+        builder.Services.AddScoped<IRedactorDescripcion, KPG.Timesheet.Infrastructure.Descripciones.GeminiRedactorDescripcion>();
 
         // Registrar handlers de MediatR que viven en Infrastructure (export handlers: Excel/PDF)
         builder.Services.AddMediatR(cfg =>

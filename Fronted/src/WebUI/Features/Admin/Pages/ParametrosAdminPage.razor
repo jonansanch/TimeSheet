@@ -43,12 +43,13 @@
                                      Max="30"
                                      HelperText="@L["Params_NotifThresholdDesc"]" />
                 </MudItem>
-                <MudItem xs="12" md="4" Class="d-flex align-end">
+                <MudItem xs="12" md="4" Class="d-flex align-start">
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                Disabled="_isSaving"
                                OnClick="GuardarConfigAsync"
-                               StartIcon="@Icons.Material.Filled.Save">
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Style="height:56px;">
                         @(_isSaving ? L["Loading"].Value : L["Btn_Save"].Value)
                     </MudButton>
                 </MudItem>
@@ -101,6 +102,63 @@
                 @if (!string.IsNullOrWhiteSpace(_logoError))
                 {
                     <MudAlert Severity="Severity.Error" Dense="true">@_logoError</MudAlert>
+                }
+            </MudStack>
+        </MudPaper>
+
+        @* ── API key de Gemini (dictado de voz y mejorar redaccion) ─────── *@
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Spacing="3">
+                <div>
+                    <MudText Typo="Typo.h6" Style="font-weight:600;">@L["Params_GeminiTitle"]</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@L["Params_GeminiSubtitle"]</MudText>
+                </div>
+
+                @if (_geminiConfigurada)
+                {
+                    <MudAlert Severity="Severity.Success" Dense="true">
+                        @L["Params_GeminiConfigured"]: @_geminiMascara
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">@L["Params_GeminiEmpty"]</MudAlert>
+                }
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+                    <MudTextField T="string"
+                                  @bind-Value="_geminiApiKeyInput"
+                                  Label="@L["Params_GeminiNewKey"]"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Password"
+                                  Immediate="true"
+                                  Margin="Margin.Dense"
+                                  Style="min-width:320px;" />
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="_isSavingGemini || string.IsNullOrWhiteSpace(_geminiApiKeyInput)"
+                               OnClick="GuardarGeminiApiKeyAsync"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Class="mt-1">
+                        @(_isSavingGemini ? L["Loading"].Value : L["Btn_Save"].Value)
+                    </MudButton>
+                    @if (_geminiConfigurada)
+                    {
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Error"
+                                   Disabled="_isSavingGemini"
+                                   OnClick="QuitarGeminiApiKeyAsync"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   Class="mt-1">
+                            @L["Params_GeminiRemove"]
+                        </MudButton>
+                    }
+                </MudStack>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@L["Params_GeminiNewKeyDesc"]</MudText>
+
+                @if (!string.IsNullOrWhiteSpace(_geminiError))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true">@_geminiError</MudAlert>
                 }
             </MudStack>
         </MudPaper>
@@ -264,6 +322,11 @@
     private string? _logoPreview;
     private bool _isSavingLogo;
     private string? _logoError;
+    private bool _geminiConfigurada;
+    private string? _geminiMascara;
+    private string? _geminiApiKeyInput;
+    private bool _isSavingGemini;
+    private string? _geminiError;
 
     /// <summary>1 MB: mismo tope que valida el backend sobre el data URI en base64.</summary>
     private const long MaxLogoBytes = 1024 * 1024;
@@ -279,7 +342,8 @@
             var rdTask = RestriccionesRepo.GetAllAsync();
             var usTask = UsuariosRepo.GetUsersAsync(1, 100, "email", false);
             var logoTask = SistemaRepo.GetLogoReportesAsync();
-            await Task.WhenAll(vTask, uTask, rTask, rdTask, usTask, logoTask);
+            var geminiTask = SistemaRepo.GetGeminiApiKeyEstadoAsync();
+            await Task.WhenAll(vTask, uTask, rTask, rdTask, usTask, logoTask, geminiTask);
             _ventana        = await vTask;
             _umbral         = await uTask;
             _reglas         = await rTask;
@@ -287,6 +351,7 @@
             _usuarios       = (await usTask).Items;
             var logo        = await logoTask;
             _logoPreview    = string.IsNullOrWhiteSpace(logo) ? null : logo;
+            (_geminiConfigurada, _geminiMascara) = await geminiTask;
         }
         catch { Snackbar.Add(L["Params_ErrorLoad"].Value, Severity.Error); }
         finally { _isLoading = false; }
@@ -478,5 +543,49 @@
             }
         }
         finally { _isSavingLogo = false; }
+    }
+
+    private async Task GuardarGeminiApiKeyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_geminiApiKeyInput)) return;
+
+        _isSavingGemini = true;
+        _geminiError = null;
+        try
+        {
+            var (ok, error) = await SistemaRepo.UpdateGeminiApiKeyAsync(_geminiApiKeyInput);
+            if (ok)
+            {
+                _geminiApiKeyInput = null;
+                (_geminiConfigurada, _geminiMascara) = await SistemaRepo.GetGeminiApiKeyEstadoAsync();
+                Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
+            }
+            else
+            {
+                _geminiError = error ?? L["Params_ErrorSave"].Value;
+            }
+        }
+        finally { _isSavingGemini = false; }
+    }
+
+    private async Task QuitarGeminiApiKeyAsync()
+    {
+        _isSavingGemini = true;
+        _geminiError = null;
+        try
+        {
+            var (ok, error) = await SistemaRepo.UpdateGeminiApiKeyAsync(null);
+            if (ok)
+            {
+                _geminiApiKeyInput = null;
+                (_geminiConfigurada, _geminiMascara) = (false, null);
+                Snackbar.Add(L["Params_SavedOk"].Value, Severity.Success);
+            }
+            else
+            {
+                _geminiError = error ?? L["Params_ErrorSave"].Value;
+            }
+        }
+        finally { _isSavingGemini = false; }
     }
 }

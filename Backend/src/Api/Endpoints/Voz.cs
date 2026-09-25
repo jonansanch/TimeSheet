@@ -29,6 +29,6 @@ public class Voz : IEndpointGroup
     [EndpointSummary("Indica si la interpretacion por IA esta configurada en este ambiente")]
     [EndpointDescription("Permite al cliente decidir si ofrece el dictado por IA o su parser local.")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    private static IResult Disponible(IInterpreteVoz interprete)
-        => Results.Ok(new { disponible = interprete.Disponible });
+    private static async Task<IResult> Disponible(IInterpreteVoz interprete, CancellationToken cancellationToken)
+        => Results.Ok(new { disponible = await interprete.DisponibleAsync(cancellationToken) });
 }

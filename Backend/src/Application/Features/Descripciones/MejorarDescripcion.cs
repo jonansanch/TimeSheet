@@ -40,7 +40,7 @@ public class MejorarDescripcionCommandHandler(
     public async Task<MejorarDescripcionResultDto> Handle(
         MejorarDescripcionCommand request, CancellationToken cancellationToken)
     {
-        if (!redactor.Disponible)
+        if (!await redactor.DisponibleAsync(cancellationToken))
             return new MejorarDescripcionResultDto(false, null, [], false, []);
 
         var actorId = user.Id

@@ -12,8 +12,11 @@ namespace KPG.Timesheet.Application.Common.Interfaces;
 /// </summary>
 public interface IRedactorDescripcion
 {
-    /// <summary>False cuando no hay API key configurada. El boton de mejorar se oculta.</summary>
-    bool Disponible { get; }
+    /// <summary>
+    /// False cuando no hay API key configurada. El boton de mejorar se oculta. La key vive en
+    /// <see cref="Domain.Entities.ParametroSistema"/>, por eso la consulta es asincrona.
+    /// </summary>
+    Task<bool> DisponibleAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Tope de usos por usuario por dia; lo hace cumplir quien llama (el command handler).</summary>
     int LimiteDiarioPorUsuario { get; }

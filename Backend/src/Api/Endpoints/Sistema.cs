@@ -1,6 +1,8 @@
+using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateGeminiApiKey;
 using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateLogoReportes;
 using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateUmbralNotificacion;
 using KPG.Timesheet.Application.Features.Sistema.Commands.UpdateVentanaRetroactividad;
+using KPG.Timesheet.Application.Features.Sistema.Queries.GetGeminiApiKeyEstado;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetLogoReportes;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetUmbralNotificacion;
 using KPG.Timesheet.Application.Features.Sistema.Queries.GetVentanaRetroactividad;
@@ -31,6 +33,8 @@ public class Sistema : IEndpointGroup
         groupBuilder.MapPut("umbral-notificacion", UpdateUmbralNotificacion).RequireAuthorization(adminOnly);
         groupBuilder.MapGet("logo-reportes", GetLogoReportes).RequireAuthorization(adminOnly);
         groupBuilder.MapPut("logo-reportes", UpdateLogoReportes).RequireAuthorization(adminOnly);
+        groupBuilder.MapGet("gemini-api-key", GetGeminiApiKeyEstado).RequireAuthorization(adminOnly);
+        groupBuilder.MapPut("gemini-api-key", UpdateGeminiApiKey).RequireAuthorization(adminOnly);
     }
 
     [EndpointSummary("Obtener ventana de registro retroactivo del usuario autenticado")]
@@ -114,8 +118,31 @@ public class Sistema : IEndpointGroup
         await sender.Send(new UpdateLogoReportesCommand(request.ImagenDataUri), cancellationToken);
         return Results.NoContent();
     }
+    [EndpointSummary("Obtener el estado de la API key de Gemini")]
+    [EndpointDescription("No devuelve la key completa, solo si esta configurada y sus ultimos caracteres.")]
+    private static async Task<IResult> GetGeminiApiKeyEstado(ISender sender, CancellationToken cancellationToken)
+    {
+        var estado = await sender.Send(new GetGeminiApiKeyEstadoQuery(), cancellationToken);
+        return Results.Ok(estado);
+    }
+
+    [EndpointSummary("Actualizar la API key de Gemini")]
+    [EndpointDescription("Usada por el dictado de voz y 'mejorar redaccion'. Enviar vacio o null la quita.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    private static async Task<IResult> UpdateGeminiApiKey(
+        [FromBody] UpdateGeminiApiKeyRequest request,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new UpdateGeminiApiKeyCommand(request.ApiKey), cancellationToken);
+        return Results.NoContent();
+    }
 }
 
 public record UpdateVentanaRequest(int Dias);
 public record UpdateUmbralRequest(int Dias);
 public record UpdateLogoReportesRequest(string? ImagenDataUri);
+public record UpdateGeminiApiKeyRequest(string? ApiKey);

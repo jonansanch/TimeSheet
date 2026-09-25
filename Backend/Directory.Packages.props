@@ -5,8 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Core Application packages -->
-    <PackageVersion Include="Anthropic" Version="12.49.0" />
     <PackageVersion Include="Ardalis.GuardClauses" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.5" />
     <PackageVersion Include="AutoMapper" Version="16.1.1" />
     <PackageVersion Include="ClosedXML" Version="0.105.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />

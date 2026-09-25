@@ -137,6 +137,36 @@ public class ParametroSistemaRepository : IParametroSistemaRepository
     private sealed record LogoReportesResponse(string Logo);
     private sealed record UpdateLogoReportesRequest(string? ImagenDataUri);
 
+    public async Task<(bool Configurada, string? Mascara)> GetGeminiApiKeyEstadoAsync(CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken)) return (false, null);
+
+        using var message = CreateMessage(HttpMethod.Get, "api/sistema/gemini-api-key");
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode) return (false, null);
+
+        var result = await response.Content.ReadFromJsonAsync<GeminiApiKeyEstadoResponse>(cancellationToken: ct);
+        return (result?.Configurada ?? false, result?.Mascara);
+    }
+
+    public async Task<(bool Ok, string? Error)> UpdateGeminiApiKeyAsync(string? apiKey, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_authState.AccessToken))
+            return (false, "Sesion no disponible.");
+
+        using var message = CreateMessage(HttpMethod.Put, "api/sistema/gemini-api-key");
+        message.Content = JsonContent.Create(new UpdateGeminiApiKeyRequest(apiKey));
+
+        var response = await _http.SendAsync(message, ct);
+        if (!response.IsSuccessStatusCode)
+            return (false, await ReadErrorAsync(response, ct));
+
+        return (true, null);
+    }
+
+    private sealed record GeminiApiKeyEstadoResponse(bool Configurada, string? Mascara);
+    private sealed record UpdateGeminiApiKeyRequest(string? ApiKey);
+
     private HttpRequestMessage CreateMessage(HttpMethod method, string url)
     {
         var message = new HttpRequestMessage(method, url);
